@@ -35,7 +35,7 @@ get_filename_component(_gitdescmoddir ${CMAKE_CURRENT_LIST_FILE} PATH)
 # function returns an empty string via _git_dir_var.
 #
 # Example: Given a path C:/bla/foo/bar and assuming C:/bla/.git exists and
-# neither foo nor bar contain a file/directory .git. This wil return
+# neither foo nor bar contain a file/directory .git. This will return
 # C:/bla/.git
 #
 function(_git_find_closest_git_dir _start_dir _git_dir_var)
@@ -71,7 +71,7 @@ function(get_git_head_revision _refspecvar _hashvar)
     return()
   endif()
 
-  find_package(Git)
+  find_package(Git QUIET)
 
   # Check if the current source dir is a git submodule or a worktree.
   # In both cases .git is a file instead of a directory.
@@ -80,7 +80,7 @@ function(get_git_head_revision _refspecvar _hashvar)
     # The following git command will return a non empty string that
     # points to the super project working tree if the current
     # source dir is inside a git submodule.
-    # Otherwise the command will return an empty string.
+    # Otherwise, the command will return an empty string.
     #
     execute_process(
       COMMAND "${GIT_EXECUTABLE}" rev-parse --show-superproject-working-tree

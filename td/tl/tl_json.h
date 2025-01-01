@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -31,7 +31,7 @@ inline void to_json(JsonValueScope &jv, const JsonInt64 json_int64) {
 }
 
 struct JsonVectorInt64 {
-  const std::vector<int64> &value;
+  const vector<int64> &value;
 };
 
 inline void to_json(JsonValueScope &jv, const JsonVectorInt64 &vec) {
@@ -51,7 +51,7 @@ void to_json(JsonValueScope &jv, const tl_object_ptr<T> &value) {
 }
 
 template <class T>
-void to_json(JsonValueScope &jv, const std::vector<T> &v) {
+void to_json(JsonValueScope &jv, const vector<T> &v) {
   auto ja = jv.enter_array();
   for (auto &value : v) {
     ja.enter_value() << ToJson(value);
@@ -63,7 +63,7 @@ inline Status from_json(int32 &to, JsonValue from) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Number, got " << from.type());
+    return Status::Error(PSLICE() << "Expected Number, but receive " << from.type());
   }
   Slice number = from.type() == JsonValue::Type::String ? from.get_string() : from.get_number();
   TRY_RESULT_ASSIGN(to, to_integer_safe<int32>(number));
@@ -82,7 +82,7 @@ inline Status from_json(bool &to, JsonValue from) {
       to = x != 0;
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Boolean, got " << from_type);
+    return Status::Error(PSLICE() << "Expected Boolean, but receive " << from_type);
   }
   to = from.get_boolean();
   return Status::OK();
@@ -93,7 +93,7 @@ inline Status from_json(int64 &to, JsonValue from) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected String or Number, got " << from.type());
+    return Status::Error(PSLICE() << "Expected String or Number, but receive " << from.type());
   }
   Slice number = from.type() == JsonValue::Type::String ? from.get_string() : from.get_number();
   TRY_RESULT_ASSIGN(to, to_integer_safe<int64>(number));
@@ -105,7 +105,7 @@ inline Status from_json(double &to, JsonValue from) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Number, got " << from.type());
+    return Status::Error(PSLICE() << "Expected Number, but receive " << from.type());
   }
   to = to_double(from.get_number());
   return Status::OK();
@@ -116,7 +116,7 @@ inline Status from_json(string &to, JsonValue from) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected String, got " << from.type());
+    return Status::Error(PSLICE() << "Expected String, but receive " << from.type());
   }
   to = from.get_string().str();
   return Status::OK();
@@ -127,24 +127,40 @@ inline Status from_json_bytes(string &to, JsonValue from) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected String, got " << from.type());
+    return Status::Error(PSLICE() << "Expected String, but receive " << from.type());
   }
   TRY_RESULT_ASSIGN(to, base64_decode(from.get_string()));
   return Status::OK();
 }
 
 template <class T>
-Status from_json(std::vector<T> &to, JsonValue from) {
+Status from_json(vector<T> &to, JsonValue from) {
   if (from.type() != JsonValue::Type::Array) {
     if (from.type() == JsonValue::Type::Null) {
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Array, got " << from.type());
+    return Status::Error(PSLICE() << "Expected Array, but receive " << from.type());
   }
-  to = std::vector<T>(from.get_array().size());
+  to = vector<T>(from.get_array().size());
   size_t i = 0;
   for (auto &value : from.get_array()) {
     TRY_STATUS(from_json(to[i], std::move(value)));
+    i++;
+  }
+  return Status::OK();
+}
+
+inline Status from_json_bytes(vector<string> &to, JsonValue from) {
+  if (from.type() != JsonValue::Type::Array) {
+    if (from.type() == JsonValue::Type::Null) {
+      return Status::OK();
+    }
+    return Status::Error(PSLICE() << "Expected Array, but receive " << from.type());
+  }
+  to = vector<string>(from.get_array().size());
+  size_t i = 0;
+  for (auto &value : from.get_array()) {
+    TRY_STATUS(from_json_bytes(to[i], std::move(value)));
     i++;
   }
   return Status::OK();
@@ -157,18 +173,18 @@ std::enable_if_t<!std::is_constructible<T>::value, Status> from_json(tl_object_p
       to = nullptr;
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Object, got " << from.type());
+    return Status::Error(PSLICE() << "Expected Object, but receive " << from.type());
   }
 
   auto &object = from.get_object();
-  TRY_RESULT(constructor_value, get_json_object_field(object, "@type", JsonValue::Type::Null, false));
+  TRY_RESULT(constructor_value, object.extract_required_field("@type", JsonValue::Type::Null));
   int32 constructor = 0;
   if (constructor_value.type() == JsonValue::Type::Number) {
     constructor = to_integer<int32>(constructor_value.get_number());
   } else if (constructor_value.type() == JsonValue::Type::String) {
     TRY_RESULT_ASSIGN(constructor, tl_constructor_from_string(to.get(), constructor_value.get_string().str()));
   } else {
-    return Status::Error(PSLICE() << "Expected String or Integer, got " << constructor_value.type());
+    return Status::Error(PSLICE() << "Expected String or Integer, but receive " << constructor_value.type());
   }
 
   TlDowncastHelper<T> helper(constructor);
@@ -193,7 +209,7 @@ std::enable_if_t<std::is_constructible<T>::value, Status> from_json(tl_object_pt
       to = nullptr;
       return Status::OK();
     }
-    return Status::Error(PSLICE() << "Expected Object, got " << from.type());
+    return Status::Error(PSLICE() << "Expected Object, but receive " << from.type());
   }
   to = make_tl_object<T>();
   return from_json(*to, from.get_object());

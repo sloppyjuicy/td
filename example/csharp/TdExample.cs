@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -76,7 +76,6 @@ namespace TdExample
                 request.SystemLanguageCode = "en";
                 request.DeviceModel = "Desktop";
                 request.ApplicationVersion = "1.0";
-                request.EnableStorageOptimizer = true;
 
                 _client.Send(request, new AuthorizationRequestHandler());
             }
@@ -108,7 +107,7 @@ namespace TdExample
             {
                 string firstName = ReadLine("Please enter your first name: ");
                 string lastName = ReadLine("Please enter your last name: ");
-                _client.Send(new TdApi.RegisterUser(firstName, lastName), new AuthorizationRequestHandler());
+                _client.Send(new TdApi.RegisterUser(firstName, lastName, false), new AuthorizationRequestHandler());
             }
             else if (_authorizationState is TdApi.AuthorizationStateWaitPassword)
             {
@@ -210,8 +209,8 @@ namespace TdExample
             TdApi.InlineKeyboardButton[] row = { new TdApi.InlineKeyboardButton("https://telegram.org?1", new TdApi.InlineKeyboardButtonTypeUrl()), new TdApi.InlineKeyboardButton("https://telegram.org?2", new TdApi.InlineKeyboardButtonTypeUrl()), new TdApi.InlineKeyboardButton("https://telegram.org?3", new TdApi.InlineKeyboardButtonTypeUrl()) };
             TdApi.ReplyMarkup replyMarkup = new TdApi.ReplyMarkupInlineKeyboard(new TdApi.InlineKeyboardButton[][] { row, row, row });
 
-            TdApi.InputMessageContent content = new TdApi.InputMessageText(new TdApi.FormattedText(message, null), false, true);
-            _client.Send(new TdApi.SendMessage(chatId, 0, 0, null, replyMarkup, content), _defaultHandler);
+            TdApi.InputMessageContent content = new TdApi.InputMessageText(new TdApi.FormattedText(message, null), null, true);
+            _client.Send(new TdApi.SendMessage(chatId, 0, null, null, replyMarkup, content), _defaultHandler);
         }
 
         static void Main()

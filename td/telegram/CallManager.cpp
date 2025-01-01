@@ -1,15 +1,14 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "td/telegram/CallManager.h"
 
-#include "td/telegram/telegram_api.hpp"
+#include "td/telegram/telegram_api.h"
 
 #include "td/utils/common.h"
-#include "td/utils/format.h"
 #include "td/utils/logging.h"
 #include "td/utils/misc.h"
 #include "td/utils/SliceBuilder.h"
@@ -18,12 +17,33 @@
 
 namespace td {
 
-CallManager::CallManager(ActorShared<> parent) : parent_(std::move(parent)) {
+CallManager::CallManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
 }
 
-void CallManager::update_call(Update call) {
-  int64 call_id = 0;
-  downcast_call(*call->phone_call_, [&](auto &update) { call_id = update.id_; });
+void CallManager::tear_down() {
+  parent_.reset();
+}
+
+void CallManager::update_call(telegram_api::object_ptr<telegram_api::updatePhoneCall> call) {
+  auto call_id = [phone_call = call->phone_call_.get()] {
+    switch (phone_call->get_id()) {
+      case telegram_api::phoneCallEmpty::ID:
+        return static_cast<const telegram_api::phoneCallEmpty *>(phone_call)->id_;
+      case telegram_api::phoneCallWaiting::ID:
+        return static_cast<const telegram_api::phoneCallWaiting *>(phone_call)->id_;
+      case telegram_api::phoneCallRequested::ID:
+        return static_cast<const telegram_api::phoneCallRequested *>(phone_call)->id_;
+      case telegram_api::phoneCallAccepted::ID:
+        return static_cast<const telegram_api::phoneCallAccepted *>(phone_call)->id_;
+      case telegram_api::phoneCall::ID:
+        return static_cast<const telegram_api::phoneCall *>(phone_call)->id_;
+      case telegram_api::phoneCallDiscarded::ID:
+        return static_cast<const telegram_api::phoneCallDiscarded *>(phone_call)->id_;
+      default:
+        UNREACHABLE();
+        return static_cast<int64>(0);
+    }
+  }();
   LOG(DEBUG) << "Receive UpdateCall for " << call_id;
 
   auto &info = call_info_[call_id];
@@ -33,7 +53,7 @@ void CallManager::update_call(Update call) {
   }
 
   if (!info.call_id.is_valid()) {
-    LOG(INFO) << "Call_id is not valid for " << call_id << ", postpone update " << to_string(call);
+    LOG(INFO) << "Call identifier is not valid for " << call_id << ", postpone update " << to_string(call);
     info.updates.push_back(std::move(call));
     return;
   }
@@ -61,14 +81,15 @@ void CallManager::update_call_signaling_data(int64 call_id, string data) {
 }
 
 void CallManager::create_call(UserId user_id, tl_object_ptr<telegram_api::InputUser> &&input_user,
-                              CallProtocol &&protocol, bool is_video, Promise<CallId> promise) {
+                              CallProtocol &&protocol, bool is_video, GroupCallId group_call_id,
+                              Promise<CallId> promise) {
   LOG(INFO) << "Create call with " << user_id;
   auto call_id = create_call_actor();
   auto actor = get_call_actor(call_id);
   CHECK(!actor.empty());
   auto safe_promise = SafePromise<CallId>(std::move(promise), Status::Error(400, "Call not found"));
   send_closure(actor, &CallActor::create_call, user_id, std::move(input_user), std::move(protocol), is_video,
-               std::move(safe_promise));
+               group_call_id, std::move(safe_promise));
 }
 
 void CallManager::accept_call(CallId call_id, CallProtocol &&protocol, Promise<Unit> promise) {
@@ -128,6 +149,15 @@ void CallManager::send_call_log(CallId call_id, td_api::object_ptr<td_api::Input
   send_closure(actor, &CallActor::send_call_log, std::move(log_file), std::move(safe_promise));
 }
 
+void CallManager::create_conference_call(CallId call_id, Promise<Unit> promise) {
+  auto actor = get_call_actor(call_id);
+  if (actor.empty()) {
+    return promise.set_error(Status::Error(400, "Call not found"));
+  }
+  auto safe_promise = SafePromise<Unit>(std::move(promise), Status::Error(400, "Call not found"));
+  send_closure(actor, &CallActor::create_conference_call, std::move(safe_promise));
+}
+
 CallId CallManager::create_call_actor() {
   if (next_call_id_ == std::numeric_limits<int32>::max()) {
     next_call_id_ = 1;
@@ -140,8 +170,8 @@ CallId CallManager::create_call_actor() {
   auto main_promise = PromiseCreator::lambda([actor_id = actor_id(this), id](Result<int64> call_id) {
     send_closure(actor_id, &CallManager::set_call_id, id, std::move(call_id));
   });
-  it_flag.first->second = create_actor<CallActor>(PSLICE() << "Call " << id.get(), id, actor_shared(this, id.get()),
-                                                  std::move(main_promise));
+  it_flag.first->second = create_actor<CallActor>(PSLICE() << "Call " << id.get(), td_, id,
+                                                  actor_shared(this, id.get()), std::move(main_promise));
   return id;
 }
 
@@ -174,25 +204,24 @@ ActorId<CallActor> CallManager::get_call_actor(CallId call_id) {
 void CallManager::hangup() {
   close_flag_ = true;
   for (auto &it : id_to_actor_) {
-    LOG(INFO) << "Ask close CallActor " << it.first;
+    LOG(INFO) << "Ask to close CallActor " << it.first.get();
     it.second.reset();
   }
   if (id_to_actor_.empty()) {
     stop();
   }
 }
+
 void CallManager::hangup_shared() {
   auto token = narrow_cast<int32>(get_link_token());
   auto it = id_to_actor_.find(CallId(token));
-  if (it != id_to_actor_.end()) {
-    LOG(INFO) << "Close CallActor " << tag("id", it->first);
-    it->second.release();
-    id_to_actor_.erase(it);
-  } else {
-    LOG(FATAL) << "Unknown CallActor hangup " << tag("id", static_cast<int32>(token));
-  }
+  CHECK(it != id_to_actor_.end());
+  LOG(INFO) << "Closed CallActor " << it->first.get();
+  it->second.release();
+  id_to_actor_.erase(it);
   if (close_flag_ && id_to_actor_.empty()) {
     stop();
   }
 }
+
 }  // namespace td

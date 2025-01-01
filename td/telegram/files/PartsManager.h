@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,6 +10,7 @@
 
 #include "td/utils/common.h"
 #include "td/utils/Status.h"
+#include "td/utils/StringBuilder.h"
 
 namespace td {
 
@@ -30,9 +31,9 @@ class PartsManager {
 
   // returns empty part if nothing to return
   Result<Part> start_part() TD_WARN_UNUSED_RESULT;
-  Status on_part_ok(int32 id, size_t part_size, size_t actual_size) TD_WARN_UNUSED_RESULT;
-  void on_part_failed(int32 id);
-  Status set_known_prefix(size_t size, bool is_ready);
+  Status on_part_ok(int part_id, size_t part_size, size_t actual_size) TD_WARN_UNUSED_RESULT;
+  void on_part_failed(int part_id);
+  Status set_known_prefix(int64 size, bool is_ready);
   void set_need_check();
   void set_checked_prefix_size(int64 size);
   int32 set_streaming_offset(int64 offset, int64 limit);
@@ -42,7 +43,6 @@ class PartsManager {
   int64 get_unchecked_ready_prefix_size();
   int64 get_size() const;
   int64 get_size_or_zero() const;
-  int64 get_expected_size() const;
   int64 get_estimated_extra() const;
   int64 get_ready_size() const;
   size_t get_part_size() const;
@@ -51,7 +51,6 @@ class PartsManager {
   int32 get_ready_prefix_count();
   int64 get_streaming_offset() const;
   string get_bitmask();
-  int32 get_pending_count() const;
 
  private:
   static constexpr int MAX_PART_COUNT = 4000;
@@ -96,13 +95,20 @@ class PartsManager {
 
   static Part get_empty_part();
 
-  Part get_part(int id) const;
-  void on_part_start(int32 id);
+  Part get_part(int part_id) const;
+  void on_part_start(int part_id);
   void update_first_empty_part();
   void update_first_not_ready_part();
 
+  int64 get_expected_size() const;
+
   bool is_streaming_limit_reached();
-  bool is_part_in_streaming_limit(int part_i) const;
+
+  bool is_part_in_streaming_limit(int part_id) const;
+
+  friend StringBuilder &operator<<(StringBuilder &string_builder, const PartsManager &parts_manager);
 };
+
+StringBuilder &operator<<(StringBuilder &string_builder, const PartsManager &parts_manager);
 
 }  // namespace td

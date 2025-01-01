@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,6 +17,7 @@
 #include "td/utils/port/detail/skip_eintr.h"
 #include "td/utils/ScopeGuard.h"
 #include "td/utils/SliceBuilder.h"
+#include "td/utils/StackAllocator.h"
 
 #include <utility>
 
@@ -126,6 +127,7 @@ Stat from_native_stat(const struct ::stat &buf) {
   res.real_size_ = buf.st_blocks * 512;
   res.is_dir_ = (buf.st_mode & S_IFMT) == S_IFDIR;
   res.is_reg_ = (buf.st_mode & S_IFMT) == S_IFREG;
+  res.is_symbolic_link_ = (buf.st_mode & S_IFMT) == S_IFLNK;
   return res;
 }
 
@@ -230,10 +232,13 @@ Result<MemStat> mem_stat() {
     fd.close();
   };
 
-  constexpr int TMEM_SIZE = 10000;
-  char mem[TMEM_SIZE];
+  constexpr size_t TMEM_SIZE = 65536;
+  auto buf = StackAllocator::alloc(TMEM_SIZE);
+  char *mem = buf.as_slice().data();
   TRY_RESULT(size, fd.read(MutableSlice(mem, TMEM_SIZE - 1)));
-  CHECK(size < TMEM_SIZE - 1);
+  if (size >= TMEM_SIZE - 1) {
+    return Status::Error("The file /proc/self/status is too big");
+  }
   mem[size] = 0;
 
   const char *s = mem;
@@ -311,11 +316,12 @@ Status cpu_stat_self(CpuStat &stat) {
     fd.close();
   };
 
-  constexpr int TMEM_SIZE = 10000;
-  char mem[TMEM_SIZE];
+  constexpr size_t TMEM_SIZE = 65536;
+  auto buf = StackAllocator::alloc(TMEM_SIZE);
+  char *mem = buf.as_slice().data();
   TRY_RESULT(size, fd.read(MutableSlice(mem, TMEM_SIZE - 1)));
   if (size >= TMEM_SIZE - 1) {
-    return Status::Error("Failed for read /proc/self/stat");
+    return Status::Error("The file /proc/self/stat is too big");
   }
   mem[size] = 0;
 
@@ -349,11 +355,12 @@ Status cpu_stat_total(CpuStat &stat) {
     fd.close();
   };
 
-  constexpr int TMEM_SIZE = 10000;
-  char mem[TMEM_SIZE];
+  constexpr size_t TMEM_SIZE = 65536;
+  auto buf = StackAllocator::alloc(TMEM_SIZE);
+  char *mem = buf.as_slice().data();
   TRY_RESULT(size, fd.read(MutableSlice(mem, TMEM_SIZE - 1)));
   if (size >= TMEM_SIZE - 1) {
-    return Status::Error("Failed for read /proc/stat");
+    return Status::Error("The file /proc/stat is too big");
   }
   mem[size] = 0;
 

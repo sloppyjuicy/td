@@ -1087,9 +1087,9 @@ Changes in 1.4.0 (1 May 2019):
     the class `scopeNotificationSettings`.
   - Added the class `PushMessageContent` describing the content of a notification, received through
     a push notification.
-  - Added the class `NotificationType` describing a type of a notification.
+  - Added the class `NotificationType` describing a type of notification.
   - Added the class `notification` containing information about a notification.
-  - Added the class `NotificationGroupType` describing a type of a notification group.
+  - Added the class `NotificationGroupType` describing a type of notification group.
   - Added the class `notificationGroup` describing a state of a notification group.
   - Added the methods `removeNotification` and `removeNotificationGroup` for handling notifications removal
     by the user.
@@ -1226,7 +1226,7 @@ Changes in 1.4.0 (1 May 2019):
 * Removed the `on_closed` callback virtual method from low-level C++ ClientActor interface.
   Callback destructor can be used instead.
 * Updated dependencies in the prebuilt TDLib for Android:
-  - Updated SDK to SDK 28 in which helper classes was moved from `android.support.` to `androidx.` package.
+  - Updated SDK to SDK 28 in which helper classes were moved from `android.support.` to `androidx.` package.
   - Updated NDK to r19c, which dropped support for Android versions up to 4.0.4, so the minimum supported version is
     Android 4.1.
   - Updated OpenSSL to version 1.1.1.
@@ -1435,7 +1435,7 @@ Changes in 1.2.0 (20 Mar 2018):
   See [using in .NET projects](README.md#using-dotnet) for more details.
 * Added a C# example. See [README](example/csharp/README.md) for build and usage instructions.
 * Added a build and usage example of TDLib SDK for Universal Windows Platform. See [README](example/uwp/README.md)
-  for detailed build and usage instructions. Also see [Unigram](https://github.com/UnigramDev/Unigram), which is
+  for detailed build and usage instructions. Also, see [Unigram](https://github.com/UnigramDev/Unigram), which is
   a full-featured client rewritten from scratch using TDLib SDK for Universal Windows Platform in less than 2 months.
 * Added a Swift example. See [README](example/swift/README.md) for build and usage instructions.
 * Added an example of building TDLib for iOS, watchOS, tvOS, and also macOS. See [README](example/ios/README.md) for

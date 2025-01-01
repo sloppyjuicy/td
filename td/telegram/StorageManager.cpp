@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +13,6 @@
 #include "td/telegram/logevent/LogEvent.h"
 #include "td/telegram/MessagesManager.h"
 #include "td/telegram/TdDb.h"
-#include "td/telegram/TdParameters.h"
 
 #include "td/db/SqliteDb.h"
 
@@ -163,6 +162,7 @@ void StorageManager::on_all_files(FileGcParameters gc_parameters, Result<FileSta
   create_gc_worker();
 
   send_closure(gc_worker_, &FileGcWorker::run_gc, std::move(gc_parameters), r_file_stats.ok_ref().get_all_files(),
+               !G()->get_option_string("my_phone_number").empty(),
                PromiseCreator::lambda([actor_id = actor_id(this), dialog_limit](Result<FileGcResult> r_file_gc_result) {
                  send_closure(actor_id, &StorageManager::on_gc_finished, dialog_limit, std::move(r_file_gc_result));
                }));
@@ -261,9 +261,14 @@ void StorageManager::send_stats(FileStats &&stats, int32 dialog_limit, std::vect
   auto promise = PromiseCreator::lambda(
       [promises = std::move(promises), stats = std::move(stats)](vector<DialogId> dialog_ids) mutable {
         stats.apply_dialog_ids(dialog_ids);
-        for (auto &promise : promises) {
-          promise.set_value(FileStats(stats));
+        auto size = promises.size();
+        size--;
+        for (size_t i = 0; i < size; i++) {
+          if (promises[i]) {
+            promises[i].set_value(FileStats(stats));
+          }
         }
+        promises[size].set_value(std::move(stats));
       });
 
   send_closure(G()->messages_manager(), &MessagesManager::load_dialogs, std::move(dialog_ids), std::move(promise));
@@ -316,7 +321,7 @@ void StorageManager::save_last_gc_timestamp() {
 }
 
 void StorageManager::schedule_next_gc() {
-  if (!G()->get_option_boolean("use_storage_optimizer") && !G()->parameters().enable_storage_optimizer) {
+  if (!G()->get_option_boolean("use_storage_optimizer")) {
     next_gc_at_ = 0;
     cancel_timeout();
     LOG(INFO) << "No next file clean up is scheduled";

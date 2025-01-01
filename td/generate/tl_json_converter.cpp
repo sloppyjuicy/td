@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,6 +20,11 @@
 namespace td {
 
 using Mode = tl::TL_writer::Mode;
+
+static bool need_bytes(const tl::simple::Type *type) {
+  return type->type == tl::simple::Type::Bytes ||
+         (type->type == tl::simple::Type::Vector && need_bytes(type->vector_value_type));
+}
 
 template <class T>
 void gen_to_json_constructor(StringBuilder &sb, const T *constructor, bool is_header) {
@@ -42,6 +47,8 @@ void gen_to_json_constructor(StringBuilder &sb, const T *constructor, bool is_he
     }
     if (arg.type->type == tl::simple::Type::Bytes) {
       object = PSTRING() << "base64_encode(" << object << ")";
+    } else if (need_bytes(arg.type)) {
+      object = "UNSUPPORTED STORED VECTOR OF BYTES";
     } else if (arg.type->type == tl::simple::Type::Bool) {
       object = PSTRING() << "JsonBool{" << object << "}";
     } else if (arg.type->type == tl::simple::Type::Int64) {
@@ -102,9 +109,9 @@ void gen_from_json_constructor(StringBuilder &sb, const T *constructor, bool is_
   } else {
     sb << " {\n";
     for (auto &arg : constructor->args) {
-      sb << "  TRY_STATUS(from_json" << (arg.type->type == tl::simple::Type::Bytes ? "_bytes" : "") << "(to."
-         << tl::simple::gen_cpp_field_name(arg.name) << ", get_json_object_field_force(from, \""
-         << tl::simple::gen_cpp_name(arg.name) << "\")));\n";
+      sb << "  TRY_STATUS(from_json" << (need_bytes(arg.type) ? "_bytes" : "") << "(to."
+         << tl::simple::gen_cpp_field_name(arg.name) << ", from.extract_field(\"" << tl::simple::gen_cpp_name(arg.name)
+         << "\")));\n";
     }
     sb << "  return Status::OK();\n";
     sb << "}\n\n";
@@ -187,7 +194,6 @@ void gen_tl_constructor_from_string(StringBuilder &sb, const tl::simple::Schema 
 void gen_json_converter_file(const tl::simple::Schema &schema, const std::string &file_name_base, bool is_header,
                              Mode mode) {
   auto file_name = is_header ? file_name_base + ".h" : file_name_base + ".cpp";
-  file_name = "auto/" + file_name;
   auto old_file_content = [&] {
     auto r_content = read_file(file_name);
     if (r_content.is_error()) {

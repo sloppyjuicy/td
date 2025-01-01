@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,6 +8,7 @@
 
 #include "td/telegram/Global.h"
 #include "td/telegram/MessageSender.h"
+#include "td/telegram/telegram_api.h"
 
 #include "td/utils/logging.h"
 
@@ -71,7 +72,7 @@ GroupCallParticipant::GroupCallParticipant(const tl_object_ptr<telegram_api::gro
 }
 
 bool GroupCallParticipant::is_versioned_update(const tl_object_ptr<telegram_api::groupCallParticipant> &participant) {
-  // updates about new and left participants must be applyed as versioned, even they don't increase version
+  // updates about new and left participants must be applied as versioned, even they don't increase version
   return participant->just_joined_ || participant->left_ || participant->versioned_;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -8,6 +8,7 @@
 
 #include "td/telegram/MessageEntity.h"
 #include "td/telegram/MessageId.h"
+#include "td/telegram/MessageInputReplyTo.h"
 #include "td/telegram/ReplyMarkup.h"
 
 #include "td/utils/common.h"
@@ -18,21 +19,24 @@ namespace td {
 struct MessageCopyOptions {
   bool send_copy = false;
   bool replace_caption = false;
+  bool new_invert_media = false;
   FormattedText new_caption;
-  MessageId top_thread_message_id;
-  MessageId reply_to_message_id;
+  MessageInputReplyTo input_reply_to;
   unique_ptr<ReplyMarkup> reply_markup;
 
   MessageCopyOptions() = default;
   MessageCopyOptions(bool send_copy, bool remove_caption) : send_copy(send_copy), replace_caption(remove_caption) {
   }
 
-  bool is_supported_server_side() const {
+  bool is_supported_server_side(MessageId top_thread_message_id) const {
     if (!send_copy) {
       return true;
     }
-    if ((replace_caption && !new_caption.text.empty()) || top_thread_message_id.is_valid() ||
-        reply_to_message_id.is_valid() || reply_markup != nullptr) {
+    if ((replace_caption && !new_caption.text.empty()) || reply_markup != nullptr) {
+      return false;
+    }
+    if (input_reply_to.is_valid() && (top_thread_message_id == MessageId() || input_reply_to.has_quote() ||
+                                      input_reply_to.get_same_chat_reply_to_message_id() != top_thread_message_id)) {
       return false;
     }
     return true;
@@ -43,13 +47,11 @@ inline StringBuilder &operator<<(StringBuilder &string_builder, MessageCopyOptio
   if (copy_options.send_copy) {
     string_builder << "CopyOptions[replace_caption = " << copy_options.replace_caption;
     if (copy_options.replace_caption) {
-      string_builder << ", new_caption = " << copy_options.new_caption;
+      string_builder << ", new_caption = " << copy_options.new_caption
+                     << ", new_show_caption_above_media = " << copy_options.new_invert_media;
     }
-    if (copy_options.top_thread_message_id.is_valid()) {
-      string_builder << ", in thread of " << copy_options.top_thread_message_id;
-    }
-    if (copy_options.reply_to_message_id.is_valid()) {
-      string_builder << ", in reply to " << copy_options.reply_to_message_id;
+    if (copy_options.input_reply_to.is_valid()) {
+      string_builder << ", in reply to " << copy_options.input_reply_to;
     }
     if (copy_options.reply_markup != nullptr) {
       string_builder << ", with reply markup";

@@ -1,5 +1,5 @@
 //
-// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2022
+// Copyright Aliaksei Levin (levlam@telegram.org), Arseny Smirnov (arseny30@gmail.com) 2014-2025
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -10,7 +10,6 @@
 #include "td/telegram/files/FileManager.h"
 #include "td/telegram/files/FileType.h"
 #include "td/telegram/Global.h"
-#include "td/telegram/TdParameters.h"
 
 #include "td/utils/algorithm.h"
 #include "td/utils/format.h"
@@ -27,7 +26,7 @@ namespace td {
 
 int VERBOSITY_NAME(file_gc) = VERBOSITY_NAME(INFO);
 
-void FileGcWorker::run_gc(const FileGcParameters &parameters, std::vector<FullFileInfo> files,
+void FileGcWorker::run_gc(const FileGcParameters &parameters, vector<FullFileInfo> files, bool send_updates,
                           Promise<FileGcResult> promise) {
   auto begin_time = Time::now();
   VLOG(file_gc) << "Start files GC with " << parameters;
@@ -38,7 +37,7 @@ void FileGcWorker::run_gc(const FileGcParameters &parameters, std::vector<FullFi
 
   std::array<bool, MAX_FILE_TYPE> immune_types{{false}};
 
-  if (G()->parameters().use_file_db) {
+  if (G()->use_file_database()) {
     // immune by default
     immune_types[narrow_cast<size_t>(FileType::Sticker)] = true;
     immune_types[narrow_cast<size_t>(FileType::ProfilePhoto)] = true;
@@ -61,7 +60,7 @@ void FileGcWorker::run_gc(const FileGcParameters &parameters, std::vector<FullFi
     }
   }
 
-  if (G()->parameters().use_file_db) {
+  if (G()->use_file_database()) {
     immune_types[narrow_cast<size_t>(FileType::EncryptedThumbnail)] = true;
   }
 
@@ -85,18 +84,19 @@ void FileGcWorker::run_gc(const FileGcParameters &parameters, std::vector<FullFi
   FileStats new_stats(false, parameters.dialog_limit_ != 0);
   FileStats removed_stats(false, parameters.dialog_limit_ != 0);
 
-  auto do_remove_file = [&removed_stats](const FullFileInfo &info) {
+  auto do_remove_file = [&removed_stats, send_updates](const FullFileInfo &info) {
     removed_stats.add_copy(info);
     auto status = unlink(info.path);
     LOG_IF(WARNING, status.is_error()) << "Failed to unlink file \"" << info.path << "\" during files GC: " << status;
-    send_closure(G()->file_manager(), &FileManager::on_file_unlink,
-                 FullLocalFileLocation(info.file_type, info.path, info.mtime_nsec));
+    if (send_updates) {
+      send_closure(G()->file_manager(), &FileManager::on_file_unlink,
+                   FullLocalFileLocation(info.file_type, info.path, info.mtime_nsec));
+    }
   };
 
   double now = Clocks::system();
 
-  // Keep all immune files
-  // Remove all files with (atime > now - max_time_from_last_access)
+  // Remove all suitable files with (atime > now - max_time_from_last_access)
   td::remove_if(files, [&](const FullFileInfo &info) {
     if (token_) {
       return false;
