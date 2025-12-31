@@ -49,6 +49,8 @@ class Contact {
 
   Contact(string phone_number, string first_name, string last_name, bool edit_note, FormattedText &&note);
 
+  Status validate();
+
   void set_user_id(UserId user_id);
 
   UserId get_user_id() const;
@@ -158,9 +160,9 @@ struct ContactHash {
   }
 };
 
-Result<Contact> get_contact(Td *td, td_api::object_ptr<td_api::contact> &&contact) TD_WARN_UNUSED_RESULT;
-
 Result<Contact> get_contact(Td *td, td_api::object_ptr<td_api::importedContact> &&contact) TD_WARN_UNUSED_RESULT;
+
+Result<vector<Contact>> get_contacts(Td *td, vector<td_api::object_ptr<td_api::importedContact>> &&contacts);
 
 Result<Contact> process_input_message_contact(
     Td *td, td_api::object_ptr<td_api::InputMessageContent> &&input_message_content) TD_WARN_UNUSED_RESULT;
