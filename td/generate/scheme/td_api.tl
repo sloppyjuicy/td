@@ -2300,6 +2300,12 @@ communityMemberStatusBanned = CommunityMemberStatus;
 //@permissions Actions that non-administrator community members are allowed to take in the community
 community id:int53 have_access:Bool name:string photo:chatPhotoInfo date:int32 status:CommunityMemberStatus permissions:communityPermissions = Community;
 
+//@description Describes a chat in a community
+//@chat_id Identifier of the chat in the community
+//@can_view_history True, if message history of the chat can be viewed
+//@is_hidden True, if the chat is hidden in the list of community chats; for community administrators only
+communityChat chat_id:int53 can_view_history:Bool is_hidden:Bool = CommunityChat;
+
 
 //@description Contains description of user rating
 //@level The level of the user; may be negative

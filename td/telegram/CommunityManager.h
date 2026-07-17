@@ -91,6 +91,27 @@ class CommunityManager final : public Actor {
     void parse(ParserT &parser);
   };
 
+  class CommunityDialog {
+    DialogId dialog_id_;
+    bool can_view_history_ = false;
+    bool is_visible_ = false;
+
+   public:
+    explicit CommunityDialog(const telegram_api::object_ptr<telegram_api::communityPeer> &peer);
+
+    bool is_valid() const {
+      return dialog_id_.is_valid();
+    }
+
+    td_api::object_ptr<td_api::communityChat> get_community_chat_object(const Td *td) const;
+
+    template <class StorerT>
+    void store(StorerT &storer) const;
+
+    template <class ParserT>
+    void parse(ParserT &parser);
+  };
+
   class CommunityLogEvent;
 
   void tear_down() final;

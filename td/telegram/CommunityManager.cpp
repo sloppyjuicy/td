@@ -11,6 +11,7 @@
 #include "td/telegram/ChannelType.h"
 #include "td/telegram/ChatManager.h"
 #include "td/telegram/DialogId.h"
+#include "td/telegram/DialogManager.h"
 #include "td/telegram/DialogPhoto.hpp"
 #include "td/telegram/Global.h"
 #include "td/telegram/logevent/LogEvent.h"
@@ -111,6 +112,36 @@ void CommunityManager::Community::parse(ParserT &parser) {
     title.clear();
     cache_version = 0;
   }
+}
+
+CommunityManager::CommunityDialog::CommunityDialog(const telegram_api::object_ptr<telegram_api::communityPeer> &peer)
+    : dialog_id_(peer->peer_), can_view_history_(peer->can_view_history_), is_visible_(peer->visible_) {
+}
+
+td_api::object_ptr<td_api::communityChat> CommunityManager::CommunityDialog::get_community_chat_object(
+    const Td *td) const {
+  return td_api::make_object<td_api::communityChat>(
+      td->dialog_manager_->get_chat_id_object(dialog_id_, "communityChat"), can_view_history_, !is_visible_);
+}
+
+template <class StorerT>
+void CommunityManager::CommunityDialog::store(StorerT &storer) const {
+  using td::store;
+  BEGIN_STORE_FLAGS();
+  STORE_FLAG(can_view_history_);
+  STORE_FLAG(is_visible_);
+  END_STORE_FLAGS();
+  store(dialog_id_, storer);
+}
+
+template <class ParserT>
+void CommunityManager::CommunityDialog::parse(ParserT &parser) {
+  using td::parse;
+  BEGIN_PARSE_FLAGS();
+  PARSE_FLAG(can_view_history_);
+  PARSE_FLAG(is_visible_);
+  END_PARSE_FLAGS();
+  parse(dialog_id_, parser);
 }
 
 CommunityManager::CommunityManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
