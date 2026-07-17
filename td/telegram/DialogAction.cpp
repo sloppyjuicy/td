@@ -236,6 +236,9 @@ DialogAction::DialogAction(Td *td, telegram_api::object_ptr<telegram_api::SendMe
       LOG(ERROR) << "Receive " << to_string(action_ptr);
       init(Type::Cancel);
       break;
+    case telegram_api::sendMessageStopDraftAction::ID:
+      init(Type::Cancel);
+      break;
     default:
       UNREACHABLE();
       break;
@@ -292,14 +295,15 @@ telegram_api::object_ptr<telegram_api::SendMessageAction> DialogAction::get_inpu
       return telegram_api::make_object<telegram_api::sendMessageEmojiInteractionSeen>(emoji_);
     case Type::TextDraft:
       return telegram_api::make_object<telegram_api::sendMessageTextDraftAction>(
-          random_id_, get_input_text_with_entities(td->user_manager_.get(), text_, "sendMessageTextDraftAction"));
+          0, false, false, random_id_,
+          get_input_text_with_entities(td->user_manager_.get(), text_, "sendMessageTextDraftAction"));
     case Type::RichTextDraft: {
       auto input_rich_message = message_.get_input_rich_message(td);
       if (input_rich_message == nullptr) {
         return nullptr;
       }
       return telegram_api::make_object<telegram_api::inputSendMessageRichMessageDraftAction>(
-          random_id_, std::move(input_rich_message));
+          0, false, false, random_id_, std::move(input_rich_message));
     }
     case Type::ClickingAnimatedEmoji:
     default:

@@ -216,12 +216,11 @@ telegram_api::object_ptr<telegram_api::RequestPeerType> RequestedDialogType::get
   }
 }
 
-telegram_api::object_ptr<telegram_api::inputKeyboardButtonRequestPeer>
-RequestedDialogType::get_input_keyboard_button_request_peer(
-    int32 flags, telegram_api::object_ptr<telegram_api::keyboardButtonStyle> style, const string &text) const {
-  return telegram_api::make_object<telegram_api::inputKeyboardButtonRequestPeer>(
-      flags, request_name_, request_username_, request_photo_, std::move(style), text, button_id_,
-      get_input_request_peer_type_object(), max_quantity_);
+telegram_api::object_ptr<telegram_api::inputButtonTypeRequestPeer>
+RequestedDialogType::get_input_button_type_request_peer() const {
+  return telegram_api::make_object<telegram_api::inputButtonTypeRequestPeer>(
+      0, request_name_, request_username_, request_photo_, button_id_, get_input_request_peer_type_object(),
+      max_quantity_);
 }
 
 int32 RequestedDialogType::get_button_id() const {

@@ -3087,10 +3087,10 @@ void StarGiftManager::send_resold_gift(const string &gift_name, DialogId receive
   if (!td_->star_manager_->has_owned_amount(price)) {
     return promise.set_error(400, "Have not enough funds");
   }
-  auto input_invoice = telegram_api::make_object<telegram_api::inputInvoiceStarGiftResale>(0, price.is_ton(), gift_name,
-                                                                                           std::move(input_peer));
+  auto input_invoice = telegram_api::make_object<telegram_api::inputInvoiceStarGiftResale>(
+      0, price.is_ton(), false, gift_name, std::move(input_peer), nullptr);
   auto resale_input_invoice = telegram_api::make_object<telegram_api::inputInvoiceStarGiftResale>(
-      0, price.is_ton(), gift_name, std::move(resale_input_peer));
+      0, price.is_ton(), false, gift_name, std::move(resale_input_peer), nullptr);
   StarGiftId star_gift_id;
   if (receiver_dialog_id == td_->dialog_manager_->get_my_dialog_id()) {
     star_gift_id = StarGiftId::from_slug(gift_name);

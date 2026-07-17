@@ -1558,7 +1558,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
-      flags = 0;
+      flags = telegram_api::ephemeral_sendMessage::PEER_MASK;
       if (reply_to != nullptr) {
         flags |= telegram_api::ephemeral_sendMessage::REPLY_TO_MASK;
       }
@@ -1581,10 +1581,11 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
 
       auto query = G()->net_query_creator().create(
-          telegram_api::ephemeral_sendMessage(
-              flags, std::move(input_peer), r_input_user.move_as_ok(), send_callback_query_id,
-              text == nullptr ? string() : text->text, std::move(entities), std::move(input_media.media_),
-              std::move(input_reply_markup), std::move(input_media.rich_message_), random_id, std::move(reply_to)),
+          telegram_api::ephemeral_sendMessage(flags, false, false, false, false, std::move(input_peer),
+                                              r_input_user.move_as_ok(), send_callback_query_id,
+                                              text == nullptr ? string() : text->text, std::move(entities),
+                                              std::move(input_media.media_), std::move(input_reply_markup),
+                                              std::move(input_media.rich_message_), random_id, std::move(reply_to)),
           {{dialog_id, MessageContentType::Text},
            {dialog_id, is_copy ? MessageContentType::Photo : MessageContentType::Text}});
       *send_query_ref = query.get_weak();
@@ -2002,7 +2003,7 @@ class ForwardMessagesQuery final : public Td::ResultHandler {
 
     auto query = G()->net_query_creator().create(
         telegram_api::messages_forwardMessages(
-            flags, false, false, false, false, false, false, false, std::move(from_input_peer),
+            flags, false, false, false, false, false, false, false, false, std::move(from_input_peer),
             MessageId::get_server_message_ids(message_ids), std::move(random_ids), std::move(to_input_peer), top_msg_id,
             std::move(input_reply_to), schedule_date, schedule_repeat_period, std::move(as_input_peer), nullptr,
             effect_id.get(), new_video_start_timestamp, paid_message_star_count, std::move(post)),
@@ -11429,6 +11430,9 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   CHECK(message != nullptr);
 
   MessageInfo message_info;
+  if (message->peer_id_ == nullptr) {
+    return message_info;
+  }
   auto dialog_id = DialogId(message->peer_id_);
   message_info.receiver_user_id = UserId(message->receiver_id_);
   message_info.ephemeral_message_id = EphemeralMessageId(message->id_);

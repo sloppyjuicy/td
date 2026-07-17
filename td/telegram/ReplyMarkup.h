@@ -34,7 +34,7 @@ struct KeyboardButton {
     WebView,
     RequestDialog
   };
-  Type type;
+  Type type = Type::Text;
   KeyboardButtonStyle style;
   string text;
   string url;                                             // WebView only
@@ -57,7 +57,7 @@ struct InlineKeyboardButton {
     Copy
   };
 
-  Type type;
+  Type type = Type::Copy;
   int64 id = 0;    // UrlAuth: button_id or (2 * request_write_access - 1) * bot_user_id
                    // SwitchInline: mask of allowed target chats; 0 if any
   UserId user_id;  // User only
@@ -84,9 +84,9 @@ struct ReplyMarkup {
 
   StringBuilder &print(StringBuilder &string_builder) const;
 
-  tl_object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(UserManager *user_manager) const;
+  telegram_api::object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(UserManager *user_manager) const;
 
-  tl_object_ptr<td_api::ReplyMarkup> get_reply_markup_object(UserManager *user_manager) const;
+  td_api::object_ptr<td_api::ReplyMarkup> get_reply_markup_object(UserManager *user_manager) const;
 
   const RequestedDialogType *get_requested_dialog_type(int32 button_id) const;
 };
@@ -96,14 +96,14 @@ bool operator!=(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 
 StringBuilder &operator<<(StringBuilder &string_builder, const ReplyMarkup &reply_markup);
 
-KeyboardButton get_keyboard_button(tl_object_ptr<telegram_api::KeyboardButton> &&keyboard_button_ptr);
+KeyboardButton get_keyboard_button(tl_object_ptr<telegram_api::keyboardButton> &&keyboard_button);
 
 Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
                                            bool request_buttons_allowed);
 
 td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const KeyboardButton &keyboard_button);
 
-telegram_api::object_ptr<telegram_api::KeyboardButton> get_input_keyboard_button(const KeyboardButton &keyboard_button);
+telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button(const KeyboardButton &keyboard_button);
 
 unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr, bool is_bot,
                                          bool only_inline_keyboard, bool message_contains_mention);
@@ -117,11 +117,11 @@ Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_api::Repl
 
 unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_markup);
 
-tl_object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(UserManager *user_manager,
-                                                                const unique_ptr<ReplyMarkup> &reply_markup);
+telegram_api::object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(UserManager *user_manager,
+                                                                           const unique_ptr<ReplyMarkup> &reply_markup);
 
-tl_object_ptr<td_api::ReplyMarkup> get_reply_markup_object(UserManager *user_manager,
-                                                           const unique_ptr<ReplyMarkup> &reply_markup);
+td_api::object_ptr<td_api::ReplyMarkup> get_reply_markup_object(UserManager *user_manager,
+                                                                const unique_ptr<ReplyMarkup> &reply_markup);
 
 void add_reply_markup_dependencies(Dependencies &dependencies, const ReplyMarkup *reply_markup);
 

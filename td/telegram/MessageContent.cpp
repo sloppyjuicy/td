@@ -10354,6 +10354,7 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       case telegram_api::messageActionNewCreatorPending::ID:
       case telegram_api::messageActionChangeCreator::ID:
       case telegram_api::messageActionChangeCommunity::ID:
+      case telegram_api::messageActionChatJoinedViaCommunity::ID:
         LOG(ERROR) << "Receive business " << to_string(action_ptr);
         break;
       case telegram_api::messageActionHistoryClear::ID:
@@ -11187,6 +11188,8 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       return td::make_unique<MessageChangeCommunity>(community_id);
     }
+    case telegram_api::messageActionChatJoinedViaCommunity::ID:
+      return make_unique<MessageUnsupported>();
     default:
       UNREACHABLE();
   }

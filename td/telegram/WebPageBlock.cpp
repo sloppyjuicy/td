@@ -2350,7 +2350,7 @@ class WebPageBlockBlockQuote final : public WebPageBlock {
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
-    return telegram_api::make_object<telegram_api::pageBlockBlockquote>(text.get_input_rich_text(context),
+    return telegram_api::make_object<telegram_api::pageBlockBlockquote>(0, false, text.get_input_rich_text(context),
                                                                         credit.get_input_rich_text(context));
   }
 
@@ -3552,7 +3552,7 @@ class WebPageBlockTable final : public WebPageBlock {
           transform(row, [&](const WebPageBlockTableCell &cell) { return cell.get_input_page_table_cell(context); }));
     });
     return telegram_api::make_object<telegram_api::pageBlockTable>(
-        0, is_bordered, is_striped, title.get_input_rich_text(context), std::move(cell_objects));
+        0, is_bordered, is_striped, false, title.get_input_rich_text(context), std::move(cell_objects));
   }
 
   td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
@@ -4238,6 +4238,8 @@ RichText get_rich_text(tl_object_ptr<telegram_api::RichText> &&rich_text_ptr,
       result.texts.push_back(get_rich_text(std::move(rich_text->old_text_), documents));
       break;
     }
+    case telegram_api::textButton::ID:
+      break;
     default:
       UNREACHABLE();
   }
@@ -4662,7 +4664,7 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
       return td::make_unique<WebPageBlockThinking>(get_rich_text(std::move(page_block->text_), documents));
     }
     case telegram_api::inputPageBlockMap::ID:
-      return nullptr;
+      break;
     case telegram_api::pageBlockBlockquoteBlocks::ID: {
       auto page_block = telegram_api::move_object_as<telegram_api::pageBlockBlockquoteBlocks>(page_block_ptr);
       return td::make_unique<WebPageBlockBlockQuoteBlocks>(
@@ -4670,6 +4672,10 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
                               voice_notes),
           get_rich_text(std::move(page_block->caption_), documents));
     }
+    case telegram_api::pageBlockButtonRow::ID:
+      break;
+    case telegram_api::pageBlockDocument::ID:
+      break;
     default:
       UNREACHABLE();
   }

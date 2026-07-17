@@ -1437,7 +1437,7 @@ class EditEphemeralMessageQuery final : public Td::ResultHandler {
     // file upload isn't supported, so only previously uploaded files or URLs can be used in the InputMedia
     CHECK(!FileManager::extract_was_uploaded(input_media));
 
-    int32 flags = 0;
+    int32 flags = telegram_api::ephemeral_editMessage::PEER_MASK;
     auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Write);
     CHECK(input_peer != nullptr);
     auto r_input_user = td_->user_manager_->get_input_user(receiver_user_id);
@@ -1461,12 +1461,12 @@ class EditEphemeralMessageQuery final : public Td::ResultHandler {
       flags |= telegram_api::ephemeral_editMessage::MEDIA_MASK;
     }
     if (input_media.rich_message_ != nullptr) {
-      // flags |= telegram_api::ephemeral_editMessage::RICH_MESSAGE_MASK;
+      flags |= telegram_api::ephemeral_editMessage::RICH_MESSAGE_MASK;
     }
     send_query(G()->net_query_creator().create(telegram_api::ephemeral_editMessage(
-        flags, std::move(input_peer), r_input_user.move_as_ok(), ephemeral_message_id.get(),
+        flags, invert_media, false, std::move(input_peer), r_input_user.move_as_ok(), ephemeral_message_id.get(),
         text == nullptr ? string() : text->text, std::move(input_media.media_), std::move(entities),
-        std::move(input_reply_markup))));
+        std::move(input_reply_markup), std::move(input_media.rich_message_))));
   }
 
   void on_result(BufferSlice packet) final {
@@ -1824,8 +1824,9 @@ class DeleteEphemeralMessageQuery final : public Td::ResultHandler {
     if (r_input_user.is_error()) {
       return on_error(Status::Error(400, "Can't access the user"));
     }
+    int32 flags = telegram_api::ephemeral_deleteMessage::PEER_MASK;
     send_query(G()->net_query_creator().create(telegram_api::ephemeral_deleteMessage(
-        std::move(input_peer), r_input_user.move_as_ok(), ephemeral_message_id.get())));
+        flags, std::move(input_peer), r_input_user.move_as_ok(), ephemeral_message_id.get())));
   }
 
   void on_result(BufferSlice packet) final {

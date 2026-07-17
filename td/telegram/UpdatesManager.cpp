@@ -781,8 +781,8 @@ bool UpdatesManager::is_acceptable_reply_markup(const tl_object_ptr<telegram_api
   }
   for (const auto &row : static_cast<const telegram_api::replyInlineMarkup *>(reply_markup.get())->rows_) {
     for (const auto &button : row->buttons_) {
-      if (button->get_id() == telegram_api::keyboardButtonUserProfile::ID) {
-        auto user_profile_button = static_cast<const telegram_api::keyboardButtonUserProfile *>(button.get());
+      if (button->type_->get_id() == telegram_api::inlineButtonTypeUserProfile::ID) {
+        auto user_profile_button = static_cast<const telegram_api::inlineButtonTypeUserProfile *>(button->type_.get());
         UserId user_id(user_profile_button->user_id_);
         if (!is_acceptable_user(user_id) || td_->user_manager_->get_input_user(user_id).is_error()) {
           return false;
@@ -999,6 +999,7 @@ bool UpdatesManager::is_acceptable_message(const telegram_api::Message *message_
         case telegram_api::messageActionPollAppendAnswer::ID:
         case telegram_api::messageActionPollDeleteAnswer::ID:
         case telegram_api::messageActionManagedBotCreated::ID:
+        case telegram_api::messageActionChatJoinedViaCommunity::ID:
           break;
         case telegram_api::messageActionChatCreate::ID: {
           auto action = static_cast<const telegram_api::messageActionChatCreate *>(action_ptr);

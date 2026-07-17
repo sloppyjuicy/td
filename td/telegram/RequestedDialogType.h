@@ -62,8 +62,7 @@ class RequestedDialogType {
 
   td_api::object_ptr<td_api::KeyboardButtonType> get_keyboard_button_type_object() const;
 
-  telegram_api::object_ptr<telegram_api::inputKeyboardButtonRequestPeer> get_input_keyboard_button_request_peer(
-      int32 flags, telegram_api::object_ptr<telegram_api::keyboardButtonStyle> style, const string &text) const;
+  telegram_api::object_ptr<telegram_api::inputButtonTypeRequestPeer> get_input_button_type_request_peer() const;
 
   int32 get_button_id() const;
 

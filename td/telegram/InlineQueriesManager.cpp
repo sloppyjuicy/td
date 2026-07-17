@@ -319,11 +319,11 @@ class GetRequestedWebViewButtonQuery final : public Td::ResultHandler {
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for GetRequestedWebViewButtonQuery: " << to_string(ptr);
-    if (ptr->get_id() != telegram_api::keyboardButtonRequestPeer::ID) {
+    auto keyboard_button = get_keyboard_button(std::move(ptr));
+    if (keyboard_button.type != KeyboardButton::Type::RequestDialog) {
       LOG(ERROR) << to_string(ptr);
       return on_error(Status::Error(500, "Receive invalid button type"));
     }
-    auto keyboard_button = get_keyboard_button(std::move(ptr));
     td_->inline_queries_manager_->on_get_requested_web_view_button(bot_user_id_, prepared_button_id_,
                                                                    keyboard_button.requested_dialog_type.get());
     promise_.set_value(get_keyboard_button_object(keyboard_button));
