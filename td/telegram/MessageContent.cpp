@@ -11865,7 +11865,7 @@ td_api::object_ptr<td_api::MessageContent> get_message_content_object(
       } else {
         LOG(ERROR) << "Receive gifted TON in " << message_id << " in " << dialog_id << " from " << source;
       }
-      return td_api::make_object<td_api::messageGiftedTon>(
+      return td_api::make_object<td_api::messageGiftedGrams>(
           gifter_user_id, receiver_user_id, m->crypto_amount, m->transaction_id,
           td->stickers_manager_->get_ton_gift_sticker_object(m->crypto_amount));
     }

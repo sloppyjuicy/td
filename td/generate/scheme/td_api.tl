@@ -5456,7 +5456,7 @@ messageGiftedStars gifter_user_id:int53 receiver_user_id:int53 currency:string a
 //@gram_amount The received Gram amount, in the smallest units of the cryptocurrency
 //@transaction_id Identifier of the transaction for Gram credit; for receiver only
 //@sticker A sticker to be shown in the message; may be null if unknown
-messageGiftedTon gifter_user_id:int53 receiver_user_id:int53 gram_amount:int53 transaction_id:string sticker:sticker = MessageContent;
+messageGiftedGrams gifter_user_id:int53 receiver_user_id:int53 gram_amount:int53 transaction_id:string sticker:sticker = MessageContent;
 
 //@description Telegram Stars were received by the current user from a giveaway
 //@star_count Number of Telegram Stars that were received
