@@ -10,6 +10,8 @@
 #include "td/telegram/AuthManager.h"
 #include "td/telegram/ChannelParticipantFilter.h"
 #include "td/telegram/ChatManager.h"
+#include "td/telegram/CommunityId.h"
+#include "td/telegram/CommunityManager.h"
 #include "td/telegram/Dependencies.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
@@ -552,6 +554,7 @@ class SearchMessagesGlobalQuery final : public Td::ResultHandler {
     bool users_only = false;
     bool groups_only = false;
     bool broadcasts_only = false;
+    telegram_api::object_ptr<telegram_api::InputChannel> community;
     if (dialog_type_filter != nullptr) {
       switch (dialog_type_filter->get_id()) {
         case td_api::searchMessagesChatTypeFilterPrivate::ID:
@@ -563,12 +566,23 @@ class SearchMessagesGlobalQuery final : public Td::ResultHandler {
         case td_api::searchMessagesChatTypeFilterChannel::ID:
           broadcasts_only = true;
           break;
+        case td_api::searchMessagesChatTypeFilterCommunity::ID: {
+          auto community_id =
+              CommunityId(static_cast<const td_api::searchMessagesChatTypeFilterCommunity *>(dialog_type_filter.get())
+                              ->community_id_);
+          community = td_->community_manager_->get_input_community(community_id);
+          if (community == nullptr) {
+            return on_error(Status::Error(400, "Invalid community specified"));
+          }
+          flags |= telegram_api::messages_searchGlobal::COMMUNITY_MASK;
+          break;
+        }
         default:
           UNREACHABLE();
       }
     }
     send_query(G()->net_query_creator().create(telegram_api::messages_searchGlobal(
-        flags, broadcasts_only, groups_only, users_only, folder_id.get(), nullptr, query,
+        flags, broadcasts_only, groups_only, users_only, folder_id.get(), std::move(community), query,
         get_input_messages_filter(filter), min_date_, max_date_, offset_date_, std::move(input_peer),
         offset_message_id.get_server_message_id().get(), limit)));
   }

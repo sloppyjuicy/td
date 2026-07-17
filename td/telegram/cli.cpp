@@ -4048,7 +4048,7 @@ class CliClient final : public Actor {
       send_request(td_api::make_object<td_api::searchChatMessages>(search_chat_id_, get_message_topic_id(), "", nullptr,
                                                                    0, 0, 100, as_search_messages_filter("pvi")));
     } else if (op == "Search" || op == "SearchA" || op == "SearchM" || op == "SearchP" || op == "SearchG" ||
-               op == "SearchC") {
+               begins_with(op, "SearchC")) {
       string query;
       string limit;
       string filter;
@@ -4057,19 +4057,19 @@ class CliClient final : public Actor {
       td_api::object_ptr<td_api::ChatList> chat_list;
       if (op == "SearchA") {
         chat_list = td_api::make_object<td_api::chatListArchive>();
-      }
-      if (op == "SearchM") {
+      } else if (op == "SearchM") {
         chat_list = td_api::make_object<td_api::chatListMain>();
       }
       td_api::object_ptr<td_api::SearchMessagesChatTypeFilter> chat_type_filter;
       if (op == "SearchP") {
         chat_type_filter = td_api::make_object<td_api::searchMessagesChatTypeFilterPrivate>();
-      }
-      if (op == "SearchG") {
+      } else if (op == "SearchG") {
         chat_type_filter = td_api::make_object<td_api::searchMessagesChatTypeFilterGroup>();
-      }
-      if (op == "SearchC") {
+      } else if (op == "SearchC") {
         chat_type_filter = td_api::make_object<td_api::searchMessagesChatTypeFilterChannel>();
+      } else if (begins_with(op, "SearchC")) {
+        chat_type_filter =
+            td_api::make_object<td_api::searchMessagesChatTypeFilterCommunity>(to_integer<int64>(op.substr(7)));
       }
       send_request(td_api::make_object<td_api::searchMessages>(std::move(chat_list), query, offset, as_limit(limit),
                                                                as_search_messages_filter(filter),

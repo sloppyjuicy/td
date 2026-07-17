@@ -6253,6 +6253,9 @@ searchMessagesChatTypeFilterGroup = SearchMessagesChatTypeFilter;
 //@description Returns only messages in channel chats
 searchMessagesChatTypeFilterChannel = SearchMessagesChatTypeFilter;
 
+//@description Returns only messages in the specified community @community_id Identifier of the community to search in
+searchMessagesChatTypeFilterCommunity community_id:int53 = SearchMessagesChatTypeFilter;
+
 
 //@class SearchChatTypeFilter @description Represents a filter for type of the chats to search for
 
