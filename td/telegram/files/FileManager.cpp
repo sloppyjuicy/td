@@ -3964,6 +3964,12 @@ void FileManager::cancel_upload(FileUploadId file_upload_id) {
   try_flush_node(node, "cancel_upload");
 }
 
+void FileManager::cancel_uploads(const vector<FileUploadId> &file_upload_ids) {
+  for (const auto &file_upload_id : file_upload_ids) {
+    cancel_upload(file_upload_id);
+  }
+}
+
 static bool is_background_type(FileType type) {
   return type == FileType::Wallpaper || type == FileType::Background;
 }

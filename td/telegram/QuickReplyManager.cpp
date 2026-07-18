@@ -2036,9 +2036,7 @@ void QuickReplyManager::update_sent_message_content_from_temporary_message(uniqu
   merge_and_compare_message_contents(td_, old_content.get(), new_content.get(), true, DialogId(), need_merge_files,
                                      old_file_upload_ids, MessageSelfDestructType(), 0.0, nullptr, is_content_changed,
                                      need_update);
-  for (const auto &file_upload_id : old_file_upload_ids) {
-    send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-  }
+  send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, old_file_upload_ids);
 }
 
 void QuickReplyManager::on_failed_send_quick_reply_messages(QuickReplyShortcutId shortcut_id, vector<int64> random_ids,
@@ -3066,9 +3064,7 @@ void QuickReplyManager::on_edit_quick_reply_message(QuickReplyShortcutId shortcu
   auto *m = get_message_editable(s, message_id);
   if (m == nullptr) {
     if (was_uploaded) {
-      for (const auto &file_upload_id : file_upload_ids) {
-        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
     }
     return;
   }
@@ -3076,9 +3072,7 @@ void QuickReplyManager::on_edit_quick_reply_message(QuickReplyShortcutId shortcu
     LOG(INFO) << "Ignore successful edit of " << QuickReplyMessageFullId(m->shortcut_id, m->message_id)
               << " with generation " << edit_generation << " instead of " << m->edit_generation;
     if (was_uploaded) {
-      for (const auto &file_upload_id : file_upload_ids) {
-        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
     }
     return;
   }
@@ -3089,9 +3083,7 @@ void QuickReplyManager::on_edit_quick_reply_message(QuickReplyShortcutId shortcu
   bool was_updated = updates_ptr == nullptr;
   if (updates_ptr == nullptr || updates_ptr->get_id() != telegram_api::updates::ID) {
     if (was_uploaded) {
-      for (const auto &file_upload_id : file_upload_ids) {
-        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
     }
     reload_quick_reply_message(shortcut_id, message_id, Promise<Unit>());
   } else {
@@ -3102,9 +3094,7 @@ void QuickReplyManager::on_edit_quick_reply_message(QuickReplyShortcutId shortcu
     if (updates->updates_.size() != 1 || updates->updates_[0]->get_id() != telegram_api::updateQuickReplyMessage::ID) {
       LOG(ERROR) << "Receive " << to_string(updates);
       if (was_uploaded) {
-        for (const auto &file_upload_id : file_upload_ids) {
-          send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-        }
+        send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
       }
     } else {
       auto update_message = telegram_api::move_object_as<telegram_api::updateQuickReplyMessage>(updates->updates_[0]);
@@ -3112,9 +3102,7 @@ void QuickReplyManager::on_edit_quick_reply_message(QuickReplyShortcutId shortcu
       if (message == nullptr || message->shortcut_id != shortcut_id || message->message_id != message_id) {
         LOG(ERROR) << "Receive unexpected message";
         if (was_uploaded) {
-          for (const auto &file_upload_id : file_upload_ids) {
-            send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-          }
+          send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
         }
       } else {
         update_sent_message_content_from_temporary_message(m, message.get(), true);
@@ -3161,14 +3149,10 @@ void QuickReplyManager::fail_edit_quick_reply_message(QuickReplyShortcutId short
   auto *m = get_message_editable({shortcut_id, message_id});
   if (m == nullptr || m->edit_generation != edit_generation) {
     if (was_uploaded) {
-      for (const auto &file_upload_id : file_upload_ids) {
-        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
     }
     if (was_thumbnail_uploaded) {
-      for (const auto &thumbnail_file_upload_id : thumbnail_file_upload_ids) {
-        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, thumbnail_file_upload_id);
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, thumbnail_file_upload_ids);
     }
     return;
   }

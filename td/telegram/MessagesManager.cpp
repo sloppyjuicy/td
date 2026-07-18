@@ -23512,9 +23512,7 @@ void MessagesManager::on_message_media_edited(
   if (m == nullptr || m->edit_generation != edit_generation) {
     // message is already deleted or was edited again
     if (was_uploaded) {
-      for (const auto &file_upload_id : file_upload_ids) {
-        cancel_upload_file(file_upload_id, "on_message_media_edited");
-      }
+      send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
     }
     return;
   }
@@ -23577,9 +23575,7 @@ void MessagesManager::on_message_media_edited(
     }
   }
   if (was_uploaded) {
-    for (const auto &file_upload_id : file_upload_ids) {
-      cancel_upload_file(file_upload_id, "on_message_media_edited");
-    }
+    send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
   }
 
   if (m->edited_schedule_date == schedule_date && m->edited_schedule_repeat_period == m->schedule_repeat_period) {
