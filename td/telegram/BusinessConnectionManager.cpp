@@ -354,12 +354,9 @@ class BusinessConnectionManager::UploadBusinessMediaQuery final : public Td::Res
   bool was_thumbnail_uploaded_ = false;
 
   void delete_thumbnail() {
-    if (was_thumbnail_uploaded_) {
-      CHECK(message_->thumbnail_file_upload_id_.is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(message_->thumbnail_file_upload_id_);
-      message_->thumbnail_file_upload_id_ = {};
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(message_->thumbnail_file_upload_id_,
+                                                                 was_thumbnail_uploaded_);
+    message_->thumbnail_file_upload_id_ = {};
   }
 
  public:

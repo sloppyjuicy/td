@@ -3606,6 +3606,22 @@ bool FileManager::delete_partial_remote_location(FileUploadId file_upload_id) {
   return true;
 }
 
+void FileManager::delete_partial_remote_location_if_needed(FileUploadId file_upload_id, bool was_uploaded) {
+  if (was_uploaded) {
+    CHECK(file_upload_id.is_valid());
+    delete_partial_remote_location(file_upload_id);
+  }
+}
+
+void FileManager::delete_partial_remote_location_if_needed(const vector<FileUploadId> &file_upload_ids,
+                                                           bool was_uploaded) {
+  if (was_uploaded) {
+    CHECK(file_upload_ids.size() == 1u);
+    CHECK(file_upload_ids[0].is_valid());
+    delete_partial_remote_location(file_upload_ids[0]);
+  }
+}
+
 void FileManager::delete_partial_remote_location_if_needed(FileUploadId file_upload_id, const Status &error) {
   if (error.code() != 429 && error.code() < 500 && !G()->close_flag()) {
     delete_partial_remote_location(file_upload_id);

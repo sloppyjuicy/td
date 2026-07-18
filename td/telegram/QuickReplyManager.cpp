@@ -412,12 +412,7 @@ class QuickReplyManager::SendQuickReplyMediaQuery final : public Td::ResultHandl
       return on_error(result_ptr.move_as_error());
     }
 
-    if (was_thumbnail_uploaded_) {
-      CHECK(thumbnail_file_upload_ids_.size() == 1u);
-      CHECK(thumbnail_file_upload_ids_[0].is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for SendQuickReplyMediaQuery for " << random_id_ << ": " << to_string(ptr);
@@ -440,12 +435,7 @@ class QuickReplyManager::SendQuickReplyMediaQuery final : public Td::ResultHandl
       return;
     }
     if (was_uploaded_) {
-      if (was_thumbnail_uploaded_) {
-        CHECK(thumbnail_file_upload_ids_.size() == 1u);
-        CHECK(thumbnail_file_upload_ids_[0].is_valid());
-        // always delete partial remote location for the thumbnail, because it can't be reused anyway
-        td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-      }
+      td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
 
       CHECK(file_upload_ids_.size() == 1u);
       CHECK(file_upload_ids_[0].is_valid());
@@ -513,11 +503,7 @@ class QuickReplyManager::UploadQuickReplyMediaQuery final : public Td::ResultHan
       return on_error(result_ptr.move_as_error());
     }
 
-    if (was_thumbnail_uploaded_) {
-      CHECK(thumbnail_file_upload_id_.is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_id_);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_id_, was_thumbnail_uploaded_);
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for UploadQuickReplyMediaQuery: " << to_string(ptr);
@@ -539,11 +525,7 @@ class QuickReplyManager::UploadQuickReplyMediaQuery final : public Td::ResultHan
       return;
     }
     if (was_uploaded_) {
-      if (was_thumbnail_uploaded_) {
-        CHECK(thumbnail_file_upload_id_.is_valid());
-        // always delete partial remote location for the thumbnail, because it can't be reused anyway
-        td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_id_);
-      }
+      td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_id_, was_thumbnail_uploaded_);
 
       CHECK(file_upload_id_.is_valid());
       auto bad_parts = FileManager::get_missing_file_parts(status);
@@ -691,12 +673,7 @@ class QuickReplyManager::EditQuickReplyMessageQuery final : public Td::ResultHan
       return on_error(result_ptr.move_as_error());
     }
 
-    if (was_thumbnail_uploaded_) {
-      CHECK(thumbnail_file_upload_ids_.size() == 1u);
-      CHECK(thumbnail_file_upload_ids_[0].is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for EditQuickReplyMessageQuery: " << to_string(ptr);
@@ -710,12 +687,7 @@ class QuickReplyManager::EditQuickReplyMessageQuery final : public Td::ResultHan
       return;
     }
     if (status.message() == "MESSAGE_NOT_MODIFIED") {
-      if (was_thumbnail_uploaded_) {
-        CHECK(thumbnail_file_upload_ids_.size() == 1u);
-        CHECK(thumbnail_file_upload_ids_[0].is_valid());
-        // always delete partial remote location for the thumbnail, because it can't be reused anyway
-        td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-      }
+      td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
 
       return td_->quick_reply_manager_->on_edit_quick_reply_message(
           shortcut_id_, message_id_, edit_generation_, std::move(file_upload_ids_), was_uploaded_, nullptr);
@@ -3164,12 +3136,7 @@ void QuickReplyManager::fail_edit_quick_reply_message(QuickReplyShortcutId short
     return;
   }
   if (was_uploaded) {
-    if (was_thumbnail_uploaded) {
-      CHECK(thumbnail_file_upload_ids.size() == 1u);
-      CHECK(thumbnail_file_upload_ids[0].is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids[0]);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids, was_thumbnail_uploaded);
 
     CHECK(file_upload_ids.size() == 1u);
     CHECK(file_upload_ids[0].is_valid());

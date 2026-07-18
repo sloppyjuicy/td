@@ -1680,13 +1680,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
     }
     td_->updates_manager_->on_get_updates(std::move(ptr), Promise<Unit>());
-
-    if (was_thumbnail_uploaded_) {
-      CHECK(thumbnail_file_upload_ids_.size() == 1u);
-      CHECK(thumbnail_file_upload_ids_[0].is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
   }
 
   void on_error(Status status) final {
@@ -1703,12 +1697,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       return;
     }
     if (was_uploaded_) {
-      if (was_thumbnail_uploaded_) {
-        CHECK(thumbnail_file_upload_ids_.size() == 1u);
-        CHECK(thumbnail_file_upload_ids_[0].is_valid());
-        // always delete partial remote location for the thumbnail, because it can't be reused anyway
-        td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids_[0]);
-      }
+      td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids_, was_thumbnail_uploaded_);
 
       CHECK(file_upload_ids_.size() == 1u);
       CHECK(file_upload_ids_[0].is_valid());
@@ -1771,11 +1760,7 @@ class UploadMediaQuery final : public Td::ResultHandler {
       return on_error(result_ptr.move_as_error());
     }
 
-    if (was_thumbnail_uploaded_) {
-      CHECK(thumbnail_file_upload_id_.is_valid());
-      // always delete partial remote location for the thumbnail, because it can't be reused anyway
-      td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_id_);
-    }
+    td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_id_, was_thumbnail_uploaded_);
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for UploadMediaQuery for " << message_id_ << " in " << dialog_id_ << ": "
@@ -1799,11 +1784,7 @@ class UploadMediaQuery final : public Td::ResultHandler {
       return;
     }
     if (was_uploaded_) {
-      if (was_thumbnail_uploaded_) {
-        CHECK(thumbnail_file_upload_id_.is_valid());
-        // always delete partial remote location for the thumbnail, because it can't be reused anyway
-        td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_id_);
-      }
+      td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_id_, was_thumbnail_uploaded_);
 
       CHECK(file_upload_id_.is_valid());
       auto bad_parts = FileManager::get_missing_file_parts(status);
@@ -23498,11 +23479,7 @@ void MessagesManager::on_message_media_edited(
     int32 schedule_date, int32 schedule_repeat_period, uint64 edit_generation, Result<int32> &&result) {
   // must not run getDifference
 
-  if (was_thumbnail_uploaded) {
-    CHECK(thumbnail_file_upload_ids.size() == 1u);
-    CHECK(thumbnail_file_upload_ids[0].is_valid());
-    td_->file_manager_->delete_partial_remote_location(thumbnail_file_upload_ids[0]);
-  }
+  td_->file_manager_->delete_partial_remote_location_if_needed(thumbnail_file_upload_ids, was_thumbnail_uploaded);
 
   CHECK(message_id.is_any_server());
   Dialog *d = get_dialog(dialog_id);
