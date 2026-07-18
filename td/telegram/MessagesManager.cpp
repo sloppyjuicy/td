@@ -1793,8 +1793,8 @@ class UploadMediaQuery final : public Td::ResultHandler {
     td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "UploadMediaQuery");
     if (td_->file_reference_manager_->process_file_reference_error(
             status, true, {}, {}, {cover_file_id_}, {cover_file_reference_}, false, [&](size_t pos, FileId file_id) {
-              td_->messages_manager_->on_upload_message_media_file_parts_missing(dialog_id_, message_id_, media_pos_,
-                                                                                 edit_generation_, {-1});
+              td_->messages_manager_->on_upload_message_media_file_error(dialog_id_, message_id_, media_pos_,
+                                                                         edit_generation_, {-1});
             })) {
       return;
     }
@@ -1808,8 +1808,8 @@ class UploadMediaQuery final : public Td::ResultHandler {
       CHECK(file_upload_id_.is_valid());
       auto bad_parts = FileManager::get_missing_file_parts(status);
       if (!bad_parts.empty()) {
-        td_->messages_manager_->on_upload_message_media_file_parts_missing(dialog_id_, message_id_, media_pos_,
-                                                                           edit_generation_, std::move(bad_parts));
+        td_->messages_manager_->on_upload_message_media_file_error(dialog_id_, message_id_, media_pos_,
+                                                                   edit_generation_, std::move(bad_parts));
         return;
       } else {
         td_->file_manager_->delete_partial_remote_location_if_needed(file_upload_id_, status);
@@ -22303,9 +22303,8 @@ void MessagesManager::on_upload_message_media_success(DialogId dialog_id, Messag
                      m->message_id, media_pos, edit_generation, std::move(result));
 }
 
-void MessagesManager::on_upload_message_media_file_parts_missing(DialogId dialog_id, MessageId message_id,
-                                                                 int32 media_pos, uint64 edit_generation,
-                                                                 vector<int> &&bad_parts) {
+void MessagesManager::on_upload_message_media_file_error(DialogId dialog_id, MessageId message_id, int32 media_pos,
+                                                         uint64 edit_generation, vector<int> &&bad_parts) {
   Dialog *d = get_dialog(dialog_id);
   CHECK(d != nullptr);
 

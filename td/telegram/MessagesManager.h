@@ -940,8 +940,8 @@ class MessagesManager final : public Actor {
                                        uint64 edit_generation,
                                        telegram_api::object_ptr<telegram_api::MessageMedia> &&media);
 
-  void on_upload_message_media_file_parts_missing(DialogId dialog_id, MessageId message_id, int32 media_pos,
-                                                  uint64 edit_generation, vector<int> &&bad_parts);
+  void on_upload_message_media_file_error(DialogId dialog_id, MessageId message_id, int32 media_pos,
+                                          uint64 edit_generation, vector<int> &&bad_parts);
 
   void on_upload_message_media_fail(DialogId dialog_id, MessageId message_id, int32 media_pos, uint64 edit_generation,
                                     Status error);
