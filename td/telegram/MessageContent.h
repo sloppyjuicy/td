@@ -244,10 +244,6 @@ void remove_message_content_web_page(MessageContent *content);
 
 bool can_message_content_have_media_timestamp(const MessageContent *content);
 
-void merge_message_contents(Td *td, const MessageContent *old_content, MessageContent *new_content,
-                            bool need_message_changed_warning, DialogId dialog_id, bool need_merge_files,
-                            bool &is_content_changed, bool &need_update);
-
 bool merge_message_content_file_id(Td *td, MessageContent *message_content, FileId new_file_id);
 
 void compare_message_contents(Td *td, const MessageContent *lhs_content, const MessageContent *rhs_content,

@@ -7426,9 +7426,9 @@ static bool need_message_entities_changed_warning(const vector<MessageEntity> &o
   return false;
 }
 
-void merge_message_contents(Td *td, const MessageContent *old_content, MessageContent *new_content,
-                            bool need_message_changed_warning, DialogId dialog_id, bool need_merge_files,
-                            bool &is_content_changed, bool &need_update) {
+static void merge_message_contents(Td *td, const MessageContent *old_content, MessageContent *new_content,
+                                   bool need_message_changed_warning, DialogId dialog_id, bool need_merge_files,
+                                   bool &is_content_changed, bool &need_update) {
   CHECK(old_content != nullptr);
   CHECK(new_content != nullptr);
   MessageContentType content_type = new_content->get_type();
