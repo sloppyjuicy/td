@@ -161,6 +161,7 @@ void store(const ReplyMarkup &reply_markup, StorerT &storer) {
   STORE_FLAG(has_inline_keyboard);
   STORE_FLAG(has_placeholder);
   STORE_FLAG(reply_markup.is_persistent);
+  STORE_FLAG(reply_markup.force_reply);
   END_STORE_FLAGS();
   store(reply_markup.type, storer);
   if (has_keyboard) {
@@ -187,6 +188,7 @@ void parse(ReplyMarkup &reply_markup, ParserT &parser) {
   PARSE_FLAG(has_inline_keyboard);
   PARSE_FLAG(has_placeholder);
   PARSE_FLAG(reply_markup.is_persistent);
+  PARSE_FLAG(reply_markup.force_reply);
   END_PARSE_FLAGS();
   parse(reply_markup.type, parser);
   if (has_keyboard) {

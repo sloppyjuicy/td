@@ -3811,12 +3811,14 @@ replyMarkupForceReply is_personal:Bool input_field_placeholder:string = ReplyMar
 //@resize_keyboard True, if the application needs to resize the keyboard vertically
 //@one_time True, if the application needs to hide the keyboard after use
 //@is_personal True, if the keyboard must automatically be shown to the current user. For outgoing messages, specify true to show the keyboard only for the mentioned users and for the target user of a reply
+//@force_reply True, if the keyboard must force reply to the message with the keyboard
 //@input_field_placeholder If non-empty, the placeholder to be shown in the input field when the keyboard is active; 0-64 characters
-replyMarkupShowKeyboard rows:vector<vector<keyboardButton>> is_persistent:Bool resize_keyboard:Bool one_time:Bool is_personal:Bool input_field_placeholder:string = ReplyMarkup;
+replyMarkupShowKeyboard rows:vector<vector<keyboardButton>> is_persistent:Bool resize_keyboard:Bool one_time:Bool is_personal:Bool force_reply:Bool input_field_placeholder:string = ReplyMarkup;
 
 //@description Contains an inline keyboard layout
 //@rows A list of rows of inline keyboard buttons
-replyMarkupInlineKeyboard rows:vector<vector<inlineKeyboardButton>> = ReplyMarkup;
+//@force_reply True, if a reply to the message must be forced when the message is received
+replyMarkupInlineKeyboard rows:vector<vector<inlineKeyboardButton>> force_reply:Bool = ReplyMarkup;
 
 
 //@class LoginUrlInfo @description Contains information about an inline button of type inlineKeyboardButtonTypeLoginUrl or an external link

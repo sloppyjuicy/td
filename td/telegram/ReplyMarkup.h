@@ -73,6 +73,7 @@ struct ReplyMarkup {
   Type type;
 
   bool is_personal = false;  // for ShowKeyboard, RemoveKeyboard, ForceReply
+  bool force_reply = false;  // for ShowKeyboard, InlineKeyboard
 
   bool is_persistent = false;               // for ShowKeyboard
   bool need_resize_keyboard = false;        // for ShowKeyboard
