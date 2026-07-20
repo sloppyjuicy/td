@@ -104,10 +104,12 @@ class MessageQueryManager final : public Actor {
 
     virtual void on_failed_to_upload_message_content_thumbnail(MessageContentUploadId upload_id, int32 media_pos) = 0;
   };
-  MessageContentUploadId upload_message_content(DialogId dialog_id, const MessageContent *content,
-                                                MessageSelfDestructType ttl, const string &send_emoji,
-                                                bool force_remote,
-                                                std::shared_ptr<UploadMessageContentCallback> &&callback);
+  MessageContentUploadId create_upload_message_content_query(DialogId dialog_id, const MessageContent *content,
+                                                             MessageSelfDestructType ttl, const string &send_emoji,
+                                                             bool force_remote,
+                                                             std::shared_ptr<UploadMessageContentCallback> &&callback);
+
+  void start_upload_message_content(MessageContentUploadId upload_id);
 
   void cancel_upload_message_content(MessageContentUploadId upload_id);
 
@@ -341,6 +343,7 @@ class MessageQueryManager final : public Actor {
     MessageSelfDestructType ttl_;
     string send_emoji_;
     bool force_remote_ = false;
+    bool is_started_ = false;
     vector<FileUploadId> file_upload_ids_;
     vector<FileUploadId> thumbnail_file_upload_ids_;
     std::shared_ptr<UploadMessageContentCallback> callback_;

@@ -2535,7 +2535,7 @@ void MessageQueryManager::complete_upload_message_cover(
   promise.set_value(Unit());
 }
 
-MessageContentUploadId MessageQueryManager::upload_message_content(
+MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
     DialogId dialog_id, const MessageContent *content, MessageSelfDestructType ttl, const string &send_emoji,
     bool force_remote, std::shared_ptr<UploadMessageContentCallback> &&callback) {
   CHECK(content != nullptr);
@@ -2550,10 +2550,12 @@ MessageContentUploadId MessageQueryManager::upload_message_content(
   query.send_emoji_ = send_emoji;
   query.force_remote_ = force_remote;
   query.callback_ = std::move(callback);
-  send_closure_later(actor_id(this), &MessageQueryManager::do_upload_message_content, upload_id, -1, vector<int>(),
-                     Unit());
   LOG(INFO) << "Start to upload content of a message in " << dialog_id << " as " << upload_id;
   return upload_id;
+}
+
+void MessageQueryManager::start_upload_message_content(MessageContentUploadId upload_id) {
+  do_upload_message_content(upload_id, -1, vector<int>(), Unit());
 }
 
 void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId upload_id) {
@@ -2584,6 +2586,12 @@ void MessageQueryManager::do_upload_message_content(MessageContentUploadId uploa
     return;  // the upload was canceled
   }
   auto &query = it->second;
+  if (bad_parts.empty()) {
+    CHECK(!query.is_started_);
+    query.is_started_ = true;
+  } else {
+    CHECK(query.is_started_);
+  }
   const auto *content = query.content_.get();
   CHECK(content != nullptr);
   if (result.is_error()) {
