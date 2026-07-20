@@ -2553,6 +2553,7 @@ uint64 MessageQueryManager::upload_message_content(DialogId dialog_id, const Mes
   query.callback_ = std::move(callback);
   send_closure_later(actor_id(this), &MessageQueryManager::do_upload_message_content, upload_id, -1, vector<int>(),
                      Unit());
+  LOG(INFO) << "Start to upload content of a message in " << dialog_id << " as " << upload_id;
   return upload_id;
 }
 
@@ -2562,6 +2563,7 @@ void MessageQueryManager::cancel_upload_message_content(uint64 upload_id) {
     return;  // the upload has already been canceled
   }
   auto &query = it->second;
+  LOG(INFO) << "Cancel upload content of a message in " << query.dialog_id_ << " as " << upload_id;
   for (const auto &file_upload_id : query.file_upload_ids_) {
     if (being_uploaded_files_.erase(file_upload_id) || file_upload_id.is_valid()) {
       send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
