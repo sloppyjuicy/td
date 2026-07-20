@@ -18,6 +18,7 @@
 #include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/ForumTopicId.h"
 #include "td/telegram/InputMedia.h"
+#include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/MessageCover.h"
 #include "td/telegram/MessageFullId.h"
 #include "td/telegram/MessageId.h"
@@ -91,30 +92,31 @@ class MessageQueryManager final : public Actor {
     UploadMessageContentCallback &operator=(const UploadMessageContentCallback &) = delete;
     virtual ~UploadMessageContentCallback() = default;
 
-    virtual void on_message_content_uploaded(uint64 upload_id, InputMedia &&input_media) = 0;
+    virtual void on_message_content_uploaded(MessageContentUploadId upload_id, InputMedia &&input_media) = 0;
 
-    virtual void on_message_content_force_uploaded(uint64 upload_id, Status status) = 0;
+    virtual void on_message_content_force_uploaded(MessageContentUploadId upload_id, Status status) = 0;
 
-    virtual void on_uploaded_message_content_updated(uint64 upload_id, unique_ptr<MessageContent> &&content,
-                                                     bool need_merge_files);
+    virtual void on_uploaded_message_content_updated(MessageContentUploadId upload_id,
+                                                     unique_ptr<MessageContent> &&content, bool need_merge_files);
 
     // called at most once
-    virtual void on_failed_to_upload_message_content(uint64 upload_id, Status error) = 0;
+    virtual void on_failed_to_upload_message_content(MessageContentUploadId upload_id, Status error) = 0;
 
-    virtual void on_failed_to_upload_message_content_thumbnail(uint64 upload_id, int32 media_pos) = 0;
+    virtual void on_failed_to_upload_message_content_thumbnail(MessageContentUploadId upload_id, int32 media_pos) = 0;
   };
-  uint64 upload_message_content(DialogId dialog_id, const MessageContent *content, MessageSelfDestructType ttl,
-                                const string &send_emoji, bool force_remote,
-                                std::shared_ptr<UploadMessageContentCallback> &&callback);
+  MessageContentUploadId upload_message_content(DialogId dialog_id, const MessageContent *content,
+                                                MessageSelfDestructType ttl, const string &send_emoji,
+                                                bool force_remote,
+                                                std::shared_ptr<UploadMessageContentCallback> &&callback);
 
-  void cancel_upload_message_content(uint64 upload_id);
+  void cancel_upload_message_content(MessageContentUploadId upload_id);
 
-  void on_upload_message_media_success(uint64 upload_id, int32 media_pos,
+  void on_upload_message_media_success(MessageContentUploadId upload_id, int32 media_pos,
                                        telegram_api::object_ptr<telegram_api::MessageMedia> &&media);
 
-  void on_upload_message_media_file_error(uint64 upload_id, int32 media_pos, vector<int> &&bad_parts);
+  void on_upload_message_media_file_error(MessageContentUploadId upload_id, int32 media_pos, vector<int> &&bad_parts);
 
-  void on_upload_message_media_fail(uint64 upload_id, int32 media_pos, Status error);
+  void on_upload_message_media_fail(MessageContentUploadId upload_id, int32 media_pos, Status error);
 
   void report_message_delivery(MessageFullId message_full_id, int32 until_date, bool from_push);
 
@@ -361,7 +363,8 @@ class MessageQueryManager final : public Actor {
 
   void do_upload_cover(FileUploadId file_upload_id, BeingUploadedCover &&being_uploaded_cover);
 
-  void on_failed_to_upload_message_content(uint64 upload_id, UploadMessageContentQuery &query, Status &&error);
+  void on_failed_to_upload_message_content(MessageContentUploadId upload_id, UploadMessageContentQuery &query,
+                                           Status &&error);
 
   void on_upload_media(FileUploadId file_upload_id, telegram_api::object_ptr<telegram_api::InputFile> input_file,
                        telegram_api::object_ptr<telegram_api::InputEncryptedFile> input_encrypted_file);
@@ -371,18 +374,19 @@ class MessageQueryManager final : public Actor {
   void on_upload_thumbnail(FileUploadId thumbnail_file_upload_id,
                            telegram_api::object_ptr<telegram_api::InputFile> thumbnail_input_file);
 
-  void do_upload_message_content(uint64 upload_id, int32 media_pos, vector<int> bad_parts, Result<Unit> result);
+  void do_upload_message_content(MessageContentUploadId upload_id, int32 media_pos, vector<int> bad_parts,
+                                 Result<Unit> result);
 
-  void on_message_media_uploaded(uint64 upload_id, UploadMessageContentQuery &query, int32 media_pos,
+  void on_message_media_uploaded(MessageContentUploadId upload_id, UploadMessageContentQuery &query, int32 media_pos,
                                  InputMedia &&input_media);
 
-  void on_upload_message_media_finished(uint64 upload_id, int32 media_pos, Status status);
+  void on_upload_message_media_finished(MessageContentUploadId upload_id, int32 media_pos, Status status);
 
-  void do_send_media(uint64 upload_id, UploadMessageContentQuery &query, int32 media_pos,
+  void do_send_media(MessageContentUploadId upload_id, UploadMessageContentQuery &query, int32 media_pos,
                      telegram_api::object_ptr<telegram_api::InputFile> input_file,
                      telegram_api::object_ptr<telegram_api::InputFile> input_thumbnail);
 
-  void do_send_internal_media_group(uint64 upload_id, UploadMessageContentQuery &query);
+  void do_send_internal_media_group(MessageContentUploadId upload_id, UploadMessageContentQuery &query);
 
   void on_reload_message_fact_checks(DialogId dialog_id, const vector<MessageId> &message_ids,
                                      Result<vector<telegram_api::object_ptr<telegram_api::factCheck>>> r_fact_checks);
@@ -489,23 +493,25 @@ class MessageQueryManager final : public Actor {
 
   uint64 current_upload_id_ = 0;
 
-  FlatHashMap<uint64, UploadMessageContentQuery> upload_message_content_queries_;
+  FlatHashMap<MessageContentUploadId, UploadMessageContentQuery, MessageContentUploadIdHash>
+      upload_message_content_queries_;
 
   struct PendingInternalMediaSend {
     size_t finished_count_ = 0;
     vector<bool> is_finished_;
     vector<Status> results_;
   };
-  FlatHashMap<uint64, PendingInternalMediaSend> pending_internal_media_sends_;
+  FlatHashMap<MessageContentUploadId, PendingInternalMediaSend, MessageContentUploadIdHash>
+      pending_internal_media_sends_;
 
   struct UploadedFileInfo {
-    uint64 upload_id_;
+    MessageContentUploadId upload_id_;
     int32 media_pos_;
   };
   FlatHashMap<FileUploadId, UploadedFileInfo, FileUploadIdHash> being_uploaded_files_;
 
   struct UploadedThumbnailInfo {
-    uint64 upload_id_;
+    MessageContentUploadId upload_id_;
     FileUploadId file_upload_id_;                                   // original file upload identifier
     telegram_api::object_ptr<telegram_api::InputFile> input_file_;  // original file InputFile
     int32 media_pos_;

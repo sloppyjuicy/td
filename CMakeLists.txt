@@ -909,6 +909,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/MessageContent.h
   td/telegram/MessageContentDupType.h
   td/telegram/MessageContentType.h
+  td/telegram/MessageContentUploadId.h
   td/telegram/MessageCopyOptions.h
   td/telegram/MessageCover.h
   td/telegram/MessageDb.h

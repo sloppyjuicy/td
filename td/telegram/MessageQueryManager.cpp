@@ -188,7 +188,7 @@ class UploadCoverQuery final : public Td::ResultHandler {
 };
 
 class UploadGenericMediaQuery final : public Td::ResultHandler {
-  uint64 upload_id_;
+  MessageContentUploadId upload_id_;
   DialogId dialog_id_;
   int32 media_pos_ = -1;
   FileUploadId file_upload_id_;
@@ -200,7 +200,7 @@ class UploadGenericMediaQuery final : public Td::ResultHandler {
   bool was_thumbnail_uploaded_ = false;
 
  public:
-  void send(uint64 upload_id, DialogId dialog_id, int32 media_pos, FileUploadId file_upload_id,
+  void send(MessageContentUploadId upload_id, DialogId dialog_id, int32 media_pos, FileUploadId file_upload_id,
             FileUploadId thumbnail_file_upload_id, FileId cover_file_id,
             telegram_api::object_ptr<telegram_api::InputMedia> &&input_media) {
     CHECK(input_media != nullptr);
@@ -2535,14 +2535,13 @@ void MessageQueryManager::complete_upload_message_cover(
   promise.set_value(Unit());
 }
 
-uint64 MessageQueryManager::upload_message_content(DialogId dialog_id, const MessageContent *content,
-                                                   MessageSelfDestructType ttl, const string &send_emoji,
-                                                   bool force_remote,
-                                                   std::shared_ptr<UploadMessageContentCallback> &&callback) {
+MessageContentUploadId MessageQueryManager::upload_message_content(
+    DialogId dialog_id, const MessageContent *content, MessageSelfDestructType ttl, const string &send_emoji,
+    bool force_remote, std::shared_ptr<UploadMessageContentCallback> &&callback) {
   CHECK(content != nullptr);
   CHECK(callback != nullptr);
   CHECK(dialog_id.get_type() != DialogType::SecretChat);
-  auto upload_id = ++current_upload_id_;
+  auto upload_id = MessageContentUploadId(++current_upload_id_);
   auto &query = upload_message_content_queries_[upload_id];
   query.dialog_id_ = dialog_id;
   query.content_ = dup_message_content(td_, dialog_id, content, MessageContentDupType::Forward, MessageCopyOptions());
@@ -2557,7 +2556,7 @@ uint64 MessageQueryManager::upload_message_content(DialogId dialog_id, const Mes
   return upload_id;
 }
 
-void MessageQueryManager::cancel_upload_message_content(uint64 upload_id) {
+void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId upload_id) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload has already been canceled
@@ -2578,8 +2577,8 @@ void MessageQueryManager::cancel_upload_message_content(uint64 upload_id) {
   pending_internal_media_sends_.erase(upload_id);
 }
 
-void MessageQueryManager::do_upload_message_content(uint64 upload_id, int32 media_pos, vector<int> bad_parts,
-                                                    Result<Unit> result) {
+void MessageQueryManager::do_upload_message_content(MessageContentUploadId upload_id, int32 media_pos,
+                                                    vector<int> bad_parts, Result<Unit> result) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload was canceled
@@ -2677,7 +2676,8 @@ void MessageQueryManager::do_upload_message_content(uint64 upload_id, int32 medi
       CHECK(is_inserted);
       // need to call resume_upload synchronously to make upload process consistent with being_uploaded_files_
       // and to send is_uploading_active == true in the updates
-      td_->file_manager_->resume_upload(file_upload_id, std::move(bad_parts), upload_media_callback_, 1, upload_id);
+      td_->file_manager_->resume_upload(file_upload_id, std::move(bad_parts), upload_media_callback_, 1,
+                                        upload_id.get());
     }
     if (can_have_multiple_files && file_upload_ids.empty()) {
       do_send_internal_media_group(upload_id, query);
@@ -2687,8 +2687,8 @@ void MessageQueryManager::do_upload_message_content(uint64 upload_id, int32 medi
   }
 }
 
-void MessageQueryManager::on_failed_to_upload_message_content(uint64 upload_id, UploadMessageContentQuery &query,
-                                                              Status &&error) {
+void MessageQueryManager::on_failed_to_upload_message_content(MessageContentUploadId upload_id,
+                                                              UploadMessageContentQuery &query, Status &&error) {
   query.callback_->on_failed_to_upload_message_content(upload_id, std::move(error));
   cancel_upload_message_content(upload_id);
   CHECK(pending_internal_media_sends_.count(upload_id) == 0);
@@ -2730,7 +2730,7 @@ void MessageQueryManager::on_upload_media(
                          UploadedThumbnailInfo{upload_id, file_upload_id, std::move(input_file), media_pos})
                 .second;
         CHECK(is_inserted);
-        td_->file_manager_->upload(thumbnail_file_upload_id, upload_thumbnail_callback_, 32, upload_id);
+        td_->file_manager_->upload(thumbnail_file_upload_id, upload_thumbnail_callback_, 32, upload_id.get());
       } else {
         do_send_media(upload_id, query, media_pos, std::move(input_file), nullptr);
       }
@@ -2812,12 +2812,12 @@ void MessageQueryManager::on_upload_thumbnail(FileUploadId thumbnail_file_upload
   do_send_media(upload_id, query, media_pos, std::move(input_file), std::move(thumbnail_input_file));
 }
 
-void MessageQueryManager::do_send_media(uint64 upload_id, UploadMessageContentQuery &query, int32 media_pos,
-                                        telegram_api::object_ptr<telegram_api::InputFile> input_file,
+void MessageQueryManager::do_send_media(MessageContentUploadId upload_id, UploadMessageContentQuery &query,
+                                        int32 media_pos, telegram_api::object_ptr<telegram_api::InputFile> input_file,
                                         telegram_api::object_ptr<telegram_api::InputFile> input_thumbnail) {
   bool have_input_file = input_file != nullptr;
   bool have_input_thumbnail = input_thumbnail != nullptr;
-  LOG(INFO) << "Do send media " << upload_id << ", have_input_file = " << have_input_file
+  LOG(INFO) << "Do send media for " << upload_id << ", have_input_file = " << have_input_file
             << ", have_input_thumbnail = " << have_input_thumbnail << ", self-destruct time = " << query.ttl_
             << ", media_pos = " << media_pos;
 
@@ -2831,8 +2831,8 @@ void MessageQueryManager::do_send_media(uint64 upload_id, UploadMessageContentQu
   on_message_media_uploaded(upload_id, query, media_pos, std::move(input_media));
 }
 
-void MessageQueryManager::on_message_media_uploaded(uint64 upload_id, UploadMessageContentQuery &query, int32 media_pos,
-                                                    InputMedia &&input_media) {
+void MessageQueryManager::on_message_media_uploaded(MessageContentUploadId upload_id, UploadMessageContentQuery &query,
+                                                    int32 media_pos, InputMedia &&input_media) {
   if (G()->close_flag()) {
     return;
   }
@@ -2867,7 +2867,7 @@ void MessageQueryManager::on_message_media_uploaded(uint64 upload_id, UploadMess
 }
 
 void MessageQueryManager::on_upload_message_media_success(
-    uint64 upload_id, int32 media_pos, telegram_api::object_ptr<telegram_api::MessageMedia> &&media) {
+    MessageContentUploadId upload_id, int32 media_pos, telegram_api::object_ptr<telegram_api::MessageMedia> &&media) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload was canceled
@@ -2897,7 +2897,7 @@ void MessageQueryManager::on_upload_message_media_success(
                      std::move(result));
 }
 
-void MessageQueryManager::on_upload_message_media_file_error(uint64 upload_id, int32 media_pos,
+void MessageQueryManager::on_upload_message_media_file_error(MessageContentUploadId upload_id, int32 media_pos,
                                                              vector<int> &&bad_parts) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
@@ -2906,7 +2906,8 @@ void MessageQueryManager::on_upload_message_media_file_error(uint64 upload_id, i
   do_upload_message_content(upload_id, media_pos, std::move(bad_parts), Unit());
 }
 
-void MessageQueryManager::on_upload_message_media_fail(uint64 upload_id, int32 media_pos, Status error) {
+void MessageQueryManager::on_upload_message_media_fail(MessageContentUploadId upload_id, int32 media_pos,
+                                                       Status error) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload was canceled
@@ -2915,21 +2916,22 @@ void MessageQueryManager::on_upload_message_media_fail(uint64 upload_id, int32 m
                      std::move(error));
 }
 
-void MessageQueryManager::on_upload_message_media_finished(uint64 upload_id, int32 media_pos, Status status) {
+void MessageQueryManager::on_upload_message_media_finished(MessageContentUploadId upload_id, int32 media_pos,
+                                                           Status status) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload was canceled
   }
   auto &query = it->second;
   if (media_pos >= 0) {
-    LOG(INFO) << "Finished to upload media " << media_pos << " from " << upload_id;
+    LOG(INFO) << "Finished to upload media " << media_pos << " for " << upload_id;
     auto &request = pending_internal_media_sends_[upload_id];
     CHECK(static_cast<size_t>(media_pos) < request.is_finished_.size());
     if (request.is_finished_[media_pos]) {
-      LOG(INFO) << "Upload media " << upload_id << " at pos " << media_pos << " was already finished";
+      LOG(INFO) << "Upload media for " << upload_id << " at pos " << media_pos << " was already finished";
       return;
     }
-    LOG(INFO) << "Finish to upload media " << upload_id << " at pos " << media_pos << " out of "
+    LOG(INFO) << "Finish to upload media for " << upload_id << " at pos " << media_pos << " out of "
               << request.is_finished_.size() << " with result " << status
               << " and previous finished_count = " << request.finished_count_;
 
@@ -2946,7 +2948,8 @@ void MessageQueryManager::on_upload_message_media_finished(uint64 upload_id, int
   query.callback_->on_message_content_force_uploaded(upload_id, std::move(status));
 }
 
-void MessageQueryManager::do_send_internal_media_group(uint64 upload_id, UploadMessageContentQuery &query) {
+void MessageQueryManager::do_send_internal_media_group(MessageContentUploadId upload_id,
+                                                       UploadMessageContentQuery &query) {
   auto &request = pending_internal_media_sends_[upload_id];
   const auto *content = query.content_.get();
   CHECK(content != nullptr);
