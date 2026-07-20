@@ -2892,9 +2892,13 @@ void MessageQueryManager::on_upload_message_media_success(
   bool need_update = false;
   auto content = get_uploaded_message_content(td_, message_content.get(), media_pos, std::move(media), query.dialog_id_,
                                               0, is_content_changed, need_update, "on_upload_message_media_success");
-  auto new_content =
-      dup_message_content(td_, query.dialog_id_, content.get(), MessageContentDupType::Forward, MessageCopyOptions());
-  query.callback_->on_uploaded_message_content_updated(upload_id, std::move(new_content), media_pos == -1);
+  query.callback_->on_uploaded_message_content_updated(
+      upload_id,
+      dup_message_content(td_, query.dialog_id_, content.get(), MessageContentDupType::Forward, MessageCopyOptions()),
+      media_pos == -1, is_content_changed, need_update);
+  merge_and_compare_message_contents(td_, message_content.get(), content.get(), false, query.dialog_id_,
+                                     media_pos == -1, query.file_upload_ids_, query.ttl_, 0.0, nullptr,
+                                     is_content_changed, need_update);
   message_content = std::move(content);
   send_closure_later(G()->file_manager(), &FileManager::cancel_upload,
                      FileUploadId::get_file_upload_id(&query.file_upload_ids_, media_pos));
