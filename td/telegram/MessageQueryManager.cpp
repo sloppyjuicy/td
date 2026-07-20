@@ -2594,10 +2594,13 @@ void MessageQueryManager::do_upload_message_content(MessageContentUploadId uploa
   }
   const auto *content = query.content_.get();
   CHECK(content != nullptr);
+  auto content_type = content->get_type();
+  if (content_type == MessageContentType::Unsupported && result.is_ok()) {
+    result = Status::Error(400, "Failed to upload file");
+  }
   if (result.is_error()) {
     return on_failed_to_upload_message_content(upload_id, query, result.move_as_error());
   }
-  auto content_type = content->get_type();
   if (content_type == MessageContentType::Text) {
     return query.callback_->on_message_content_uploaded(upload_id,
                                                         get_message_content_input_media_web_page(td_, content));
