@@ -2550,11 +2550,11 @@ MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
   query.send_emoji_ = send_emoji;
   query.force_remote_ = force_remote;
   query.callback_ = std::move(callback);
-  LOG(INFO) << "Start to upload content of a message in " << dialog_id << " as " << upload_id;
   return upload_id;
 }
 
 void MessageQueryManager::start_upload_message_content(MessageContentUploadId upload_id) {
+  LOG(INFO) << "Start to upload message content as " << upload_id;
   do_upload_message_content(upload_id, -1, vector<int>(), Unit());
 }
 
@@ -2817,6 +2817,7 @@ void MessageQueryManager::on_upload_thumbnail(FileUploadId thumbnail_file_upload
 
   if (thumbnail_input_file == nullptr) {
     query.callback_->on_failed_to_upload_message_content_thumbnail(upload_id, media_pos);
+    delete_message_content_thumbnail(td_, query.content_.get(), media_pos);
     FileUploadId::delete_file_upload_id(&query.thumbnail_file_upload_ids_, media_pos);
   }
 
