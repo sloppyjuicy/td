@@ -372,6 +372,8 @@ class QuickReplyManager final : public Actor {
                                         telegram_api::object_ptr<telegram_api::Updates> updates_ptr,
                                         vector<int64> random_ids);
 
+  void on_failed_edit_quick_reply_message(QuickReplyShortcutId shortcut_id, MessageId message_id);
+
   void on_failed_send_quick_reply_messages(QuickReplyShortcutId shortcut_id, vector<int64> random_ids, Status error);
 
   void update_sent_message_content_from_temporary_message(QuickReplyMessage *old_message,

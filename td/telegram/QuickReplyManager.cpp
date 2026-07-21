@@ -2184,8 +2184,7 @@ void QuickReplyManager::on_cover_upload(QuickReplyMessageFullId message_full_id,
 
   if (result.is_error()) {
     if (is_edit) {
-      fail_edit_quick_reply_message(m->shortcut_id, m->message_id, edit_generation, {}, {}, {}, {}, {}, false, false,
-                                    result.move_as_error());
+      on_failed_edit_quick_reply_message(m->shortcut_id, m->message_id);
     } else {
       on_failed_send_quick_reply_messages(m->shortcut_id, {m->random_id}, result.move_as_error());
     }
@@ -2214,8 +2213,7 @@ void QuickReplyManager::do_send_message(const QuickReplyMessage *m, int32 media_
   auto content_type = content->get_type();
   if (content_type == MessageContentType::Unsupported) {
     if (is_edit) {
-      return fail_edit_quick_reply_message(m->shortcut_id, m->message_id, m->edit_generation, {}, {}, {}, {}, {}, false,
-                                           false, Status::Error(400, "Failed to upload file"));
+      return on_failed_edit_quick_reply_message(m->shortcut_id, m->message_id);
     }
     return on_failed_send_quick_reply_messages(m->shortcut_id, {m->random_id},
                                                Status::Error(400, "Failed to upload file"));
@@ -2462,11 +2460,9 @@ void QuickReplyManager::on_upload_media_error(FileUploadId file_upload_id, Statu
   }
 
   if (m->message_id.is_any_server()) {
-    fail_edit_quick_reply_message(m->shortcut_id, m->message_id, edit_generation, {}, {}, {}, {}, {}, false, false,
-                                  std::move(status));
+    on_failed_edit_quick_reply_message(m->shortcut_id, m->message_id);
   } else {
-    on_failed_send_quick_reply_messages(message_full_id.get_quick_reply_shortcut_id(), {m->random_id},
-                                        std::move(status));
+    on_failed_send_quick_reply_messages(m->shortcut_id, {m->random_id}, std::move(status));
   }
 }
 
@@ -2779,10 +2775,9 @@ void QuickReplyManager::do_send_internal_media_group(QuickReplyShortcutId shortc
       status = Status::Error(400, "Message send failed");
     }
     if (is_edit) {
-      fail_edit_quick_reply_message(m->shortcut_id, m->message_id, m->edit_generation, {}, {}, {}, {}, {}, false, false,
-                                    std::move(status));
+      on_failed_edit_quick_reply_message(m->shortcut_id, m->message_id);
     } else {
-      on_failed_send_quick_reply_messages(shortcut_id, {m->random_id}, std::move(status));
+      on_failed_send_quick_reply_messages(m->shortcut_id, {m->random_id}, std::move(status));
     }
     return;
   }
@@ -3118,7 +3113,7 @@ void QuickReplyManager::fail_edit_quick_reply_message(QuickReplyShortcutId short
                                                       vector<FileId> cover_file_ids, vector<string> file_references,
                                                       vector<string> cover_file_references, bool was_uploaded,
                                                       bool was_thumbnail_uploaded, Status status) {
-  auto *m = get_message_editable({shortcut_id, message_id});
+  auto *m = get_message({shortcut_id, message_id});
   if (m == nullptr || m->edit_generation != edit_generation) {
     if (was_uploaded) {
       send_closure_later(G()->file_manager(), &FileManager::cancel_uploads, file_upload_ids);
@@ -3148,6 +3143,12 @@ void QuickReplyManager::fail_edit_quick_reply_message(QuickReplyShortcutId short
     td_->file_manager_->delete_partial_remote_location_if_needed(file_upload_ids[0], status);
   }
 
+  on_failed_edit_quick_reply_message(shortcut_id, message_id);
+}
+
+void QuickReplyManager::on_failed_edit_quick_reply_message(QuickReplyShortcutId shortcut_id, MessageId message_id) {
+  auto *m = get_message_editable({shortcut_id, message_id});
+  CHECK(m != nullptr);
   auto old_file_ids = get_message_file_ids(m);
   m->edit_generation = 0;
   m->edited_content = nullptr;
@@ -3160,9 +3161,9 @@ void QuickReplyManager::fail_edit_quick_reply_message(QuickReplyShortcutId short
   auto *s = get_shortcut(m->shortcut_id);
   CHECK(s != nullptr);
   if (s->messages_[0]->message_id == m->message_id) {
-    send_update_quick_reply_shortcut(s, "fail_edit_quick_reply_message 1");
+    send_update_quick_reply_shortcut(s, "on_failed_edit_quick_reply_message 1");
   }
-  send_update_quick_reply_shortcut_messages(s, "fail_edit_quick_reply_message 2");
+  send_update_quick_reply_shortcut_messages(s, "on_failed_edit_quick_reply_message 2");
   save_quick_reply_shortcuts();
   reload_quick_reply_message(shortcut_id, message_id, Promise<Unit>());
 }
