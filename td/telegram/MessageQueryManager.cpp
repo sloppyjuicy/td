@@ -2634,7 +2634,8 @@ void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId u
   auto &query = it->second;
   LOG(INFO) << "Cancel upload content of a message in " << query.dialog_id_ << " as " << upload_id;
   for (const auto &file_upload_id : query.file_upload_ids_) {
-    if (being_uploaded_files_.erase(file_upload_id) || file_upload_id.is_valid()) {
+    if (file_upload_id.is_valid()) {
+      being_uploaded_files_.erase(file_upload_id);
       if (query.is_sending_started_) {
         send_closure_later(G()->file_manager(), &FileManager::delete_partial_remote_location, file_upload_id);
       } else {
@@ -2643,7 +2644,8 @@ void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId u
     }
   }
   for (const auto &file_upload_id : query.thumbnail_file_upload_ids_) {
-    if (being_uploaded_thumbnails_.erase(file_upload_id) || file_upload_id.is_valid()) {
+    if (file_upload_id.is_valid()) {
+      being_uploaded_thumbnails_.erase(file_upload_id);
       if (query.is_sending_started_) {
         send_closure_later(G()->file_manager(), &FileManager::delete_partial_remote_location, file_upload_id);
       } else {
