@@ -2553,9 +2553,10 @@ MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
   return upload_id;
 }
 
-void MessageQueryManager::start_upload_message_content(MessageContentUploadId upload_id) {
+void MessageQueryManager::start_upload_message_content(MessageContentUploadId upload_id,
+                                                       bool after_file_reference_error) {
   LOG(INFO) << "Start to upload message content as " << upload_id;
-  do_upload_message_content(upload_id, -1, vector<int>(), Unit());
+  do_upload_message_content(upload_id, -1, after_file_reference_error ? vector<int>{-1} : vector<int>(), Unit());
 }
 
 void MessageQueryManager::on_start_sending_message_content(MessageContentUploadId upload_id,

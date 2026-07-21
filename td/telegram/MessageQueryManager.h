@@ -110,7 +110,7 @@ class MessageQueryManager final : public Actor {
                                                              bool force_remote,
                                                              std::shared_ptr<UploadMessageContentCallback> &&callback);
 
-  void start_upload_message_content(MessageContentUploadId upload_id);
+  void start_upload_message_content(MessageContentUploadId upload_id, bool after_file_reference_error = false);
 
   void on_start_sending_message_content(MessageContentUploadId upload_id, bool was_thumbnail_uploaded);
 
