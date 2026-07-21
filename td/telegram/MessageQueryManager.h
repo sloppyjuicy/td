@@ -351,6 +351,7 @@ class MessageQueryManager final : public Actor {
     string send_emoji_;
     bool force_remote_ = false;
     bool is_started_ = false;
+    bool is_sending_started_ = false;
     vector<FileUploadId> file_upload_ids_;
     vector<FileUploadId> thumbnail_file_upload_ids_;
     std::shared_ptr<UploadMessageContentCallback> callback_;

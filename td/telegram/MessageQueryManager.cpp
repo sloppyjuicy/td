@@ -2560,15 +2560,16 @@ void MessageQueryManager::start_upload_message_content(MessageContentUploadId up
 
 void MessageQueryManager::on_start_sending_message_content(MessageContentUploadId upload_id,
                                                            bool was_thumbnail_uploaded) {
-  if (!was_thumbnail_uploaded) {
-    return;  // nothing to do
-  }
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload has already been canceled
   }
+  auto &query = it->second;
+  CHECK(!query.is_sending_started_);
+  query.is_sending_started_ = true;
   // always delete partial remote location for the thumbnail, because it can't be reused anyway
-  td_->file_manager_->delete_partial_remote_location_if_needed(it->second.thumbnail_file_upload_ids_, true);
+  td_->file_manager_->delete_partial_remote_location_if_needed(query.thumbnail_file_upload_ids_,
+                                                               was_thumbnail_uploaded);
 }
 
 void MessageQueryManager::process_send_message_content_error(MessageContentUploadId upload_id,
@@ -2581,15 +2582,13 @@ void MessageQueryManager::process_send_message_content_error(MessageContentUploa
     return;  // the upload has already been canceled
   }
   auto &query = it->second;
+  CHECK(query.is_sending_started_);
   if (td_->file_reference_manager_->process_file_reference_error(
           error, was_uploaded, query.file_upload_ids_, file_references, cover_file_ids, cover_file_references, false,
           [&](size_t pos, FileId file_id) { on_upload_message_content_file_error(upload_id, query, pos, {-1}); })) {
     return;
   }
   if (was_uploaded) {
-    td_->file_manager_->delete_partial_remote_location_if_needed(query.thumbnail_file_upload_ids_,
-                                                                 was_thumbnail_uploaded);
-
     CHECK(query.file_upload_ids_.size() == 1u);
     CHECK(query.file_upload_ids_[0].is_valid());
     auto bad_parts = FileManager::get_missing_file_parts(error);
@@ -2623,6 +2622,7 @@ void MessageQueryManager::on_upload_message_content_file_error(MessageContentUpl
   } else {
     CHECK(pos == 0);
   }
+  query.is_sending_started_ = false;
   do_upload_message_content(upload_id, media_pos, std::move(bad_parts), Unit());
 }
 
@@ -2635,12 +2635,20 @@ void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId u
   LOG(INFO) << "Cancel upload content of a message in " << query.dialog_id_ << " as " << upload_id;
   for (const auto &file_upload_id : query.file_upload_ids_) {
     if (being_uploaded_files_.erase(file_upload_id) || file_upload_id.is_valid()) {
-      send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
+      if (query.is_sending_started_) {
+        send_closure_later(G()->file_manager(), &FileManager::delete_partial_remote_location, file_upload_id);
+      } else {
+        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
+      }
     }
   }
   for (const auto &file_upload_id : query.thumbnail_file_upload_ids_) {
     if (being_uploaded_thumbnails_.erase(file_upload_id) || file_upload_id.is_valid()) {
-      send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
+      if (query.is_sending_started_) {
+        send_closure_later(G()->file_manager(), &FileManager::delete_partial_remote_location, file_upload_id);
+      } else {
+        send_closure_later(G()->file_manager(), &FileManager::cancel_upload, file_upload_id);
+      }
     }
   }
   upload_message_content_queries_.erase(it);
