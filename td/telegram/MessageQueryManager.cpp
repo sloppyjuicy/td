@@ -2558,6 +2558,61 @@ void MessageQueryManager::start_upload_message_content(MessageContentUploadId up
   do_upload_message_content(upload_id, -1, vector<int>(), Unit());
 }
 
+void MessageQueryManager::process_upload_message_content_error(MessageContentUploadId upload_id,
+                                                               vector<string> file_references,
+                                                               vector<FileId> cover_file_ids,
+                                                               vector<string> cover_file_references, bool was_uploaded,
+                                                               bool was_thumbnail_uploaded, Status error) {
+  auto it = upload_message_content_queries_.find(upload_id);
+  if (it == upload_message_content_queries_.end()) {
+    return;  // the upload has already been canceled
+  }
+  auto &query = it->second;
+  if (td_->file_reference_manager_->process_file_reference_error(
+          error, was_uploaded, query.file_upload_ids_, file_references, cover_file_ids, cover_file_references, false,
+          [&](size_t pos, FileId file_id) { on_upload_message_content_file_error(upload_id, query, pos, {-1}); })) {
+    return;
+  }
+  if (was_uploaded) {
+    td_->file_manager_->delete_partial_remote_location_if_needed(query.thumbnail_file_upload_ids_,
+                                                                 was_thumbnail_uploaded);
+
+    CHECK(query.file_upload_ids_.size() == 1u);
+    CHECK(query.file_upload_ids_[0].is_valid());
+    auto bad_parts = FileManager::get_missing_file_parts(error);
+    if (!bad_parts.empty()) {
+      return on_upload_message_content_file_error(upload_id, query, 0, std::move(bad_parts));
+    }
+
+    td_->file_manager_->delete_partial_remote_location_if_needed(query.file_upload_ids_[0], error);
+  }
+  on_failed_to_upload_message_content(upload_id, query, std::move(error));
+}
+
+void MessageQueryManager::on_upload_message_content_file_error(MessageContentUploadId upload_id,
+                                                               UploadMessageContentQuery &query, size_t pos,
+                                                               vector<int> &&bad_parts) {
+  int32 media_pos = -1;
+  const auto *content = query.content_.get();
+  if (can_message_content_have_multiple_files(content->get_type())) {
+    media_pos = static_cast<int32>(pos);
+
+    auto file_count = query.file_upload_ids_.size();
+    LOG(INFO) << "Add internal media send for " << upload_id << " with error at " << pos << '/' << file_count;
+    auto &request = pending_internal_media_sends_[upload_id];
+    CHECK(request.is_finished_.empty());
+    CHECK(static_cast<size_t>(media_pos) < file_count);
+    request.is_finished_.resize(file_count, true);
+    request.is_finished_[media_pos] = false;
+    request.finished_count_ = file_count - 1;
+    request.results_.resize(file_count);
+    CHECK(query.file_upload_ids_[media_pos].is_valid());
+  } else {
+    CHECK(pos == 0);
+  }
+  do_upload_message_content(upload_id, media_pos, std::move(bad_parts), Unit());
+}
+
 void MessageQueryManager::cancel_upload_message_content(MessageContentUploadId upload_id) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {

@@ -112,6 +112,10 @@ class MessageQueryManager final : public Actor {
 
   void start_upload_message_content(MessageContentUploadId upload_id);
 
+  void process_upload_message_content_error(MessageContentUploadId upload_id, vector<string> file_references,
+                                            vector<FileId> cover_file_ids, vector<string> cover_file_references,
+                                            bool was_uploaded, bool was_thumbnail_uploaded, Status error);
+
   void cancel_upload_message_content(MessageContentUploadId upload_id);
 
   void on_upload_message_media_success(MessageContentUploadId upload_id, int32 media_pos,
@@ -366,6 +370,9 @@ class MessageQueryManager final : public Actor {
   void on_upload_cover_error(FileUploadId file_upload_id, Status status);
 
   void do_upload_cover(FileUploadId file_upload_id, BeingUploadedCover &&being_uploaded_cover);
+
+  void on_upload_message_content_file_error(MessageContentUploadId upload_id, UploadMessageContentQuery &query,
+                                            size_t pos, vector<int> &&bad_parts);
 
   void on_failed_to_upload_message_content(MessageContentUploadId upload_id, UploadMessageContentQuery &query,
                                            Status &&error);
