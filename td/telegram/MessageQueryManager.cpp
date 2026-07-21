@@ -2558,11 +2558,24 @@ void MessageQueryManager::start_upload_message_content(MessageContentUploadId up
   do_upload_message_content(upload_id, -1, vector<int>(), Unit());
 }
 
-void MessageQueryManager::process_upload_message_content_error(MessageContentUploadId upload_id,
-                                                               vector<string> file_references,
-                                                               vector<FileId> cover_file_ids,
-                                                               vector<string> cover_file_references, bool was_uploaded,
-                                                               bool was_thumbnail_uploaded, Status error) {
+void MessageQueryManager::on_start_sending_message_content(MessageContentUploadId upload_id,
+                                                           bool was_thumbnail_uploaded) {
+  if (!was_thumbnail_uploaded) {
+    return;  // nothing to do
+  }
+  auto it = upload_message_content_queries_.find(upload_id);
+  if (it == upload_message_content_queries_.end()) {
+    return;  // the upload has already been canceled
+  }
+  // always delete partial remote location for the thumbnail, because it can't be reused anyway
+  td_->file_manager_->delete_partial_remote_location_if_needed(it->second.thumbnail_file_upload_ids_, true);
+}
+
+void MessageQueryManager::process_send_message_content_error(MessageContentUploadId upload_id,
+                                                             vector<string> file_references,
+                                                             vector<FileId> cover_file_ids,
+                                                             vector<string> cover_file_references, bool was_uploaded,
+                                                             bool was_thumbnail_uploaded, Status error) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload has already been canceled

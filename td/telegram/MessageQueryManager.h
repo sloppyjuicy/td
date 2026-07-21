@@ -112,9 +112,11 @@ class MessageQueryManager final : public Actor {
 
   void start_upload_message_content(MessageContentUploadId upload_id);
 
-  void process_upload_message_content_error(MessageContentUploadId upload_id, vector<string> file_references,
-                                            vector<FileId> cover_file_ids, vector<string> cover_file_references,
-                                            bool was_uploaded, bool was_thumbnail_uploaded, Status error);
+  void on_start_sending_message_content(MessageContentUploadId upload_id, bool was_thumbnail_uploaded);
+
+  void process_send_message_content_error(MessageContentUploadId upload_id, vector<string> file_references,
+                                          vector<FileId> cover_file_ids, vector<string> cover_file_references,
+                                          bool was_uploaded, bool was_thumbnail_uploaded, Status error);
 
   void cancel_upload_message_content(MessageContentUploadId upload_id);
 
