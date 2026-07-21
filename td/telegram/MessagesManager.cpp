@@ -1397,7 +1397,7 @@ class SendInlineBotResultQuery final : public Td::ResultHandler {
 };
 
 class SendMultiMediaQuery final : public Td::ResultHandler {
-  vector<FileUploadId> file_upload_ids_;
+  vector<FileId> file_ids_;
   vector<string> file_references_;
   vector<FileId> cover_file_ids_;
   vector<string> cover_file_references_;
@@ -1407,7 +1407,7 @@ class SendMultiMediaQuery final : public Td::ResultHandler {
  public:
   void send(int32 flags, DialogId dialog_id, tl_object_ptr<telegram_api::InputPeer> as_input_peer,
             const MessageInputReplyTo &input_reply_to, const MessageTopic &message_topic, int32 schedule_date,
-            MessageEffectId effect_id, vector<FileUploadId> file_upload_ids, vector<FileId> cover_file_ids,
+            MessageEffectId effect_id, vector<FileId> file_ids, vector<FileId> cover_file_ids,
             vector<tl_object_ptr<telegram_api::inputSingleMedia>> &&input_single_media, bool is_copy,
             int64 paid_message_star_count) {
     for (auto &single_media : input_single_media) {
@@ -1417,9 +1417,9 @@ class SendMultiMediaQuery final : public Td::ResultHandler {
       cover_file_references_.push_back(FileManager::extract_cover_file_reference(single_media->media_));
     }
     dialog_id_ = dialog_id;
-    file_upload_ids_ = std::move(file_upload_ids);
+    file_ids_ = std::move(file_ids);
     cover_file_ids_ = std::move(cover_file_ids);
-    CHECK(file_upload_ids_.size() == random_ids_.size());
+    CHECK(file_ids_.size() == random_ids_.size());
 
     auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Write);
     if (input_peer == nullptr) {
@@ -1498,7 +1498,7 @@ class SendMultiMediaQuery final : public Td::ResultHandler {
     }
     LOG(INFO) << "Receive error for SendMultiMedia: " << status;
     if (td_->file_reference_manager_->process_file_reference_error(
-            status, false, file_upload_ids_, file_references_, cover_file_ids_, cover_file_references_, true,
+            status, file_ids_, file_references_, cover_file_ids_, cover_file_references_, true,
             [&](size_t pos, FileId file_id) {
               td_->messages_manager_->on_send_media_group_file_reference_error(dialog_id_, std::move(random_ids_));
             })) {
@@ -22451,7 +22451,7 @@ void MessagesManager::do_send_message_group(int64 media_album_id) {
 
   auto default_status = can_send_message(dialog_id);
   bool success = default_status.is_ok();
-  vector<FileUploadId> file_upload_ids;
+  vector<FileId> file_ids;
   vector<FileId> cover_file_ids;
   vector<int64> random_ids;
   vector<tl_object_ptr<telegram_api::inputSingleMedia>> input_single_media;
@@ -22482,10 +22482,10 @@ void MessagesManager::do_send_message_group(int64 media_album_id) {
     paid_message_star_count += m->paid_message_star_count;
     as_input_peer = get_send_message_as_input_peer(m);
 
-    file_upload_ids.push_back(get_message_send_file_upload_id(dialog_id, m, -1));
+    file_ids.push_back(get_message_content_any_file_id(m->content.get()));
     cover_file_ids.push_back(get_message_content_cover_any_file_id(m->content.get()));
 
-    LOG(INFO) << "Have " << file_upload_ids.back() << " in " << m->message_id << " with result " << request.results[i]
+    LOG(INFO) << "Have " << file_ids.back() << " in " << m->message_id << " with result " << request.results[i]
               << " and is_finished = " << static_cast<bool>(request.is_finished[i]);
 
     random_ids.push_back(begin_send_message(dialog_id, m));
@@ -22544,10 +22544,9 @@ void MessagesManager::do_send_message_group(int64 media_album_id) {
     LOG(INFO) << "Media group " << media_album_id << " from " << dialog_id << " is empty";
   }
   CHECK(input_reply_to != nullptr);
-  td_->create_handler<SendMultiMediaQuery>()->send(flags, dialog_id, std::move(as_input_peer), *input_reply_to,
-                                                   message_topic, schedule_date, effect_id, std::move(file_upload_ids),
-                                                   std::move(cover_file_ids), std::move(input_single_media), is_copy,
-                                                   paid_message_star_count);
+  td_->create_handler<SendMultiMediaQuery>()->send(
+      flags, dialog_id, std::move(as_input_peer), *input_reply_to, message_topic, schedule_date, effect_id,
+      std::move(file_ids), std::move(cover_file_ids), std::move(input_single_media), is_copy, paid_message_star_count);
 }
 
 void MessagesManager::do_send_internal_media_group(DialogId dialog_id, MessageId message_id) {
