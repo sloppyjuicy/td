@@ -98,7 +98,7 @@ class MessageQueryManager final : public Actor {
 
     virtual void on_uploaded_message_content_updated(MessageContentUploadId upload_id,
                                                      unique_ptr<MessageContent> &&content, bool need_merge_files,
-                                                     bool is_content_changed, bool need_update);
+                                                     bool is_content_changed, bool need_update) = 0;
 
     // called at most once
     virtual void on_failed_to_upload_message_content(MessageContentUploadId upload_id, Status error) = 0;

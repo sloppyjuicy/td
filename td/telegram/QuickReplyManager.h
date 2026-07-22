@@ -9,8 +9,8 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileSourceId.h"
-#include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/InputMedia.h"
+#include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/MessageId.h"
 #include "td/telegram/QuickReplyMessageFullId.h"
 #include "td/telegram/QuickReplyShortcutId.h"
@@ -156,14 +156,10 @@ class QuickReplyManager final : public Actor {
     int64 media_album_id = 0;
 
     unique_ptr<MessageContent> content;
-    mutable vector<FileUploadId> file_upload_ids;            // for send_message
-    mutable vector<FileUploadId> thumbnail_file_upload_ids;  // for send_message
+    mutable MessageContentUploadId upload_id;  // for send_message
     unique_ptr<ReplyMarkup> reply_markup;
 
     unique_ptr<MessageContent> edited_content;
-    mutable vector<FileUploadId> edited_file_upload_ids;
-    mutable vector<FileUploadId> edited_thumbnail_file_upload_ids;
-    uint64 edit_generation = 0;
 
     template <class StorerT>
     void store(StorerT &storer) const;
@@ -215,11 +211,7 @@ class QuickReplyManager final : public Actor {
   class SendQuickReplyMultiMediaQuery;
   class UploadQuickReplyMediaQuery;
 
-  class UploadMediaCallback;
-  class UploadThumbnailCallback;
-
-  std::shared_ptr<UploadMediaCallback> upload_media_callback_;
-  std::shared_ptr<UploadThumbnailCallback> upload_thumbnail_callback_;
+  class UploadMessageContentCallback;
 
   void tear_down() final;
 
@@ -368,7 +360,7 @@ class QuickReplyManager final : public Actor {
                                                   const telegram_api::object_ptr<telegram_api::Updates> &updates_ptr,
                                                   const vector<int64> &random_ids);
 
-  void process_send_quick_reply_updates(QuickReplyShortcutId shortcut_id, vector<FileUploadId> file_upload_ids,
+  void process_send_quick_reply_updates(QuickReplyShortcutId shortcut_id,
                                         telegram_api::object_ptr<telegram_api::Updates> updates_ptr,
                                         vector<int64> random_ids);
 
@@ -380,66 +372,23 @@ class QuickReplyManager final : public Actor {
                                                           QuickReplyMessage *new_message, bool is_edit);
 
   void update_sent_message_content_from_temporary_message(unique_ptr<MessageContent> &old_content,
-                                                          vector<FileUploadId> old_file_upload_ids,
                                                           unique_ptr<MessageContent> &new_content,
                                                           bool need_merge_files);
 
-  void on_cover_upload(QuickReplyMessageFullId message_full_id, uint64 edit_generation, int32 media_pos,
-                       vector<int> bad_parts, Result<Unit> result);
+  void do_send_message(const QuickReplyMessage *m);
 
-  void do_send_message(const QuickReplyMessage *m, int32 media_pos = -1, vector<int> bad_parts = {});
-
-  void on_send_message_file_error(QuickReplyShortcutId shortcut_id, MessageId message_id, int64 random_id, size_t pos,
-                                  uint64 edit_generation, vector<int> &&bad_parts);
-
-  void on_upload_media(FileUploadId file_upload_id, telegram_api::object_ptr<telegram_api::InputFile> input_file);
-
-  void do_send_media(const QuickReplyMessage *m, int32 media_pos,
-                     telegram_api::object_ptr<telegram_api::InputFile> input_file,
-                     telegram_api::object_ptr<telegram_api::InputFile> input_thumbnail);
-
-  void on_upload_media_error(FileUploadId file_upload_id, Status status);
-
-  void on_upload_thumbnail(FileUploadId thumbnail_file_upload_id,
-                           telegram_api::object_ptr<telegram_api::InputFile> thumbnail_input_file);
-
-  void on_upload_message_media_success(QuickReplyShortcutId shortcut_id, MessageId message_id, int32 media_pos,
-                                       uint64 edit_generation, FileUploadId file_upload_id,
-                                       telegram_api::object_ptr<telegram_api::MessageMedia> &&media);
-
-  void on_upload_message_media_fail(QuickReplyShortcutId shortcut_id, MessageId message_id, int32 media_pos,
-                                    uint64 edit_generation, Status error);
-
-  void on_upload_message_media_finished(int64 media_album_id, QuickReplyShortcutId shortcut_id, MessageId message_id,
-                                        int32 media_pos, uint64 edit_generation, Status result);
-
-  vector<FileUploadId> *get_message_file_upload_ids(const QuickReplyMessage *m, bool is_thumbnail) const;
-
-  FileUploadId get_message_send_file_upload_id(const QuickReplyMessage *m, int32 media_pos) const;
-
-  FileUploadId get_message_send_thumbnail_file_upload_id(const QuickReplyMessage *m, int32 media_pos) const;
+  void on_upload_album_message_finished(int64 media_album_id, QuickReplyShortcutId shortcut_id, MessageId message_id,
+                                        Status result);
 
   void do_send_message_group(QuickReplyShortcutId shortcut_id, int64 media_album_id);
-
-  void do_send_internal_media_group(QuickReplyShortcutId shortcut_id, MessageId message_id);
-
-  void on_message_media_uploaded(const QuickReplyMessage *m, int32 media_pos, InputMedia &&input_media);
-
-  void do_send_message_media(const QuickReplyMessage *m, InputMedia &&input_media);
 
   void on_send_media_group_file_reference_error(QuickReplyShortcutId shortcut_id, vector<int64> random_ids);
 
   int64 generate_new_media_album_id() const;
 
-  void on_edit_quick_reply_message(QuickReplyShortcutId shortcut_id, MessageId message_id, uint64 edit_generation,
-                                   vector<FileUploadId> file_upload_ids, bool was_uploaded,
+  void on_edit_quick_reply_message(QuickReplyShortcutId shortcut_id, MessageId message_id,
+                                   MessageContentUploadId upload_id,
                                    telegram_api::object_ptr<telegram_api::Updates> updates_ptr);
-
-  void fail_edit_quick_reply_message(QuickReplyShortcutId shortcut_id, MessageId message_id, uint64 edit_generation,
-                                     vector<FileUploadId> file_upload_ids,
-                                     vector<FileUploadId> thumbnail_file_upload_ids, vector<FileId> cover_file_ids,
-                                     vector<string> file_references, vector<string> cover_file_references,
-                                     bool was_uploaded, bool was_thumbnail_uploaded, Status status);
 
   string get_quick_reply_shortcuts_database_key();
 
@@ -447,17 +396,19 @@ class QuickReplyManager final : public Actor {
 
   void load_quick_reply_shortcuts();
 
+  void cancel_upload_message_content(MessageContentUploadId &upload_id);
+
   vector<FileId> get_message_file_ids(const QuickReplyMessage *m) const;
 
-  void delete_message_files(const QuickReplyMessage *m) const;
+  void delete_message_files(const QuickReplyMessage *m);
 
   void change_message_files(const QuickReplyMessage *m, const vector<FileId> &old_file_ids);
 
   void register_new_message(const QuickReplyMessage *m, const char *source);
 
-  void register_message_content(const QuickReplyMessage *m, const char *source) const;
+  void register_message_content(const QuickReplyMessage *m, const char *source);
 
-  void unregister_message_content(const QuickReplyMessage *m, const char *source) const;
+  void unregister_message_content(const QuickReplyMessage *m, const char *source);
 
   Shortcuts shortcuts_;
 
@@ -473,21 +424,9 @@ class QuickReplyManager final : public Actor {
 
   FlatHashMap<QuickReplyMessageFullId, FileSourceId, QuickReplyMessageFullIdHash> message_full_id_to_file_source_id_;
 
-  struct UploadedFileInfo {
-    QuickReplyMessageFullId message_full_id;
-    int32 media_pos;
-    uint64 edit_generation;
-  };
-  FlatHashMap<FileUploadId, UploadedFileInfo, FileUploadIdHash> being_uploaded_files_;
+  FlatHashMap<MessageContentUploadId, QuickReplyMessageFullId, MessageContentUploadIdHash> uploaded_message_contents_;
 
-  struct UploadedThumbnailInfo {
-    QuickReplyMessageFullId quick_reply_message_full_id;
-    FileUploadId file_upload_id;                                   // original file file_upload_id
-    telegram_api::object_ptr<telegram_api::InputFile> input_file;  // original file InputFile
-    int32 media_pos;
-    uint64 edit_generation;
-  };
-  FlatHashMap<FileUploadId, UploadedThumbnailInfo, FileUploadIdHash> being_uploaded_thumbnails_;
+  std::shared_ptr<UploadMessageContentCallback> upload_message_content_callback_;
 
   struct PendingMessageGroupSend {
     size_t finished_count = 0;
@@ -496,16 +435,6 @@ class QuickReplyManager final : public Actor {
     vector<Status> results;
   };
   FlatHashMap<int64, PendingMessageGroupSend> pending_message_group_sends_;  // media_album_id -> ...
-
-  struct PendingInternalMediaSend {
-    size_t finished_count = 0;
-    vector<bool> is_finished;
-    vector<Status> results;
-  };
-  FlatHashMap<QuickReplyMessageFullId, PendingInternalMediaSend, QuickReplyMessageFullIdHash>
-      pending_internal_media_sends_;
-
-  uint64 current_message_edit_generation_ = 0;
 
   Td *td_;
   ActorShared<> parent_;
