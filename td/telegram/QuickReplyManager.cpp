@@ -340,10 +340,6 @@ class QuickReplyManager::SendQuickReplyMediaQuery final : public Td::ResultHandl
   QuickReplyShortcutId shortcut_id_;
   MessageId message_id_;
   MessageContentUploadId upload_id_;
-  vector<string> file_references_;
-  vector<string> cover_file_references_;
-  bool was_uploaded_ = false;
-  bool was_thumbnail_uploaded_ = false;
 
  public:
   void send(const QuickReplyMessage *m, InputMedia &&input_media) {
@@ -351,11 +347,7 @@ class QuickReplyManager::SendQuickReplyMediaQuery final : public Td::ResultHandl
     shortcut_id_ = m->shortcut_id;
     message_id_ = m->message_id;
     upload_id_ = m->upload_id;
-    file_references_ = FileManager::extract_file_references(input_media);
-    cover_file_references_ = FileManager::extract_cover_file_references(input_media);
-    was_uploaded_ = FileManager::extract_was_uploaded(input_media);
-    was_thumbnail_uploaded_ = FileManager::extract_was_thumbnail_uploaded(input_media);
-    td_->message_query_manager_->on_start_sending_message_content(upload_id_, was_thumbnail_uploaded_);
+    td_->message_query_manager_->on_start_sending_message_content(upload_id_, input_media);
 
     auto reply_to = MessageInputReplyTo::regular(m->reply_to_message_id).get_input_reply_to(td_, MessageTopic());
     CHECK(m->edited_content == nullptr);
@@ -419,9 +411,7 @@ class QuickReplyManager::SendQuickReplyMediaQuery final : public Td::ResultHandl
       return;
     }
     LOG(INFO) << "Receive error for SendQuickReplyMediaQuery: " << status;
-    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(file_references_),
-                                                                    std::move(cover_file_references_), was_uploaded_,
-                                                                    was_thumbnail_uploaded_, std::move(status));
+    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(status));
   }
 };
 
@@ -496,10 +486,6 @@ class QuickReplyManager::EditQuickReplyMessageQuery final : public Td::ResultHan
   QuickReplyShortcutId shortcut_id_;
   MessageId message_id_;
   MessageContentUploadId upload_id_;
-  vector<string> file_references_;
-  vector<string> cover_file_references_;
-  bool was_uploaded_ = false;
-  bool was_thumbnail_uploaded_ = false;
 
  public:
   void send(const QuickReplyMessage *m, InputMedia &&input_media) {
@@ -508,11 +494,7 @@ class QuickReplyManager::EditQuickReplyMessageQuery final : public Td::ResultHan
     shortcut_id_ = m->shortcut_id;
     message_id_ = m->message_id;
     upload_id_ = m->upload_id;
-    file_references_ = FileManager::extract_file_references(input_media);
-    cover_file_references_ = FileManager::extract_cover_file_references(input_media);
-    was_uploaded_ = FileManager::extract_was_uploaded(input_media);
-    was_thumbnail_uploaded_ = FileManager::extract_was_thumbnail_uploaded(input_media);
-    td_->message_query_manager_->on_start_sending_message_content(upload_id_, was_thumbnail_uploaded_);
+    td_->message_query_manager_->on_start_sending_message_content(upload_id_, input_media);
 
     auto *content = m->edited_content.get();
     const auto *text = get_message_content_text(content);
@@ -561,9 +543,7 @@ class QuickReplyManager::EditQuickReplyMessageQuery final : public Td::ResultHan
     if (status.message() == "MESSAGE_NOT_MODIFIED") {
       return td_->quick_reply_manager_->on_edit_quick_reply_message(shortcut_id_, message_id_, upload_id_, nullptr);
     }
-    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(file_references_),
-                                                                    std::move(cover_file_references_), was_uploaded_,
-                                                                    was_thumbnail_uploaded_, std::move(status));
+    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(status));
   }
 };
 

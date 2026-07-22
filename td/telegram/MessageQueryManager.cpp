@@ -2560,7 +2560,7 @@ void MessageQueryManager::start_upload_message_content(MessageContentUploadId up
 }
 
 void MessageQueryManager::on_start_sending_message_content(MessageContentUploadId upload_id,
-                                                           bool was_thumbnail_uploaded) {
+                                                           const InputMedia &input_media) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload has already been canceled
@@ -2568,15 +2568,16 @@ void MessageQueryManager::on_start_sending_message_content(MessageContentUploadI
   auto &query = it->second;
   CHECK(!query.is_sending_started_);
   query.is_sending_started_ = true;
+  query.file_references_ = FileManager::extract_file_references(input_media);
+  query.cover_file_references_ = FileManager::extract_cover_file_references(input_media);
+  query.was_uploaded_ = FileManager::extract_was_uploaded(input_media);
+
   // always delete partial remote location for the thumbnail, because it can't be reused anyway
-  td_->file_manager_->delete_partial_remote_location_if_needed(query.thumbnail_file_upload_ids_,
-                                                               was_thumbnail_uploaded);
+  td_->file_manager_->delete_partial_remote_location_if_needed(
+      query.thumbnail_file_upload_ids_, FileManager::extract_was_thumbnail_uploaded(input_media));
 }
 
-void MessageQueryManager::process_send_message_content_error(MessageContentUploadId upload_id,
-                                                             vector<string> file_references,
-                                                             vector<string> cover_file_references, bool was_uploaded,
-                                                             bool was_thumbnail_uploaded, Status error) {
+void MessageQueryManager::process_send_message_content_error(MessageContentUploadId upload_id, Status error) {
   auto it = upload_message_content_queries_.find(upload_id);
   if (it == upload_message_content_queries_.end()) {
     return;  // the upload has already been canceled
@@ -2585,11 +2586,12 @@ void MessageQueryManager::process_send_message_content_error(MessageContentUploa
   CHECK(query.is_sending_started_);
   auto cover_file_ids = get_message_content_cover_any_file_ids(td_, query.content_.get());
   if (td_->file_reference_manager_->process_file_reference_error(
-          error, was_uploaded, query.file_upload_ids_, file_references, cover_file_ids, cover_file_references, false,
+          error, query.was_uploaded_, query.file_upload_ids_, query.file_references_, cover_file_ids,
+          query.cover_file_references_, false,
           [&](size_t pos, FileId file_id) { on_upload_message_content_file_error(upload_id, query, pos, {-1}); })) {
     return;
   }
-  if (was_uploaded) {
+  if (query.was_uploaded_) {
     CHECK(query.file_upload_ids_.size() == 1u);
     CHECK(query.file_upload_ids_[0].is_valid());
     auto bad_parts = FileManager::get_missing_file_parts(error);

@@ -112,11 +112,9 @@ class MessageQueryManager final : public Actor {
 
   void start_upload_message_content(MessageContentUploadId upload_id, bool after_file_reference_error = false);
 
-  void on_start_sending_message_content(MessageContentUploadId upload_id, bool was_thumbnail_uploaded);
+  void on_start_sending_message_content(MessageContentUploadId upload_id, const InputMedia &input_media);
 
-  void process_send_message_content_error(MessageContentUploadId upload_id, vector<string> file_references,
-                                          vector<string> cover_file_references, bool was_uploaded,
-                                          bool was_thumbnail_uploaded, Status error);
+  void process_send_message_content_error(MessageContentUploadId upload_id, Status error);
 
   void cancel_upload_message_content(MessageContentUploadId upload_id);
 
@@ -352,6 +350,9 @@ class MessageQueryManager final : public Actor {
     bool force_remote_ = false;
     bool is_started_ = false;
     bool is_sending_started_ = false;
+    bool was_uploaded_ = false;
+    vector<string> file_references_;
+    vector<string> cover_file_references_;
     vector<FileUploadId> file_upload_ids_;
     vector<FileUploadId> thumbnail_file_upload_ids_;
     std::shared_ptr<UploadMessageContentCallback> callback_;
