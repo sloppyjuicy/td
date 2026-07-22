@@ -1831,7 +1831,10 @@ void QuickReplyManager::process_send_quick_reply_updates(QuickReplyShortcutId sh
     shortcut_id = new_shortcut_id;
   }
   auto *s = get_shortcut(shortcut_id);
-  CHECK(s != nullptr);
+  if (s == nullptr) {
+    reload_quick_reply_shortcuts();
+    return;  // the shortcut was deleted while the message was sent
+  }
 
   for (auto &random_id : random_ids) {
     for (auto it = s->messages_.begin(); it != s->messages_.end(); ++it) {
