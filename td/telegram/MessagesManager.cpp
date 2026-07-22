@@ -10335,10 +10335,10 @@ void MessagesManager::on_message_ttl_expired_impl(Dialog *d, Message *m, bool is
   m->ttl_expires_at = 0;
   if (m->reply_markup != nullptr) {
     if (m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard) {
-      if (d->reply_markup_message_id == m->message_id) {
-        set_dialog_reply_markup(d, MessageId(), nullptr);
-      }
       m->had_reply_markup = true;
+    }
+    if (d->reply_markup_message_id == m->message_id) {
+      set_dialog_reply_markup(d, MessageId(), nullptr);
     }
     m->reply_markup = nullptr;
   }
@@ -11978,7 +11978,8 @@ MessageFullId MessagesManager::on_get_message(MessageInfo &&message_info, const 
 
     // set dialog reply markup only after updateNewMessage and updateChatLastMessage are sent
     if (need_update && m->reply_markup != nullptr && !m->message_id.is_scheduled() &&
-        m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard && m->reply_markup->is_personal) {
+        (m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard || m->reply_markup->force_reply) &&
+        m->reply_markup->is_personal) {
       set_dialog_reply_markup(d, message_id, m);
     }
 
@@ -12398,7 +12399,8 @@ void MessagesManager::try_restore_dialog_reply_markup(Dialog *d, const Message *
   if (m->had_reply_markup) {
     LOG(INFO) << "Restore deleted reply markup in " << d->dialog_id;
     set_dialog_reply_markup(d, MessageId(), nullptr);
-  } else if (m->reply_markup != nullptr && m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard &&
+  } else if (m->reply_markup != nullptr &&
+             (m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard || m->reply_markup->force_reply) &&
              m->reply_markup->is_personal) {
     LOG(INFO) << "Restore reply markup in " << d->dialog_id << " to " << m->message_id;
     set_dialog_reply_markup(d, m->message_id, m);
@@ -15933,14 +15935,16 @@ Status MessagesManager::delete_dialog_reply_markup(DialogId dialog_id, MessageId
   CHECK(m != nullptr);
   CHECK(m->reply_markup != nullptr);
 
-  if (m->reply_markup->type == ReplyMarkup::Type::ForceReply) {
+  if (m->reply_markup->type == ReplyMarkup::Type::ForceReply ||
+      m->reply_markup->type == ReplyMarkup::Type::InlineKeyboard) {
     set_dialog_reply_markup(d, MessageId(), nullptr);
   } else if (m->reply_markup->type == ReplyMarkup::Type::ShowKeyboard) {
     if (!m->reply_markup->is_one_time_keyboard) {
       return Status::Error(400, "Do not need to delete non one-time keyboard");
     }
-    if (m->reply_markup->is_personal) {
+    if (m->reply_markup->is_personal || m->reply_markup->force_reply) {
       m->reply_markup->is_personal = false;
+      m->reply_markup->force_reply = false;
       set_dialog_reply_markup(d, message_id, m);
 
       on_message_changed(d, m, true, "delete_dialog_reply_markup");
