@@ -2575,7 +2575,6 @@ void MessageQueryManager::on_start_sending_message_content(MessageContentUploadI
 
 void MessageQueryManager::process_send_message_content_error(MessageContentUploadId upload_id,
                                                              vector<string> file_references,
-                                                             vector<FileId> cover_file_ids,
                                                              vector<string> cover_file_references, bool was_uploaded,
                                                              bool was_thumbnail_uploaded, Status error) {
   auto it = upload_message_content_queries_.find(upload_id);
@@ -2584,6 +2583,7 @@ void MessageQueryManager::process_send_message_content_error(MessageContentUploa
   }
   auto &query = it->second;
   CHECK(query.is_sending_started_);
+  auto cover_file_ids = get_message_content_cover_any_file_ids(td_, query.content_.get());
   if (td_->file_reference_manager_->process_file_reference_error(
           error, was_uploaded, query.file_upload_ids_, file_references, cover_file_ids, cover_file_references, false,
           [&](size_t pos, FileId file_id) { on_upload_message_content_file_error(upload_id, query, pos, {-1}); })) {
