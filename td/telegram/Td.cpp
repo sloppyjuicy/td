@@ -1259,6 +1259,7 @@ void Td::init_managers() {
   phone_number_manager_actor_ = register_actor("PhoneNumberManager", phone_number_manager_.get());
   poll_manager_ = make_unique<PollManager>(this, create_reference());
   poll_manager_actor_ = register_actor("PollManager", poll_manager_.get());
+  G()->set_poll_manager(poll_manager_actor_.get());
   privacy_manager_ = make_unique<PrivacyManager>(this, create_reference());
   privacy_manager_actor_ = register_actor("PrivacyManager", privacy_manager_.get());
   promo_data_manager_ = make_unique<PromoDataManager>(this, create_reference());

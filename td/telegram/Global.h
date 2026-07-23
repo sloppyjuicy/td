@@ -71,6 +71,7 @@ class OnlineManager;
 class OptionManager;
 class PasswordManager;
 class PeopleNearbyManager;
+class PollManager;
 class PromoDataManager;
 class QuickReplyManager;
 class ReactionManager;
@@ -467,6 +468,13 @@ class Global final : public ActorContext {
     people_nearby_manager_ = people_nearby_manager;
   }
 
+  ActorId<PollManager> poll_manager() const {
+    return poll_manager_;
+  }
+  void set_poll_manager(ActorId<PollManager> poll_manager) {
+    poll_manager_ = poll_manager;
+  }
+
   ActorId<PromoDataManager> promo_data_manager() const {
     return promo_data_manager_;
   }
@@ -787,6 +795,7 @@ class Global final : public ActorContext {
   ActorId<OnlineManager> online_manager_;
   ActorId<PasswordManager> password_manager_;
   ActorId<PeopleNearbyManager> people_nearby_manager_;
+  ActorId<PollManager> poll_manager_;
   ActorId<PromoDataManager> promo_data_manager_;
   ActorId<QuickReplyManager> quick_reply_manager_;
   ActorId<ReactionManager> reaction_manager_;
