@@ -2301,6 +2301,7 @@ Status FileManager::merge(FileId x_file_id, FileId y_file_id, bool no_sync) {
   auto file_view = FileView(node);
 
   LOG(DEBUG) << "Have x_node->pmc_id_ = " << x_node->pmc_id_.get() << ", y_node->pmc_id_ = " << y_node->pmc_id_.get()
+             << ", x_size = " << x_node->size_ << ", y_size = " << y_node->size_
              << ", x_node_size = " << x_node->file_ids_.size() << ", y_node_size = " << y_node->file_ids_.size()
              << ", node_i = " << node_i << ", local_i = " << local_i << ", remote_i = " << remote_i
              << ", generate_i = " << generate_i << ", size_i = " << size_i << ", remote_name_i = " << remote_name_i

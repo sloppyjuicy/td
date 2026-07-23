@@ -359,6 +359,7 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
     merge_and_compare_message_contents(manager_->td_, query.option_.media_.get(), content.get(), true,
                                        query.message_full_id_.get_dialog_id(), need_merge_files, vector<FileUploadId>(),
                                        MessageSelfDestructType(), 0.0, nullptr, is_content_changed, need_update);
+    query.option_.media_ = std::move(content);
   }
 
   void on_failed_to_upload_message_content(MessageContentUploadId upload_id, Status error) final {

@@ -593,8 +593,9 @@ class QuickReplyManager::UploadMessageContentCallback final : public MessageQuer
     auto *m = manager_->get_message_editable(message_full_id);
     CHECK(m != nullptr);
     bool is_edit = m->message_id.is_any_server();
-    manager_->do_update_sent_message_content_from_temporary_message(is_edit ? m->edited_content : m->content, content,
-                                                                    need_merge_files);
+    auto &old_content = is_edit ? m->edited_content : m->content;
+    manager_->do_update_sent_message_content_from_temporary_message(old_content, content, need_merge_files);
+    old_content = std::move(content);
     manager_->save_quick_reply_shortcuts();
   }
 
