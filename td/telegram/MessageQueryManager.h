@@ -51,6 +51,7 @@ struct BinlogEvent;
 struct FormattedText;
 class MessageContent;
 struct MessageSearchOffset;
+struct ReplyMarkup;
 class RichMessage;
 class Td;
 
@@ -248,6 +249,8 @@ class MessageQueryManager final : public Actor {
                               td_api::object_ptr<td_api::InputMessageContent> &&input_message_content,
                               Promise<Unit> &&promise);
 
+  void cancel_edit_ephemeral_message(MessageContentUploadId upload_id, Status status);
+
   void delete_dialog_messages_by_sender(DialogId dialog_id, DialogId sender_dialog_id, Promise<Unit> &&promise);
 
   void delete_dialog_messages_by_date(DialogId dialog_id, int32 min_date, int32 max_date, bool revoke,
@@ -331,6 +334,8 @@ class MessageQueryManager final : public Actor {
   class UploadCoverCallback;
   class UploadMediaCallback;
   class UploadThumbnailCallback;
+
+  class UploadEphemeralMessageContentCallback;
 
   static constexpr int32 MAX_SEARCH_MESSAGES = 100;  // server-side limit
 
@@ -545,6 +550,20 @@ class MessageQueryManager final : public Actor {
   WaitFreeHashMap<MessageFullId, FileSourceId, MessageFullIdHash> rich_message_full_id_to_file_source_id_;
 
   MultiTimeout send_message_view_metrics_timeout_{"SendMessageViewMetricsTimeout"};
+
+  struct EditEphemeralMessageRequest {
+    DialogId dialog_id_;
+    UserId receiver_user_id_;
+    EphemeralMessageId ephemeral_message_id_;
+    unique_ptr<ReplyMarkup> reply_markup_;
+    unique_ptr<MessageContent> content_;
+    bool invert_media_ = false;
+    Promise<Unit> promise_;
+  };
+  FlatHashMap<MessageContentUploadId, EditEphemeralMessageRequest, MessageContentUploadIdHash>
+      edit_ephemeral_message_queries_;
+
+  std::shared_ptr<UploadEphemeralMessageContentCallback> upload_ephemeral_message_content_callback_;
 
   Td *td_;
   ActorShared<> parent_;
