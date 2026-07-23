@@ -5000,7 +5000,7 @@ void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateDeleteQuickRepl
 }
 
 void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateQuickReplyMessage> update, Promise<Unit> &&promise) {
-  td_->quick_reply_manager_->update_quick_reply_message(std::move(update->message_));
+  td_->quick_reply_manager_->on_update_quick_reply_message(std::move(update->message_));
   promise.set_value(Unit());
 }
 

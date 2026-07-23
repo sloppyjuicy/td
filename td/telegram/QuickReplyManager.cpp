@@ -1496,7 +1496,7 @@ void QuickReplyManager::reorder_quick_reply_shortcuts_on_server(vector<QuickRepl
   td_->create_handler<ReorderQuickRepliesQuery>(std::move(promise))->send(std::move(shortcut_ids));
 }
 
-void QuickReplyManager::update_quick_reply_message(telegram_api::object_ptr<telegram_api::Message> &&message_ptr) {
+void QuickReplyManager::on_update_quick_reply_message(telegram_api::object_ptr<telegram_api::Message> &&message_ptr) {
   if (td_->auth_manager_->is_bot()) {
     return;
   }

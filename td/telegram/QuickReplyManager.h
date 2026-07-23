@@ -52,7 +52,7 @@ class QuickReplyManager final : public Actor {
 
   void reorder_quick_reply_shortcuts(const vector<QuickReplyShortcutId> &shortcut_ids, Promise<Unit> &&promise);
 
-  void update_quick_reply_message(telegram_api::object_ptr<telegram_api::Message> &&message_ptr);
+  void on_update_quick_reply_message(telegram_api::object_ptr<telegram_api::Message> &&message_ptr);
 
   void delete_pending_message_web_page(QuickReplyMessageFullId message_full_id);
 
