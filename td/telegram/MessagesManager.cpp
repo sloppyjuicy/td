@@ -1558,6 +1558,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
+      bool invert_media = (flags & MessagesManager::SEND_MESSAGE_FLAG_INVERT_MEDIA) != 0;
       flags = telegram_api::ephemeral_sendMessage::PEER_MASK;
       if (reply_to != nullptr) {
         flags |= telegram_api::ephemeral_sendMessage::REPLY_TO_MASK;
@@ -1581,7 +1582,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
 
       auto query = G()->net_query_creator().create(
-          telegram_api::ephemeral_sendMessage(flags, false, false, false, false, std::move(input_peer),
+          telegram_api::ephemeral_sendMessage(flags, invert_media, false, false, false, std::move(input_peer),
                                               r_input_user.move_as_ok(), send_callback_query_id,
                                               text == nullptr ? string() : text->text, std::move(entities),
                                               std::move(input_media.media_), std::move(input_reply_markup),
@@ -11451,7 +11452,7 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   message_info.is_channel_post = td->dialog_manager_->is_broadcast_channel(dialog_id);
   message_info.ttl_period = 7 * 86400;
   // message_info.noforwards = message->noforwards_;
-  // message_info.invert_media = message->invert_media_;
+  message_info.invert_media = message->invert_media_;
   if (message->top_msg_id_ > 0) {
     auto top_thread_message_id = MessageId(ServerMessageId(message->top_msg_id_));
     message_info.reply_header.top_thread_message_id_ = top_thread_message_id;
