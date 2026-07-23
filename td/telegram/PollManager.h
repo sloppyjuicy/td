@@ -324,12 +324,12 @@ class PollManager final : public Actor {
 
   uint64 current_generation_ = 0;
 
-  struct AddedPollOptionQuery {
+  struct AddPollOptionQuery {
     MessageFullId message_full_id_;
     PollOption option_;
     Promise<Unit> promise_;
   };
-  FlatHashMap<MessageContentUploadId, AddedPollOptionQuery, MessageContentUploadIdHash> added_poll_option_queries_;
+  FlatHashMap<MessageContentUploadId, AddPollOptionQuery, MessageContentUploadIdHash> add_poll_option_queries_;
 
   std::shared_ptr<UploadPollOptionContentCallback> upload_poll_option_content_callback_;
 

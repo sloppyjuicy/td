@@ -336,7 +336,7 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
   }
 
   void on_message_content_uploaded(MessageContentUploadId upload_id, InputMedia &&input_media) final {
-    auto &query = manager_->added_poll_option_queries_[upload_id];
+    auto &query = manager_->add_poll_option_queries_[upload_id];
     manager_->td_->create_handler<AddPollAnswerQuery>()->send(query.message_full_id_, query.option_, upload_id,
                                                               std::move(input_media));
   }
@@ -345,7 +345,7 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
     if (status.is_error()) {
       return on_failed_to_upload_message_content(upload_id, std::move(status));
     }
-    auto &query = manager_->added_poll_option_queries_[upload_id];
+    auto &query = manager_->add_poll_option_queries_[upload_id];
     auto input_media =
         get_message_content_input_media(query.option_.media_.get(), manager_->td_, {}, string(), true, -1);
     CHECK(!input_media.is_empty());
@@ -355,7 +355,7 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
 
   void on_uploaded_message_content_updated(MessageContentUploadId upload_id, unique_ptr<MessageContent> &&content,
                                            bool need_merge_files, bool is_content_changed, bool need_update) final {
-    auto &query = manager_->added_poll_option_queries_[upload_id];
+    auto &query = manager_->add_poll_option_queries_[upload_id];
     merge_and_compare_message_contents(manager_->td_, query.option_.media_.get(), content.get(), true,
                                        query.message_full_id_.get_dialog_id(), need_merge_files, vector<FileUploadId>(),
                                        MessageSelfDestructType(), 0.0, nullptr, is_content_changed, need_update);
@@ -367,7 +367,7 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
   }
 
   void on_failed_to_upload_message_content_thumbnail(MessageContentUploadId upload_id, int32 media_pos) final {
-    auto &query = manager_->added_poll_option_queries_[upload_id];
+    auto &query = manager_->add_poll_option_queries_[upload_id];
     delete_message_content_thumbnail(manager_->td_, query.option_.media_.get(), media_pos);
   }
 };
@@ -1205,7 +1205,7 @@ void PollManager::add_poll_option(MessageFullId message_full_id, td_api::object_
                                           .get()
                                     : poll_option.media_.get(),
       MessageSelfDestructType(), string(), true, false, upload_poll_option_content_callback_);
-  auto &query = added_poll_option_queries_[upload_id];
+  auto &query = add_poll_option_queries_[upload_id];
   query.message_full_id_ = message_full_id;
   query.option_ = std::move(poll_option);
   query.promise_ = std::move(promise);
@@ -1213,12 +1213,12 @@ void PollManager::add_poll_option(MessageFullId message_full_id, td_api::object_
 }
 
 void PollManager::cancel_add_poll_option(MessageContentUploadId upload_id, Status status) {
-  auto it = added_poll_option_queries_.find(upload_id);
-  if (it == added_poll_option_queries_.end()) {
+  auto it = add_poll_option_queries_.find(upload_id);
+  if (it == add_poll_option_queries_.end()) {
     return;
   }
   auto promise = std::move(it->second.promise_);
-  added_poll_option_queries_.erase(upload_id);
+  add_poll_option_queries_.erase(upload_id);
 
   td_->message_query_manager_->cancel_upload_message_content(upload_id);
   if (status.is_error()) {
