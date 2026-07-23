@@ -706,6 +706,8 @@ class Requests {
 
   void on_request(uint64 id, td_api::editEphemeralMessage &request);
 
+  void on_request(uint64 id, td_api::editEphemeralMessageCaption &request);
+
   void on_request(uint64 id, td_api::editMessageSchedulingState &request);
 
   void on_request(uint64 id, td_api::setMessageFactCheck &request);

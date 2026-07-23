@@ -4076,7 +4076,7 @@ void MessageQueryManager::edit_ephemeral_message(
   CHECK(is_bot);
 
   TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Write,
-                                                                        "edit_ephemeral_message_text"));
+                                                                        "edit_ephemeral_message"));
   TRY_RESULT_PROMISE(promise, new_reply_markup, get_inline_reply_markup(std::move(reply_markup), is_bot, true));
   if (input_message_content == nullptr) {
     td_->create_handler<EditEphemeralMessageQuery>(std::move(promise))
@@ -4086,12 +4086,8 @@ void MessageQueryManager::edit_ephemeral_message(
   }
   int32 new_message_content_type = input_message_content->get_id();
   if (new_message_content_type == td_api::inputMessageText::ID) {
-    auto text = static_cast<td_api::inputMessageText *>(input_message_content.get());
-    InputMessageText input_message_text;
-    if ((text->text_ != nullptr && !text->text_->text_.empty()) || text->link_preview_options_ != nullptr) {
-      TRY_RESULT_PROMISE_ASSIGN(promise, input_message_text,
-                                process_input_message_text(td_, dialog_id, std::move(input_message_content), is_bot));
-    }
+    TRY_RESULT_PROMISE(promise, input_message_text,
+                       process_input_message_text(td_, dialog_id, std::move(input_message_content), is_bot));
     td_->create_handler<EditEphemeralMessageQuery>(std::move(promise))
         ->send(dialog_id, receiver_user_id, ephemeral_message_id, true, &input_message_text.text,
                input_message_text.disable_web_page_preview, MessageContentUploadId(),
@@ -4120,6 +4116,25 @@ void MessageQueryManager::edit_ephemeral_message(
   query.invert_media_ = content.invert_media;
   query.promise_ = std::move(promise);
   start_upload_message_content(upload_id);
+}
+
+void MessageQueryManager::edit_ephemeral_message_caption(DialogId dialog_id, UserId receiver_user_id,
+                                                         EphemeralMessageId ephemeral_message_id,
+                                                         td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
+                                                         td_api::object_ptr<td_api::formattedText> &&input_caption,
+                                                         bool invert_media, Promise<Unit> &&promise) {
+  auto is_bot = td_->auth_manager_->is_bot();
+  CHECK(is_bot);
+
+  TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Write,
+                                                                        "edit_ephemeral_message_caption"));
+  TRY_RESULT_PROMISE(promise, new_reply_markup, get_inline_reply_markup(std::move(reply_markup), is_bot, true));
+  TRY_RESULT_PROMISE(promise, caption,
+                     get_formatted_text(td_, dialog_id, std::move(input_caption), is_bot, true, false, false));
+
+  td_->create_handler<EditEphemeralMessageQuery>(std::move(promise))
+      ->send(dialog_id, receiver_user_id, ephemeral_message_id, true, &caption, false, MessageContentUploadId(),
+             InputMedia(), invert_media, new_reply_markup);
 }
 
 void MessageQueryManager::cancel_edit_ephemeral_message(MessageContentUploadId upload_id, Status status) {

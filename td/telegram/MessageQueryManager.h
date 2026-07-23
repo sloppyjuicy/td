@@ -249,6 +249,12 @@ class MessageQueryManager final : public Actor {
                               td_api::object_ptr<td_api::InputMessageContent> &&input_message_content,
                               Promise<Unit> &&promise);
 
+  void edit_ephemeral_message_caption(DialogId dialog_id, UserId receiver_user_id,
+                                      EphemeralMessageId ephemeral_message_id,
+                                      td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
+                                      td_api::object_ptr<td_api::formattedText> &&input_caption, bool invert_media,
+                                      Promise<Unit> &&promise);
+
   void cancel_edit_ephemeral_message(MessageContentUploadId upload_id, Status status);
 
   void delete_dialog_messages_by_sender(DialogId dialog_id, DialogId sender_dialog_id, Promise<Unit> &&promise);
