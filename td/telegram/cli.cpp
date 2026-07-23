@@ -6691,6 +6691,15 @@ class CliClient final : public Actor {
           td_api::make_object<td_api::inputMessageVideo>(as_input_video(video), get_caption(),
                                                          show_caption_above_media_, get_message_self_destruct_type(),
                                                          has_spoiler_)));
+    } else if (op == "eqrman") {
+      ShortcutId shortcut_id;
+      MessageId message_id;
+      string animation;
+      get_args(args, shortcut_id, message_id, animation);
+      send_request(td_api::make_object<td_api::editQuickReplyMessage>(
+          shortcut_id, message_id,
+          td_api::make_object<td_api::inputMessageAnimation>(as_input_animation(animation), get_caption(),
+                                                             show_caption_above_media_, has_spoiler_)));
     } else if (op == "eqrmchl") {
       ShortcutId shortcut_id;
       MessageId message_id;
@@ -7450,7 +7459,7 @@ class CliClient final : public Actor {
       get_args(args, chat_id, member_id, banned_until_date, revoke_messages);
       send_request(td_api::make_object<td_api::banChatMember>(chat_id, as_message_sender(member_id), banned_until_date,
                                                               revoke_messages));
-    } else if (op == "apo" || op == "apol" || op == "apolo" || op == "apop" || op == "apov") {
+    } else if (op == "apo" || op == "apol" || op == "apolo" || op == "apop" || op == "apov" || op == "apoan") {
       ChatId chat_id;
       MessageId message_id;
       string text;
@@ -7473,6 +7482,10 @@ class CliClient final : public Actor {
         string video;
         get_args(args, video);
         media = td_api::make_object<td_api::inputPollMediaVideo>(as_input_video(video));
+      } else if (op == "apoan") {
+        string animation;
+        get_args(args, animation);
+        media = td_api::make_object<td_api::inputPollMediaAnimation>(as_input_animation(animation));
       }
       send_request(td_api::make_object<td_api::addPollOption>(
           chat_id, message_id,
