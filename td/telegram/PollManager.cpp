@@ -337,8 +337,8 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
 
   void on_message_content_uploaded(MessageContentUploadId upload_id, InputMedia &&input_media) final {
     auto &query = manager_->added_poll_option_queries_[upload_id];
-    return manager_->td_->create_handler<AddPollAnswerQuery>()->send(query.message_full_id_, query.option_, upload_id,
-                                                                     std::move(input_media));
+    manager_->td_->create_handler<AddPollAnswerQuery>()->send(query.message_full_id_, query.option_, upload_id,
+                                                              std::move(input_media));
   }
 
   void on_message_content_force_uploaded(MessageContentUploadId upload_id, Status status) final {
@@ -349,8 +349,8 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
     auto input_media =
         get_message_content_input_media(query.option_.media_.get(), manager_->td_, {}, string(), true, -1);
     CHECK(!input_media.is_empty());
-    return manager_->td_->create_handler<AddPollAnswerQuery>()->send(query.message_full_id_, query.option_, upload_id,
-                                                                     std::move(input_media));
+    manager_->td_->create_handler<AddPollAnswerQuery>()->send(query.message_full_id_, query.option_, upload_id,
+                                                              std::move(input_media));
   }
 
   void on_uploaded_message_content_updated(MessageContentUploadId upload_id, unique_ptr<MessageContent> &&content,
