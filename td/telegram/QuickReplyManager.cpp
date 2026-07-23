@@ -2154,6 +2154,7 @@ void QuickReplyManager::do_send_message_group(QuickReplyShortcutId shortcut_id, 
       if (error.is_ok()) {
         error = std::move(request.results[i]);
       }
+      random_ids.push_back(m->random_id);
       continue;
     }
 
