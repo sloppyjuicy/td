@@ -1204,7 +1204,7 @@ void PollManager::add_poll_option(MessageFullId message_full_id, td_api::object_
                                                                   WebPageId(), false, false, false, string())
                                           .get()
                                     : poll_option.media_.get(),
-      MessageSelfDestructType(), string(), true, upload_poll_option_content_callback_);
+      MessageSelfDestructType(), string(), true, false, upload_poll_option_content_callback_);
   auto &query = added_poll_option_queries_[upload_id];
   query.message_full_id_ = message_full_id;
   query.option_ = std::move(poll_option);

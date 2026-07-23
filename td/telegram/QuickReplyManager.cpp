@@ -2084,7 +2084,7 @@ void QuickReplyManager::do_send_message(const QuickReplyMessage *m) {
   CHECK(content != nullptr);
   m->upload_id = td_->message_query_manager_->create_upload_message_content_query(
       td_->dialog_manager_->get_my_dialog_id(), content, MessageSelfDestructType(), m->send_emoji,
-      m->media_album_id != 0, upload_message_content_callback_);
+      !is_edit && m->media_album_id != 0, m->media_album_id != 0, upload_message_content_callback_);
   uploaded_message_contents_[m->upload_id] = message_full_id;
   td_->message_query_manager_->start_upload_message_content(m->upload_id);
 }

@@ -107,7 +107,7 @@ class MessageQueryManager final : public Actor {
   };
   MessageContentUploadId create_upload_message_content_query(DialogId dialog_id, const MessageContent *content,
                                                              MessageSelfDestructType ttl, const string &send_emoji,
-                                                             bool force_remote,
+                                                             bool force_remote, bool disallow_animation,
                                                              std::shared_ptr<UploadMessageContentCallback> &&callback);
 
   void start_upload_message_content(MessageContentUploadId upload_id, bool after_file_reference_error = false);
@@ -348,6 +348,7 @@ class MessageQueryManager final : public Actor {
     MessageSelfDestructType ttl_;
     string send_emoji_;
     bool force_remote_ = false;
+    bool disallow_animation_ = false;
     bool is_started_ = false;
     bool is_sending_started_ = false;
     bool was_uploaded_ = false;

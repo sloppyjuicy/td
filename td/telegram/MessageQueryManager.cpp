@@ -2552,7 +2552,7 @@ void MessageQueryManager::complete_upload_message_cover(
 
 MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
     DialogId dialog_id, const MessageContent *content, MessageSelfDestructType ttl, const string &send_emoji,
-    bool force_remote, std::shared_ptr<UploadMessageContentCallback> &&callback) {
+    bool force_remote, bool disallow_animation, std::shared_ptr<UploadMessageContentCallback> &&callback) {
   CHECK(content != nullptr);
   CHECK(callback != nullptr);
   CHECK(dialog_id.get_type() != DialogType::SecretChat);
@@ -2564,6 +2564,7 @@ MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
   query.ttl_ = ttl;
   query.send_emoji_ = send_emoji;
   query.force_remote_ = force_remote && get_message_content_any_file_id(content).is_valid();
+  query.disallow_animation_ = disallow_animation;
   query.callback_ = std::move(callback);
   return upload_id;
 }
@@ -2947,7 +2948,7 @@ void MessageQueryManager::on_message_media_uploaded(MessageContentUploadId uploa
 
   if (query.force_remote_ || media_pos != -1) {
     CHECK(input_media.rich_message_ == nullptr);
-    if (!is_uploaded_input_media(input_media.media_, query.force_remote_)) {
+    if (!is_uploaded_input_media(input_media.media_, query.disallow_animation_)) {
       auto file_upload_id = FileUploadId::get_file_upload_id(&query.file_upload_ids_, media_pos);
       auto thumbnail_file_upload_id = FileUploadId::get_file_upload_id(&query.thumbnail_file_upload_ids_, media_pos);
       auto cover_file_ids = get_message_content_cover_any_file_ids(td_, query.content_.get());
