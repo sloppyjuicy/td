@@ -593,8 +593,8 @@ class QuickReplyManager::UploadMessageContentCallback final : public MessageQuer
     auto *m = manager_->get_message_editable(message_full_id);
     CHECK(m != nullptr);
     bool is_edit = m->message_id.is_any_server();
-    manager_->update_sent_message_content_from_temporary_message(is_edit ? m->edited_content : m->content, content,
-                                                                 need_merge_files);
+    manager_->do_update_sent_message_content_from_temporary_message(is_edit ? m->edited_content : m->content, content,
+                                                                    need_merge_files);
     manager_->save_quick_reply_shortcuts();
   }
 
@@ -1888,13 +1888,13 @@ void QuickReplyManager::update_sent_message_content_from_temporary_message(Quick
                                                                            bool is_edit) {
   CHECK(is_edit ? old_message->message_id.is_server() : old_message->message_id.is_yet_unsent());
   CHECK(new_message->edited_content == nullptr);
-  update_sent_message_content_from_temporary_message(is_edit ? old_message->edited_content : old_message->content,
-                                                     new_message->content, is_edit || new_message->edit_date == 0);
+  do_update_sent_message_content_from_temporary_message(is_edit ? old_message->edited_content : old_message->content,
+                                                        new_message->content, is_edit || new_message->edit_date == 0);
 }
 
-void QuickReplyManager::update_sent_message_content_from_temporary_message(unique_ptr<MessageContent> &old_content,
-                                                                           unique_ptr<MessageContent> &new_content,
-                                                                           bool need_merge_files) {
+void QuickReplyManager::do_update_sent_message_content_from_temporary_message(unique_ptr<MessageContent> &old_content,
+                                                                              unique_ptr<MessageContent> &new_content,
+                                                                              bool need_merge_files) {
   bool is_content_changed = true;
   bool need_update = true;
   merge_and_compare_message_contents(td_, old_content.get(), new_content.get(), true, DialogId(), need_merge_files,

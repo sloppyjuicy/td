@@ -371,9 +371,9 @@ class QuickReplyManager final : public Actor {
   void update_sent_message_content_from_temporary_message(QuickReplyMessage *old_message,
                                                           QuickReplyMessage *new_message, bool is_edit);
 
-  void update_sent_message_content_from_temporary_message(unique_ptr<MessageContent> &old_content,
-                                                          unique_ptr<MessageContent> &new_content,
-                                                          bool need_merge_files);
+  void do_update_sent_message_content_from_temporary_message(unique_ptr<MessageContent> &old_content,
+                                                             unique_ptr<MessageContent> &new_content,
+                                                             bool need_merge_files);
 
   void do_send_message(const QuickReplyMessage *m);
 
