@@ -366,6 +366,7 @@ bool is_allowed_ephemeral_message_content(MessageContentType content_type) {
     case MessageContentType::Document:
     case MessageContentType::Location:
     case MessageContentType::Photo:
+    case MessageContentType::RichText:
     case MessageContentType::Sticker:
     case MessageContentType::Text:
     case MessageContentType::Venue:

@@ -4097,7 +4097,7 @@ void MessageQueryManager::edit_ephemeral_message(
   TRY_RESULT_PROMISE(promise, content,
                      get_input_message_content(dialog_id, std::move(input_message_content), td_, false));
   auto content_type = content.content->get_type();
-  if (!is_editable_media_message_content(content_type)) {
+  if (!is_editable_media_message_content(content_type) && content_type != MessageContentType::RichText) {
     return promise.set_error(400, "Unsupported input message content type");
   }
   if (!content.ttl.is_empty()) {
