@@ -2563,7 +2563,7 @@ MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
   CHECK(query.content_ != nullptr);
   query.ttl_ = ttl;
   query.send_emoji_ = send_emoji;
-  query.force_remote_ = force_remote;
+  query.force_remote_ = force_remote && get_message_content_any_file_id(content).is_valid();
   query.callback_ = std::move(callback);
   return upload_id;
 }

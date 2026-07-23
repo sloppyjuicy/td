@@ -7450,13 +7450,33 @@ class CliClient final : public Actor {
       get_args(args, chat_id, member_id, banned_until_date, revoke_messages);
       send_request(td_api::make_object<td_api::banChatMember>(chat_id, as_message_sender(member_id), banned_until_date,
                                                               revoke_messages));
-    } else if (op == "apo") {
+    } else if (op == "apo" || op == "apol" || op == "apolo" || op == "apop" || op == "apov") {
       ChatId chat_id;
       MessageId message_id;
       string text;
-      get_args(args, chat_id, message_id, text);
+      get_args(args, chat_id, message_id, text, args);
+      td_api::object_ptr<td_api::InputPollMedia> media;
+      if (op == "apol") {
+        string link;
+        get_args(args, link);
+        media = td_api::make_object<td_api::inputPollMediaLink>(link);
+      } else if (op == "apolo") {
+        string latitude;
+        string longitude;
+        get_args(args, latitude, longitude);
+        media = td_api::make_object<td_api::inputPollMediaLocation>(as_location(latitude, longitude, string()));
+      } else if (op == "apop") {
+        string photo;
+        get_args(args, photo);
+        media = td_api::make_object<td_api::inputPollMediaPhoto>(as_input_photo(photo));
+      } else if (op == "apov") {
+        string video;
+        get_args(args, video);
+        media = td_api::make_object<td_api::inputPollMediaVideo>(as_input_video(video));
+      }
       send_request(td_api::make_object<td_api::addPollOption>(
-          chat_id, message_id, td_api::make_object<td_api::inputPollOption>(as_formatted_text(text), nullptr)));
+          chat_id, message_id,
+          td_api::make_object<td_api::inputPollOption>(as_formatted_text(text), std::move(media))));
     } else if (op == "dpo") {
       ChatId chat_id;
       MessageId message_id;

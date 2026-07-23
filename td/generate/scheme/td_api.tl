@@ -457,7 +457,7 @@ pollOption id:string text:formattedText media:PollMedia voter_count:int32 vote_p
 
 //@description Describes one answer option of a poll to be created
 //@text Option text; 1-100 characters. Only custom emoji entities are allowed to be added and only by Premium users
-//@media Option media; pass null if none; ignored in addPollOption. Must be one of the following types:
+//@media Option media; pass null if none. Must be one of the following types:
 //-inputPollMediaAnimation, inputPollMediaLink, inputPollMediaLocation, inputPollMediaPhoto, inputPollMediaSticker, inputPollMediaVenue, or inputPollMediaVideo without caption
 inputPollOption text:formattedText media:InputPollMedia = InputPollOption;
 
