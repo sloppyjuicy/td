@@ -11462,9 +11462,8 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
       td,
       get_message_text(td->user_manager_.get(), std::move(message->message_), std::move(message->entities_), true,
                        td->auth_manager_->is_bot(), message_info.date, message_info.media_album_id != 0, source),
-      nullptr, std::move(message->media_), dialog_id,
-      message_info.date,  // std::move(message->rich_message_)
-      true, UserId(), &message_info.ttl, &message_info.disable_web_page_preview, source);
+      std::move(message->rich_message_), std::move(message->media_), dialog_id, message_info.date, true, UserId(),
+      &message_info.ttl, &message_info.disable_web_page_preview, source);
   message_info.reply_markup = std::move(message->reply_markup_);
   if (message_info.sender_dialog_id.get_type() == DialogType::User) {
     message_info.sender_user_id = message_info.sender_dialog_id.get_user_id();
