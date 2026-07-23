@@ -576,6 +576,9 @@ class QuickReplyManager::UploadMessageContentCallback final : public MessageQuer
     CHECK(m != nullptr);
     bool is_edit = m->message_id.is_any_server();
     if (is_edit) {
+      if (status.is_error()) {
+        return on_failed_to_upload_message_content(upload_id, std::move(status));
+      }
       auto input_media =
           get_message_content_input_media(m->edited_content.get(), manager_->td_, {}, string(), true, -1);
       CHECK(!input_media.is_empty());

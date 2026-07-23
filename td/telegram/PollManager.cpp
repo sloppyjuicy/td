@@ -342,6 +342,9 @@ class PollManager::UploadPollOptionContentCallback final : public MessageQueryMa
   }
 
   void on_message_content_force_uploaded(MessageContentUploadId upload_id, Status status) final {
+    if (status.is_error()) {
+      return on_failed_to_upload_message_content(upload_id, std::move(status));
+    }
     auto &query = manager_->added_poll_option_queries_[upload_id];
     auto input_media =
         get_message_content_input_media(query.option_.media_.get(), manager_->td_, {}, string(), true, -1);
