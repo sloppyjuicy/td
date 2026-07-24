@@ -12857,7 +12857,7 @@ void MessagesManager::on_get_dialogs(FolderId folder_id, vector<tl_object_ptr<te
     }
 
     need_update_dialog_pos |=
-        update_dialog_draft_message(d, get_draft_message(td_, std::move(dialog->draft_)), true, false);
+        update_dialog_draft_message(d, get_draft_message(td_, std::move(dialog->draft_)), true, false, true, false);
     if (is_new) {
       bool has_pts = dialog->pts_ > 0;
       if (last_message_id.is_valid() && !td_->auth_manager_->is_bot()) {
@@ -16011,7 +16011,7 @@ Status MessagesManager::set_dialog_draft_message(Dialog *d, const MessageTopic &
   CHECK(!message_topic.is_saved_messages());
   CHECK(message_topic.is_empty());
 
-  if (update_dialog_draft_message(d, std::move(draft_message), false, true)) {
+  if (update_dialog_draft_message(d, std::move(draft_message), false, true, true, false)) {
     if (d->dialog_id.get_type() != DialogType::SecretChat && !is_local_draft_message(d->draft_message)) {
       if (G()->use_message_database()) {
         SaveDialogDraftMessageOnServerLogEvent log_event;
@@ -16059,7 +16059,7 @@ void MessagesManager::clear_all_draft_messages(bool exclude_secret_chats, Promis
     dialogs_.foreach([&](const DialogId &dialog_id, unique_ptr<Dialog> &dialog) {
       Dialog *d = dialog.get();
       if (dialog_id.get_type() == DialogType::SecretChat) {
-        update_dialog_draft_message(d, nullptr, false, true);
+        update_dialog_draft_message(d, nullptr, false, true, true, false);
       }
     });
   }
@@ -28261,7 +28261,7 @@ void MessagesManager::on_update_dialog_draft_message(
     return;
   }
 
-  update_dialog_draft_message(d, std::move(new_draft_message), true, true);
+  update_dialog_draft_message(d, std::move(new_draft_message), true, true, true, false);
 }
 
 bool MessagesManager::update_dialog_draft_message(Dialog *d, unique_ptr<DraftMessage> &&draft_message, bool from_update,
@@ -28324,7 +28324,7 @@ void MessagesManager::clear_dialog_draft_by_sent_message(Dialog *d, const Messag
     // forum topics were handled earlier
     set_dialog_draft_message(d, get_send_message_topic(d->dialog_id, m), nullptr).ignore();
   } else {
-    update_dialog_draft_message(d, nullptr, false, need_update_dialog_pos, false);
+    update_dialog_draft_message(d, nullptr, false, need_update_dialog_pos, false, false);
   }
 }
 
@@ -35160,7 +35160,7 @@ void MessagesManager::on_get_channel_difference(DialogId dialog_id, int32 reques
         set_dialog_is_marked_as_unread(d, is_marked_as_unread);
       }
 
-      update_dialog_draft_message(d, get_draft_message(td_, std::move(dialog->draft_)), true, false);
+      update_dialog_draft_message(d, get_draft_message(td_, std::move(dialog->draft_)), true, false, true, false);
 
       on_get_channel_dialog(dialog_id, MessageId(ServerMessageId(dialog->top_message_)),
                             MessageId(ServerMessageId(dialog->read_inbox_max_id_)), dialog->unread_count_,
