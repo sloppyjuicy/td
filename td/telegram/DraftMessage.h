@@ -7,6 +7,7 @@
 #pragma once
 
 #include "td/telegram/DialogId.h"
+#include "td/telegram/DraftMessageManager.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/InputDialogId.h"
 #include "td/telegram/InputMessageText.h"
@@ -56,6 +57,7 @@ class DraftMessage {
   MessageEffectId message_effect_id_;
   unique_ptr<SuggestedPost> suggested_post_;
 
+  friend class DraftMessageManager::UploadDraftMessageCallback;
   friend class SaveDraftMessageQuery;
 
  public:
@@ -73,6 +75,10 @@ class DraftMessage {
 
   bool is_local() const {
     return local_content_ != nullptr;
+  }
+
+  const MessageContent *get_rich_message_content() const {
+    return rich_message_content_.get();
   }
 
   bool need_clear_local(MessageContentType content_type) const;
