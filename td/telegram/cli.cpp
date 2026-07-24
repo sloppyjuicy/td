@@ -5990,20 +5990,24 @@ class CliClient final : public Actor {
       op_not_found_count++;
     }
 
-    if (op == "scdm") {
+    if (op == "scdm" || op == "scdmrm") {
       ChatId chat_id;
       string message;
       get_args(args, chat_id, message);
       td_api::object_ptr<td_api::DraftMessageContent> content;
       auto reply_to = get_input_message_reply_to();
       if (reply_to != nullptr || !message.empty()) {
-        vector<td_api::object_ptr<td_api::textEntity>> entities;
-        if (!message.empty()) {
-          entities.push_back(
-              td_api::make_object<td_api::textEntity>(0, 1, td_api::make_object<td_api::textEntityTypePre>()));
+        if (op == "scdm") {
+          vector<td_api::object_ptr<td_api::textEntity>> entities;
+          if (!message.empty()) {
+            entities.push_back(
+                td_api::make_object<td_api::textEntity>(0, 1, td_api::make_object<td_api::textEntityTypePre>()));
+          }
+          content = td_api::make_object<td_api::draftMessageContentText>(
+              as_formatted_text(message, std::move(entities)), get_link_preview_options());
+        } else {
+          content = td_api::make_object<td_api::draftMessageContentInputRichMessage>(as_input_rich_message(message));
         }
-        content = td_api::make_object<td_api::draftMessageContentText>(as_formatted_text(message, std::move(entities)),
-                                                                       get_link_preview_options());
       }
       set_draft_message(chat_id, std::move(content));
     } else if (op == "scdmvn") {
