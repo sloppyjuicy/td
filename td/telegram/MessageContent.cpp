@@ -4615,6 +4615,10 @@ unique_ptr<MessageContent> create_text_message_content(string text, vector<Messa
                                       force_small_media, force_large_media, skip_confirmation, std::move(web_page_url));
 }
 
+unique_ptr<MessageContent> create_rich_message_content(RichMessage &&rich_message) {
+  return make_unique<MessageRichText>(std::move(rich_message));
+}
+
 unique_ptr<MessageContent> create_animation_message_content(FileId animation_file_id) {
   return make_unique<MessageAnimation>(animation_file_id, FormattedText(), false);
 }

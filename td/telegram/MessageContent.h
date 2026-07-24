@@ -115,6 +115,8 @@ unique_ptr<MessageContent> create_text_message_content(string text, vector<Messa
                                                        bool force_large_media, bool skip_confitmation,
                                                        string &&web_page_url);
 
+unique_ptr<MessageContent> create_rich_message_content(RichMessage &&rich_message);
+
 unique_ptr<MessageContent> create_animation_message_content(FileId animation_file_id);
 
 unique_ptr<MessageContent> create_audio_message_content(FileId audio_file_id);
