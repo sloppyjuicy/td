@@ -7897,6 +7897,13 @@ bool merge_message_content_file_id(Td *td, MessageContent *message_content, File
   return false;
 }
 
+bool are_message_contents_same(Td *td, const MessageContent *lhs_content, const MessageContent *rhs_content) {
+  bool is_content_changed = false;
+  bool need_update = false;
+  compare_message_contents(td, lhs_content, rhs_content, is_content_changed, need_update);
+  return !is_content_changed && !need_update;
+}
+
 void compare_message_contents(Td *td, const MessageContent *old_content, const MessageContent *new_content,
                               bool &is_content_changed, bool &need_update) {
   if (old_content == nullptr) {
