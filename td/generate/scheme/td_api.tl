@@ -3382,8 +3382,11 @@ reactionNotificationSettings message_reaction_source:ReactionNotificationSource 
 //@link_preview_options Options to be used for generation of a link preview; may be null if none; pass null to use default link preview options
 draftMessageContentText text:formattedText link_preview_options:linkPreviewOptions = DraftMessageContent;
 
-//@description A rich message draft; not supported in setChatDraftMessage @message The rich message; the message must not have not yet uploaded media
+//@description A rich message draft; not supported in setChatDraftMessage @message The rich message
 draftMessageContentRichMessage message:richMessage = DraftMessageContent;
+
+//@description A rich message draft; only for setChatDraftMessage @message The rich message
+draftMessageContentInputRichMessage message:inputRichMessage = DraftMessageContent;
 
 //@description A video note message draft
 //@file_path Path to the file with the video note
@@ -13308,7 +13311,7 @@ setChatTheme chat_id:int53 theme:InputChatTheme = Ok;
 //@description Changes the draft message in a chat or a topic
 //@chat_id Chat identifier
 //@topic_id Topic in which the draft will be changed; pass null to change the draft for the chat itself
-//@draft_message New draft message; pass null to remove the draft. All files in draft message content must be of the type inputFileLocal. Media thumbnails and captions are ignored
+//@draft_message New draft message; pass null to remove the draft
 setChatDraftMessage chat_id:int53 topic_id:MessageTopic draft_message:draftMessage = Ok;
 
 //@description Changes the notification settings of a chat. Notification settings of a chat with the current user (Saved Messages) can't be changed

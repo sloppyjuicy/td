@@ -387,11 +387,10 @@ Result<unique_ptr<DraftMessage>> DraftMessage::get_draft_message(
         result->input_message_text_ = std::move(input_message_text);
         break;
       }
-      case td_api::draftMessageContentRichMessage::ID: {
-        auto message = td_api::move_object_as<td_api::draftMessageContentRichMessage>(content);
-        if (message->message_ == nullptr || true) {
-          break;
-        }
+      case td_api::draftMessageContentRichMessage::ID:
+        return Status::Error(400, "Use draftMessageContentInputRichMessage instead of draftMessageContentRichMessage");
+      case td_api::draftMessageContentInputRichMessage::ID: {
+        auto message = td_api::move_object_as<td_api::draftMessageContentInputRichMessage>(content);
         TRY_RESULT(rich_message, RichMessage::get_rich_message(td, dialog_id, std::move(message->message_), false));
         result->rich_message_content_ = create_rich_message_content(std::move(rich_message));
         break;
