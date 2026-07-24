@@ -266,13 +266,11 @@ void DraftMessageManager::save_draft_message(DialogId dialog_id, const MessageTo
     auto it = dialog_draft_message_upload_ids_.find(dialog_id);
     if (it != dialog_draft_message_upload_ids_.end()) {
       upload_id = it->second;
-      dialog_draft_message_upload_ids_.erase(it);
     }
   } else {
     auto it = topic_draft_message_upload_ids_.find(message_topic);
     if (it != topic_draft_message_upload_ids_.end()) {
       upload_id = it->second;
-      topic_draft_message_upload_ids_.erase(it);
     }
   }
   if (upload_id != MessageContentUploadId()) {
@@ -306,6 +304,11 @@ void DraftMessageManager::cancel_save_draft_message(MessageContentUploadId uploa
     return;
   }
   auto promise = std::move(it->second.promise_);
+  if (it->second.message_topic_.is_empty()) {
+    dialog_draft_message_upload_ids_.erase(it->second.dialog_id_);
+  } else {
+    topic_draft_message_upload_ids_.erase(it->second.message_topic_);
+  }
   save_draft_message_queries_.erase(upload_id);
 
   td_->message_query_manager_->cancel_upload_message_content(upload_id);
