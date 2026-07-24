@@ -28324,7 +28324,16 @@ void MessagesManager::clear_dialog_draft_by_sent_message(Dialog *d, const Messag
     // forum topics were handled earlier
     set_dialog_draft_message(d, get_send_message_topic(d->dialog_id, m), nullptr).ignore();
   } else {
-    update_dialog_draft_message(d, nullptr, false, need_update_dialog_pos, false, false);
+    // update_dialog_draft_message(d, nullptr, false, need_update_dialog_pos, false, false);
+    if (d->draft_message != nullptr) {
+      d->draft_message = nullptr;
+      // do not call change_draft_message_files to keep file source identifiers
+      if (need_update_dialog_pos) {
+        update_dialog_pos(d, "clear_dialog_draft_by_sent_message", false);
+      }
+      on_dialog_updated(d->dialog_id, "clear_dialog_draft_by_sent_message");
+      send_update_chat_draft_message(d);
+    }
   }
 }
 
