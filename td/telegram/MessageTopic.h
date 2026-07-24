@@ -70,6 +70,8 @@ class MessageTopic {
     return type_ == Type::None;
   }
 
+  bool is_valid() const;
+
   bool is_thread() const {
     return type_ == Type::Thread;
   }
