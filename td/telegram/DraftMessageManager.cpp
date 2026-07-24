@@ -57,8 +57,10 @@ class SaveDraftMessageQuery final : public Td::ResultHandler {
     if (draft_message != nullptr) {
       CHECK(!draft_message->is_local());
       input_reply_to = draft_message->message_input_reply_to_.get_input_reply_to(td_, message_topic, true);
-      if (draft_message->is_rich_) {
-        input_rich_message = draft_message->rich_message_.get_input_rich_message(td_);
+      if (draft_message->rich_message_content_ != nullptr) {
+        input_rich_message = std::move(get_message_content_input_media(draft_message->rich_message_content_.get(), td_,
+                                                                       MessageSelfDestructType(), string(), true, -1)
+                                           .rich_message_);
         if (input_rich_message != nullptr) {
           flags |= telegram_api::messages_saveDraft::RICH_MESSAGE_MASK;
         }

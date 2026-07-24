@@ -247,8 +247,8 @@ bool DraftMessage::need_update_to(const DraftMessage &other, bool from_update) c
     return !from_update || other.is_local();
   }
   if (message_input_reply_to_ == other.message_input_reply_to_ && input_message_text_ == other.input_message_text_ &&
-      rich_message_ == other.rich_message_ && message_effect_id_ == other.message_effect_id_ &&
-      suggested_post_ == other.suggested_post_) {
+      are_message_contents_same(nullptr /*unused*/, rich_message_content_.get(), other.rich_message_content_.get()) &&
+      message_effect_id_ == other.message_effect_id_ && suggested_post_ == other.suggested_post_) {
     return date_ < other.date_;
   } else {
     return !from_update || date_ <= other.date_;
@@ -264,7 +264,10 @@ unique_ptr<DraftMessage> DraftMessage::clone(Td *td, const unique_ptr<DraftMessa
   result->date_ = draft_message->date_;
   result->message_input_reply_to_ = draft_message->message_input_reply_to_.clone();
   result->input_message_text_ = draft_message->input_message_text_;
-  result->rich_message_ = draft_message->rich_message_.clone(td, dialog_id, MessageContentDupType::ServerCopy);
+  if (draft_message->rich_message_content_ != nullptr) {
+    result->rich_message_content_ = dup_message_content(td, dialog_id, draft_message->rich_message_content_.get(),
+                                                        MessageContentDupType::Forward, MessageCopyOptions());
+  }
   if (draft_message->local_content_ != nullptr) {
     switch (draft_message->local_content_->get_type()) {
       case DraftMessageContentType::VideoNote: {
@@ -289,24 +292,32 @@ unique_ptr<DraftMessage> DraftMessage::clone(Td *td, const unique_ptr<DraftMessa
 }
 
 vector<FileId> DraftMessage::get_file_ids(const Td *td) const {
-  vector<FileId> file_ids;
-  rich_message_.append_file_ids(td, file_ids);
-  return file_ids;
+  if (rich_message_content_ != nullptr) {
+    return get_message_content_file_ids(rich_message_content_.get(), td);
+  }
+  return {};
 }
 
 void DraftMessage::add_dependencies(Dependencies &dependencies) const {
   message_input_reply_to_.add_dependencies(dependencies);
   input_message_text_.add_dependencies(dependencies);
-  rich_message_.add_dependencies(dependencies);
+  if (rich_message_content_ != nullptr) {
+    add_message_content_dependencies(dependencies, rich_message_content_.get(), UserId() /*ignored*/,
+                                     false /*ignored*/);
+  }
 }
 
 td_api::object_ptr<td_api::draftMessage> DraftMessage::get_draft_message_object(Td *td) const {
   td_api::object_ptr<td_api::DraftMessageContent> content;
   if (local_content_ != nullptr) {
     content = local_content_->get_draft_message_content_object();
-  } else if (is_rich_) {
-    content =
-        td_api::make_object<td_api::draftMessageContentRichMessage>(rich_message_.get_rich_message_object(td, true));
+  } else if (rich_message_content_ != nullptr) {
+    auto message_content_object =
+        get_message_content_object(rich_message_content_.get(), td, DialogId(), MessageId(), DialogId(), false, true,
+                                   false, DialogId(), 0, 0, false, true, -1, false, false, "get_draft_message_object");
+    CHECK(message_content_object->get_id() == td_api::messageRichMessage::ID);
+    auto rich_message = td_api::move_object_as<td_api::messageRichMessage>(message_content_object);
+    content = td_api::make_object<td_api::draftMessageContentRichMessage>(std::move(rich_message->message_));
   } else {
     content = input_message_text_.get_draft_message_content_object(td->user_manager_.get());
   }
@@ -321,8 +332,8 @@ DraftMessage::DraftMessage(Td *td, telegram_api::object_ptr<telegram_api::draftM
   date_ = draft_message->date_;
   message_input_reply_to_ = MessageInputReplyTo(td, std::move(draft_message->reply_to_));
   if (draft_message->rich_message_ != nullptr) {
-    is_rich_ = true;
-    rich_message_ = RichMessage(td, std::move(draft_message->rich_message_), DialogId());
+    rich_message_content_ =
+        create_rich_message_content(RichMessage(td, std::move(draft_message->rich_message_), DialogId()));
   } else {
     auto draft_text = get_formatted_text(td->user_manager_.get(), std::move(draft_message->message_),
                                          std::move(draft_message->entities_), true, true, "DraftMessage");
@@ -382,8 +393,7 @@ Result<unique_ptr<DraftMessage>> DraftMessage::get_draft_message(
           break;
         }
         TRY_RESULT(rich_message, RichMessage::get_rich_message(td, dialog_id, std::move(message->message_), false));
-        result->rich_message_ = std::move(rich_message);
-        result->is_rich_ = true;
+        result->rich_message_content_ = create_rich_message_content(std::move(rich_message));
         break;
       }
       case td_api::draftMessageContentVideoNote::ID: {
@@ -408,8 +418,8 @@ Result<unique_ptr<DraftMessage>> DraftMessage::get_draft_message(
     }
   }
 
-  if (!result->message_input_reply_to_.is_valid() && result->input_message_text_.is_empty() && !result->is_rich_ &&
-      result->local_content_ == nullptr) {
+  if (!result->message_input_reply_to_.is_valid() && result->input_message_text_.is_empty() &&
+      result->rich_message_content_ == nullptr && result->local_content_ == nullptr) {
     return nullptr;
   }
 
