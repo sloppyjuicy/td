@@ -52,10 +52,7 @@ class DraftMessageManager final : public Actor {
   FileSourceId *get_file_source_id(DialogId dialog_id, const MessageTopic &message_topic);
 
   FlatHashMap<DialogId, FileSourceId, DialogIdHash> dialog_draft_message_file_source_ids_;
-  FlatHashMap<DialogId, FlatHashMap<ForumTopicId, FileSourceId, ForumTopicIdHash>, DialogIdHash>
-      forum_topic_draft_message_file_source_ids_;
-  FlatHashMap<DialogId, FlatHashMap<SavedMessagesTopicId, FileSourceId, SavedMessagesTopicIdHash>, DialogIdHash>
-      monoforum_topic_draft_message_file_source_ids_;
+  FlatHashMap<MessageTopic, FileSourceId, MessageTopicHash> topic_draft_message_file_source_ids_;
 };
 
 }  // namespace td

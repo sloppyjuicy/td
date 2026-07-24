@@ -235,21 +235,10 @@ FileSourceId *DraftMessageManager::get_file_source_id(DialogId dialog_id, const 
   if (message_topic.is_empty()) {
     return &dialog_draft_message_file_source_ids_[dialog_id];
   }
-  if (message_topic.is_forum()) {
-    auto forum_topic_id = message_topic.get_forum_topic_id();
-    if (!forum_topic_id.is_valid()) {
-      return nullptr;
-    }
-    return &forum_topic_draft_message_file_source_ids_[dialog_id][forum_topic_id];
+  if (!message_topic.is_valid()) {
+    return nullptr;
   }
-  if (message_topic.is_monoforum()) {
-    auto saved_messages_topic_id = message_topic.get_monoforum_saved_messages_topic_id();
-    if (!saved_messages_topic_id.is_valid()) {
-      return nullptr;
-    }
-    return &monoforum_topic_draft_message_file_source_ids_[dialog_id][saved_messages_topic_id];
-  }
-  return nullptr;
+  return &topic_draft_message_file_source_ids_[message_topic];
 }
 
 FileSourceId DraftMessageManager::get_draft_message_file_source_id(DialogId dialog_id,
