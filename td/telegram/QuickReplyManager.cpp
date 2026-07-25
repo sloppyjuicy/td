@@ -2366,16 +2366,18 @@ void QuickReplyManager::edit_quick_reply_message(
   switch (old_message_content_type) {
     case MessageContentType::Text:
     case MessageContentType::RichText:
+      if (!is_editable_media_message_content(new_message_content_type) &&
+          new_message_content_type != MessageContentType::Text &&
+          new_message_content_type != MessageContentType::RichText) {
+        return promise.set_error(400, "Message can't be edited to the specified message type");
+      }
+      break;
     case MessageContentType::Animation:
     case MessageContentType::Audio:
     case MessageContentType::Document:
     case MessageContentType::Photo:
     case MessageContentType::Video:
-      if (!is_editable_media_message_content(new_message_content_type) &&
-          ((new_message_content_type != MessageContentType::Text &&
-            new_message_content_type != MessageContentType::RichText) ||
-           (old_message_content_type != MessageContentType::Text &&
-            old_message_content_type != MessageContentType::RichText))) {
+      if (!is_editable_media_message_content(new_message_content_type)) {
         return promise.set_error(400, "Message can't be edited to the specified message type");
       }
       if (m->media_album_id != 0) {
