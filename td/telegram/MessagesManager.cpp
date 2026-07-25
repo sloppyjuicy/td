@@ -23572,18 +23572,6 @@ void MessagesManager::edit_message_media(MessageFullId message_full_id,
                                          tl_object_ptr<td_api::ReplyMarkup> &&reply_markup,
                                          tl_object_ptr<td_api::InputMessageContent> &&input_message_content,
                                          Promise<Unit> &&promise) {
-  if (input_message_content == nullptr) {
-    return promise.set_error(400, "Can't edit message without new content");
-  }
-  int32 new_message_content_type = input_message_content->get_id();
-  if (new_message_content_type != td_api::inputMessageAnimation::ID &&
-      new_message_content_type != td_api::inputMessageAudio::ID &&
-      new_message_content_type != td_api::inputMessageDocument::ID &&
-      new_message_content_type != td_api::inputMessagePhoto::ID &&
-      new_message_content_type != td_api::inputMessageVideo::ID) {
-    return promise.set_error(400, "Unsupported input message content type");
-  }
-
   auto dialog_id = message_full_id.get_dialog_id();
   TRY_RESULT_PROMISE(promise, d, check_dialog_access(dialog_id, true, AccessRights::Edit, "edit_message_media"));
 
@@ -23597,13 +23585,16 @@ void MessagesManager::edit_message_media(MessageFullId message_full_id,
   CHECK(m->message_id.is_any_server());
 
   TRY_RESULT_PROMISE(promise, content, process_input_message_content(dialog_id, std::move(input_message_content)));
+  auto new_content_type = content.content->get_type();
+  if (!is_editable_media_message_content(new_content_type)) {
+    return promise.set_error(400, "Unsupported input message content type");
+  }
   if (!content.ttl.is_empty()) {
     return promise.set_error(400, "Can't enable self-destruction for media");
   }
 
   if (m->media_album_id != 0) {
     auto old_message_content_type = m->content->get_type();
-    auto new_content_type = content.content->get_type();
     if (old_message_content_type != new_content_type) {
       if (!is_allowed_media_group_content(new_content_type)) {
         return promise.set_error(400, "Message content type can't be used in an album");

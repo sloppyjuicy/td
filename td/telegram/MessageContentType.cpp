@@ -789,6 +789,19 @@ bool is_editable_message_content(MessageContentType content_type) {
   }
 }
 
+bool is_editable_media_message_content(MessageContentType content_type) {
+  switch (content_type) {
+    case MessageContentType::Animation:
+    case MessageContentType::Audio:
+    case MessageContentType::Document:
+    case MessageContentType::Photo:
+    case MessageContentType::Video:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool is_supported_reply_message_content(MessageContentType content_type) {
   switch (content_type) {
     case MessageContentType::Animation:

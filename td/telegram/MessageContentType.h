@@ -134,6 +134,8 @@ bool is_service_message_content(MessageContentType content_type);
 
 bool is_editable_message_content(MessageContentType content_type);
 
+bool is_editable_media_message_content(MessageContentType content_type);
+
 bool is_supported_reply_message_content(MessageContentType content_type);
 
 bool is_expired_message_content(MessageContentType content_type);

@@ -2371,11 +2371,7 @@ void QuickReplyManager::edit_quick_reply_message(
     case MessageContentType::Document:
     case MessageContentType::Photo:
     case MessageContentType::Video:
-      if (new_message_content_type != MessageContentType::Animation &&
-          new_message_content_type != MessageContentType::Audio &&
-          new_message_content_type != MessageContentType::Document &&
-          new_message_content_type != MessageContentType::Photo &&
-          new_message_content_type != MessageContentType::Video &&
+      if (!is_editable_media_message_content(new_message_content_type) &&
           ((new_message_content_type != MessageContentType::Text &&
             new_message_content_type != MessageContentType::RichText) ||
            (old_message_content_type != MessageContentType::Text &&

@@ -4030,16 +4030,12 @@ void MessageQueryManager::edit_ephemeral_message(
                input_message_text.show_above_text, new_reply_markup);
   }
 
-  if (new_message_content_type != td_api::inputMessageAnimation::ID &&
-      new_message_content_type != td_api::inputMessageAudio::ID &&
-      new_message_content_type != td_api::inputMessageDocument::ID &&
-      new_message_content_type != td_api::inputMessagePhoto::ID &&
-      new_message_content_type != td_api::inputMessageVideo::ID) {
-    return promise.set_error(400, "Invalid message content type specified");
-  }
-
   TRY_RESULT_PROMISE(promise, content,
                      get_input_message_content(dialog_id, std::move(input_message_content), td_, false));
+  auto content_type = content.content->get_type();
+  if (!is_editable_media_message_content(content_type)) {
+    return promise.set_error(400, "Unsupported input message content type");
+  }
   if (!content.ttl.is_empty()) {
     return promise.set_error(400, "Can't enable self-destruction for media");
   }
