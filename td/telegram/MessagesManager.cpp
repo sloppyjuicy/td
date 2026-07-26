@@ -11431,6 +11431,10 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   CHECK(message != nullptr);
 
   MessageInfo message_info;
+  if (message->welcome_template_) {
+    LOG(ERROR) << "Receive welcome message template from " << source;
+    return message_info;
+  }
   if (message->peer_id_ == nullptr) {
     return message_info;
   }
@@ -11441,7 +11445,8 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   if (!dialog_id.is_valid() || !message_info.receiver_user_id.is_valid() ||
       !message_info.ephemeral_message_id.is_valid() || !message_info.sender_dialog_id.is_valid()) {
     LOG(ERROR) << "Ignore " << message_info.ephemeral_message_id << " in " << dialog_id << " sent by "
-               << message_info.sender_dialog_id << " and received by " << message_info.receiver_user_id;
+               << message_info.sender_dialog_id << " and received by " << message_info.receiver_user_id << " from "
+               << source;
     return message_info;
   }
   message_info.dialog_id = dialog_id;
