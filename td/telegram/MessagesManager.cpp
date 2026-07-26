@@ -14926,18 +14926,11 @@ bool MessagesManager::can_get_message_video_advertisements(DialogId dialog_id, c
 }
 
 Status MessagesManager::can_get_message_viewers(MessageFullId message_full_id) {
-  auto dialog_id = message_full_id.get_dialog_id();
-  Dialog *d = get_dialog_force(dialog_id, "can_get_message_viewers");
-  if (d == nullptr) {
-    return Status::Error(400, "Chat not found");
-  }
-
-  auto m = get_message_force(d, message_full_id.get_message_id(), "can_get_message_viewers");
+  auto m = get_message_force(message_full_id, "can_get_message_viewers");
   if (m == nullptr) {
     return Status::Error(400, "Message not found");
   }
-
-  return can_get_message_viewers(dialog_id, m);
+  return can_get_message_viewers(message_full_id.get_dialog_id(), m);
 }
 
 Status MessagesManager::can_get_message_viewers(DialogId dialog_id, const Message *m) const {
@@ -16299,6 +16292,10 @@ Status MessagesManager::toggle_dialog_is_translatable(DialogId dialog_id, bool i
 Status MessagesManager::set_message_sender_block_list(const td_api::object_ptr<td_api::MessageSender> &sender,
                                                       const td_api::object_ptr<td_api::BlockList> &block_list) {
   TRY_RESULT(dialog_id, get_message_sender_dialog_id(td_, sender, true, false));
+  Dialog *d = get_dialog_force(dialog_id, "set_message_sender_block_list");
+  if (!td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Know)) {
+    return Status::Error(400, "Message sender isn't accessible");
+  }
   BlockListId block_list_id(block_list);
   bool is_blocked = block_list_id == BlockListId::main();
   bool is_blocked_for_stories = block_list_id == BlockListId::stories();
@@ -16327,10 +16324,6 @@ Status MessagesManager::set_message_sender_block_list(const td_api::object_ptr<t
       UNREACHABLE();
   }
 
-  Dialog *d = get_dialog_force(dialog_id, "set_message_sender_block_list");
-  if (!td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Know)) {
-    return Status::Error(400, "Message sender isn't accessible");
-  }
   if (d != nullptr) {
     if (is_blocked == d->is_blocked && is_blocked_for_stories == d->is_blocked_for_stories) {
       return Status::OK();
@@ -22878,11 +22871,7 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_inline_query_r
     DialogId dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id,
     td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to, tl_object_ptr<td_api::messageSendOptions> &&options,
     int64 query_id, const string &result_id, bool hide_via_bot) {
-  Dialog *d = get_dialog_force(dialog_id, "send_inline_query_result_message");
-  if (d == nullptr) {
-    return Status::Error(400, "Chat not found");
-  }
-
+  TRY_RESULT(d, check_dialog_access(dialog_id, true, AccessRights::Write, "send_inline_query_result_message"));
   TRY_STATUS(can_send_message(dialog_id));
   TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(td_, dialog_id, std::move(options),
                                                                                 false, false, false, false, 1));
@@ -24314,10 +24303,7 @@ void MessagesManager::add_offer(DialogId dialog_id, MessageId message_id,
   if (options == nullptr || options->suggested_post_info_ == nullptr) {
     return promise.set_error(400, "Suggested post info must be non-empty");
   }
-  Dialog *d = get_dialog_force(dialog_id, "add_offer");
-  if (d == nullptr) {
-    return promise.set_error(400, "Chat not found");
-  }
+  TRY_RESULT_PROMISE(promise, d, check_dialog_access(dialog_id, false, AccessRights::Write, "add_offer"));
   if (!td_->dialog_manager_->is_monoforum_channel(dialog_id)) {
     return promise.set_error(400, "Chat is not a direct messages chat");
   }
@@ -24982,11 +24968,7 @@ Result<vector<MessageId>> MessagesManager::resend_messages(DialogId dialog_id, v
     return Status::Error(400, "There are no messages to resend");
   }
 
-  Dialog *d = get_dialog_force(dialog_id, "resend_messages");
-  if (d == nullptr) {
-    return Status::Error(400, "Chat not found");
-  }
-
+  TRY_RESULT(d, check_dialog_access(dialog_id, true, AccessRights::Write, "resend_messages"));
   TRY_STATUS(can_send_message(dialog_id));
 
   MessageId last_message_id;
@@ -25246,10 +25228,7 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_mess
       return Status::Error(400, "Unallowed message content");
   }
 
-  Dialog *d = get_dialog_force(dialog_id, "send_ephemeral_message");
-  if (d == nullptr) {
-    return Status::Error(400, "Chat not found");
-  }
+  TRY_RESULT(d, check_dialog_access(dialog_id, false, AccessRights::Write, "send_ephemeral_message"));
   TRY_STATUS(td_->user_manager_->get_input_user(receiver_user_id));
   TRY_RESULT(message_topic, MessageTopic::get_send_message_topic(td_, dialog_id, topic_id));
   auto input_reply_to = create_message_input_reply_to(d, message_topic, std::move(reply_to), false, true);
@@ -30310,10 +30289,7 @@ void MessagesManager::pin_dialog_message(BusinessConnectionId business_connectio
     TRY_STATUS_PROMISE(promise,
                        td_->business_connection_manager_->check_business_connection(business_connection_id, dialog_id));
   } else {
-    auto d = get_dialog_force(dialog_id, "pin_dialog_message");
-    if (d == nullptr) {
-      return promise.set_error(400, "Chat not found");
-    }
+    TRY_RESULT_PROMISE(promise, d, check_dialog_access(dialog_id, false, AccessRights::Write, "pin_dialog_message"));
     const Message *m = get_message_force(d, message_id, "pin_dialog_message");
     TRY_STATUS_PROMISE(promise, can_pin_message(dialog_id, m));
   }
