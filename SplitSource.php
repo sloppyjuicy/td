@@ -505,7 +505,8 @@ function split_file($file, $chunks, $undo) {
             'WebBrowserSettings' => 'WebBrowserSettings',
             'WebDomainException' => 'WebDomainException',
             'WebPageId(Hash)?' => 'WebPageId',
-            'web_pages_manager[_(-](?![.]get[(][)])|WebPagesManager' => 'WebPagesManager');
+            'web_pages_manager[_(-](?![.]get[(][)])|WebPagesManager' => 'WebPagesManager',
+            'welcome_message_manager[_(-](?![.]get[(][)])|WelcomeMessageManager' => 'WelcomeMessageManager');
 
         foreach ($td_methods as $pattern => $header) {
             if (strpos($cpp_name, $header) !== false) {
