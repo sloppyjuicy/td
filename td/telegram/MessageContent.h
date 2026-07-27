@@ -11,6 +11,7 @@
 #include "td/telegram/ChatTheme.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/EncryptedFile.h"
+#include "td/telegram/EphemeralMessageFullId.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/ForumTopicId.h"
@@ -277,6 +278,12 @@ void register_quick_reply_message_content(Td *td, const MessageContent *content,
 
 void unregister_quick_reply_message_content(Td *td, const MessageContent *content,
                                             QuickReplyMessageFullId message_full_id, const char *source);
+
+void register_welcome_message_content(Td *td, const MessageContent *content,
+                                          EphemeralMessageFullId message_full_id, const char *source);
+
+void unregister_welcome_message_content(Td *td, const MessageContent *content,
+                                            EphemeralMessageFullId message_full_id, const char *source);
 
 unique_ptr<MessageContent> get_secret_message_content(
     Td *td, string message_text, unique_ptr<EncryptedFile> file,

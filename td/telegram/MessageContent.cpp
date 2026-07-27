@@ -8985,7 +8985,8 @@ void register_message_content(Td *td, const MessageContent *content, MessageFull
       }
       return;
     }
-    // don't forget to update reregister_message_content, register_reply_message_content, register_quick_reply_message_content
+    // don't forget to update reregister_message_content, register_reply_message_content,
+    // register_quick_reply_message_content, register_ephemeral_message_content
     default:
       return;
   }
@@ -9258,6 +9259,44 @@ void unregister_quick_reply_message_content(Td *td, const MessageContent *conten
     case MessageContentType::Story:
       return td->story_manager_->unregister_story(static_cast<const MessageStory *>(content)->story_full_id, {},
                                                   message_full_id, source);
+    default:
+      return;
+  }
+}
+
+void register_welcome_message_content(Td *td, const MessageContent *content,
+                                          EphemeralMessageFullId message_full_id, const char *source) {
+  CHECK(content != nullptr);
+  switch (content->get_type()) {
+    case MessageContentType::Text: {
+      auto text = static_cast<const MessageText *>(content);
+      if (text->web_page_id.is_valid()) {
+        td->web_pages_manager_->register_welcome_message_web_page(text->web_page_id, message_full_id, source);
+      } else if (can_be_animated_emoji(text->text)) {
+        td->stickers_manager_->register_emoji(text->text.text, get_custom_emoji_id(text->text), {}, {}, message_full_id,
+                                              source);
+      }
+      return;
+    }
+    default:
+      return;
+  }
+}
+
+void unregister_welcome_message_content(Td *td, const MessageContent *content,
+                                            EphemeralMessageFullId message_full_id, const char *source) {
+  CHECK(content != nullptr);
+  switch (content->get_type()) {
+    case MessageContentType::Text: {
+      auto text = static_cast<const MessageText *>(content);
+      if (text->web_page_id.is_valid()) {
+        td->web_pages_manager_->unregister_welcome_message_web_page(text->web_page_id, message_full_id, source);
+      } else if (can_be_animated_emoji(text->text)) {
+        td->stickers_manager_->unregister_emoji(text->text.text, get_custom_emoji_id(text->text), {}, {}, message_full_id,
+                                                source);
+      }
+      return;
+    }
     default:
       return;
   }
