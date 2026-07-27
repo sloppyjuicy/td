@@ -111,10 +111,20 @@ telegram_api::object_ptr<telegram_api::InputRichFile> RichMessageMedia::get_inpu
     }
   }
   switch (media_->get_type()) {
-    case MessageContentType::Photo:
-      return telegram_api::make_object<telegram_api::inputRichFilePhoto>(id_, get_input_photo(td));
-    default:
-      return telegram_api::make_object<telegram_api::inputRichFileDocument>(id_, get_input_document(td));
+    case MessageContentType::Photo: {
+      auto input_photo = get_input_photo(td);
+      if (input_photo == nullptr) {
+        return nullptr;
+      }
+      return telegram_api::make_object<telegram_api::inputRichFilePhoto>(id_, std::move(input_photo));
+    }
+    default: {
+      auto input_document = get_input_document(td);
+      if (input_document == nullptr) {
+        return nullptr;
+      }
+      return telegram_api::make_object<telegram_api::inputRichFileDocument>(id_, std::move(input_document));
+    }
   }
 }
 
