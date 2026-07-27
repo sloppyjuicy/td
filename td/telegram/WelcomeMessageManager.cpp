@@ -415,6 +415,15 @@ void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
   loaded_welcome_messages_.erase(dialog_id);
 }
 
+vector<FileId> WelcomeMessageManager::get_dialog_welcome_message_file_ids(
+    const vector<unique_ptr<WelcomeMessage>> &messages) const {
+  vector<FileId> file_ids;
+  for (auto &message : messages) {
+    td::append(file_ids, get_message_content_file_ids(message->content_.get(), td_));
+  }
+  return file_ids;
+}
+
 td_api::object_ptr<td_api::welcomeMessage> WelcomeMessageManager::get_welcome_message_object(
     const WelcomeMessage *m) const {
   CHECK(m != nullptr);

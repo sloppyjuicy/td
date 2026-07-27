@@ -9,6 +9,7 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/EphemeralMessageFullId.h"
 #include "td/telegram/EphemeralMessageId.h"
+#include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileSourceId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/td_api.h"
@@ -101,6 +102,8 @@ class WelcomeMessageManager final : public Actor {
                                Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages);
 
   void do_delete_welcome_messages(DialogId dialog_id, vector<EphemeralMessageId> ephemeral_message_ids);
+
+  vector<FileId> get_dialog_welcome_message_file_ids(const vector<unique_ptr<WelcomeMessage>> &messages) const;
 
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
