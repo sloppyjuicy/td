@@ -32,6 +32,7 @@
 #include "td/telegram/WebAppManager.h"
 #include "td/telegram/WebPageId.h"
 #include "td/telegram/WebPagesManager.h"
+#include "td/telegram/WelcomeMessageManager.h"
 
 #include "td/utils/algorithm.h"
 #include "td/utils/common.h"
@@ -202,6 +203,7 @@ fileSourceStoryAlbum chat_id:int53 story_album_id:int32 = FileSource;           
 fileSourceSavedMusic user_id:int53 file_id:int32 = FileSource;                             // users.getSavedMusicByID
 fileSourceDraftMessage chat_id:int53 topic:MessageTopic = FileSource;                      // messages.getPeerDialogs/messages.getForumTopicsByID/messages.getSavedDialogsByID
 fileSourceRichMessage chat_id:int53 message_id:int53 = FileSource;                         // messages.getRichMessage
+fileSourceWelcomeMessages chat_id:int53 = FileSource;                                      // ephemeral.getWelcomeMessages
 */
 
 FileSourceId FileReferenceManager::get_current_file_source_id() const {
@@ -332,6 +334,11 @@ FileSourceId FileReferenceManager::create_draft_message_file_source(DialogId dia
 FileSourceId FileReferenceManager::create_rich_message_file_source(MessageFullId message_full_id) {
   FileSourceRichMessage source{message_full_id};
   return add_file_source_id(source, PSLICE() << "rich " << message_full_id);
+}
+
+FileSourceId FileReferenceManager::create_welcome_messages_file_source(DialogId dialog_id) {
+  FileSourceWelcomeMessages source{dialog_id};
+  return add_file_source_id(source, PSLICE() << "welcome messages of " << dialog_id);
 }
 
 FileReferenceManager::Node &FileReferenceManager::add_node(NodeId node_id) {
@@ -583,6 +590,10 @@ void FileReferenceManager::send_query(Destination dest, FileSourceId file_source
       [&](const FileSourceRichMessage &source) {
         send_closure_later(G()->message_query_manager(), &MessageQueryManager::reload_full_rich_message,
                            source.message_full_id, std::move(promise));
+      },
+      [&](const FileSourceWelcomeMessages &source) {
+        send_closure_later(G()->welcome_message_manager(), &WelcomeMessageManager::reload_welcome_messages,
+                           source.dialog_id, std::move(promise));
       }));
 }
 

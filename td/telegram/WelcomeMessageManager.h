@@ -9,6 +9,7 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/EphemeralMessageFullId.h"
 #include "td/telegram/EphemeralMessageId.h"
+#include "td/telegram/files/FileSourceId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
@@ -46,6 +47,8 @@ class WelcomeMessageManager final : public Actor {
   void on_edited_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
 
   void on_delete_welcome_messages(DialogId dialog_id, vector<EphemeralMessageId> ephemeral_message_ids);
+
+  FileSourceId get_welcome_messages_file_source_id(DialogId dialog_id);
 
   void get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const;
 
@@ -119,6 +122,8 @@ class WelcomeMessageManager final : public Actor {
   FlatHashSet<DialogId, DialogIdHash> loaded_welcome_messages_;
 
   FlatHashSet<EphemeralMessageFullId, EphemeralMessageFullIdHash> deleted_welcome_messages_;
+
+  FlatHashMap<DialogId, FileSourceId, DialogIdHash> dialog_to_file_source_id_;
 };
 
 }  // namespace td

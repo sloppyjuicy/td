@@ -10,6 +10,7 @@
 #include "td/telegram/AuthManager.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
+#include "td/telegram/FileReferenceManager.h"
 #include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/MessageContent.h"
@@ -444,6 +445,26 @@ void WelcomeMessageManager::send_update_chat_welcome_messages(DialogId dialog_id
   } else {
     send_closure(G()->td(), &Td::send_update, get_update_chat_welcome_messages_object(dialog_id, *messages));
   }
+}
+
+FileSourceId WelcomeMessageManager::get_welcome_messages_file_source_id(DialogId dialog_id) {
+  if (td_->auth_manager_->is_bot()) {
+    return FileSourceId();
+  }
+  switch (dialog_id.get_type()) {
+    case DialogType::Chat:
+    case DialogType::Channel:
+      // ok
+      break;
+    default:
+      return FileSourceId();
+  }
+
+  auto &file_source_id = dialog_to_file_source_id_[dialog_id];
+  if (!file_source_id.is_valid()) {
+    file_source_id = td_->file_reference_manager_->create_welcome_messages_file_source(dialog_id);
+  }
+  return file_source_id;
 }
 
 void WelcomeMessageManager::get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const {
