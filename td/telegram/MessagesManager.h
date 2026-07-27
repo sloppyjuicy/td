@@ -21,6 +21,7 @@
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/DialogSource.h"
 #include "td/telegram/EncryptedFile.h"
+#include "td/telegram/EphemeralMessageFullId.h"
 #include "td/telegram/EphemeralMessageId.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileSourceId.h"
@@ -3271,8 +3272,7 @@ class MessagesManager final : public Actor {
   FlatHashMap<int64, MessageFullId> being_sent_messages_;  // message_random_id -> message
 
   MessageHashMap<MessageId> update_message_ids_;  // new_message_id -> temporary_id
-  FlatHashMap<DialogId, FlatHashMap<EphemeralMessageId, MessageId, EphemeralMessageIdHash>, DialogIdHash>
-      update_ephemeral_message_ids_;
+  FlatHashMap<EphemeralMessageFullId, MessageId, EphemeralMessageFullIdHash> update_ephemeral_message_ids_;
 
   FlatHashMap<MessageFullId, MessageId, MessageFullIdHash> messages_to_restore_;  // new_message_id -> temporary_id
 

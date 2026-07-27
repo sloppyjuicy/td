@@ -11834,8 +11834,9 @@ MessageFullId MessagesManager::on_get_message(MessageInfo &&message_info, const 
   Dialog *d = get_dialog_force(dialog_id, source);
 
   auto is_ephemeral = new_message->ephemeral_message_id.is_valid();
-  MessageId old_message_id = is_ephemeral ? update_ephemeral_message_ids_[dialog_id][new_message->ephemeral_message_id]
-                                          : update_message_ids_.get(dialog_id, message_id);
+  MessageId old_message_id = is_ephemeral
+                                 ? update_ephemeral_message_ids_[{dialog_id, new_message->ephemeral_message_id}]
+                                 : update_message_ids_.get(dialog_id, message_id);
   bool is_sent_message = false;
   if (old_message_id.is_valid() || old_message_id.is_valid_scheduled()) {
     CHECK(d != nullptr);
@@ -11864,13 +11865,8 @@ MessageFullId MessagesManager::on_get_message(MessageInfo &&message_info, const 
     }
 
     if (is_ephemeral) {
-      auto it = update_ephemeral_message_ids_.find(dialog_id);
-      CHECK(it != update_ephemeral_message_ids_.end());
-      auto erased_count = it->second.erase(new_message->ephemeral_message_id);
+      auto erased_count = update_ephemeral_message_ids_.erase({dialog_id, new_message->ephemeral_message_id});
       CHECK(erased_count > 0);
-      if (it->second.empty()) {
-        update_ephemeral_message_ids_.erase(it);
-      }
     } else {
       auto erased_count = update_message_ids_.erase(dialog_id, message_id);
       CHECK(erased_count > 0);
@@ -25479,7 +25475,7 @@ void MessagesManager::on_update_ephemeral_message_id(int64 random_id, EphemeralM
 
   LOG(INFO) << "Save correspondence from " << ephemeral_message_id << " in " << dialog_id << " to " << old_message_id;
   CHECK(old_message_id.is_yet_unsent());
-  update_ephemeral_message_ids_[dialog_id][ephemeral_message_id] = old_message_id;
+  update_ephemeral_message_ids_[{dialog_id, ephemeral_message_id}] = old_message_id;
 }
 
 bool MessagesManager::on_get_message_error(DialogId dialog_id, MessageId message_id, const Status &status,
