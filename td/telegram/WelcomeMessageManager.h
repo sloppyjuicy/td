@@ -33,6 +33,8 @@ class WelcomeMessageManager final : public Actor {
   void on_external_update_message_content(EphemeralMessageFullId message_full_id, const char *source,
                                           bool expect_no_message = false) const;
 
+  void delete_pending_message_web_page(EphemeralMessageFullId message_full_id);
+
   void load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
   void drop_welcome_messages(DialogId dialog_id);

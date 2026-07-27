@@ -93,6 +93,15 @@ void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageF
   // must not save welcome messages, because the message itself wasn't changed
 }
 
+void WelcomeMessageManager::delete_pending_message_web_page(EphemeralMessageFullId message_full_id) {
+  auto *m = get_welcome_message(message_full_id.get_dialog_id(), message_full_id.get_ephemeral_message_id());
+  CHECK(has_message_content_web_page(m->content_.get()));
+  //unregister_message_content(m, "delete_pending_message_web_page");
+  remove_message_content_web_page(m->content_.get());
+  //register_message_content(m, "delete_pending_message_web_page");
+  // don't need to send updates, because the web page was pending
+}
+
 WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_message(
     Td *td, telegram_api::object_ptr<telegram_api::ephemeralMessage> message, const char *source) {
   LOG(DEBUG) << "Receive from " << source << ' ' << to_string(message);
