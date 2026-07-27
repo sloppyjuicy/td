@@ -3766,7 +3766,11 @@ void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateNewEphemeralMes
 
 void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateEditEphemeralMessage> update,
                                Promise<Unit> &&promise) {
-  td_->messages_manager_->on_edited_ephemeral_message(std::move(update->message_));
+  if (update->message_->welcome_template_) {
+    td_->welcome_message_manager_->on_edited_welcome_message(std::move(update->message_));
+  } else {
+    td_->messages_manager_->on_edited_ephemeral_message(std::move(update->message_));
+  }
   promise.set_value(Unit());
 }
 

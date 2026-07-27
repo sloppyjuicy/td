@@ -134,6 +134,32 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
 
+void WelcomeMessageManager::on_edited_welcome_message(
+    telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message) {
+  auto message_info = parse_welcome_message(td_, std::move(message), "on_edited_welcome_message");
+  auto dialog_id = message_info.dialog_id_;
+  if (!dialog_id.is_valid() || can_access_welcome_messages(dialog_id).is_error() ||
+      loaded_welcome_messages_.count(dialog_id) == 0) {
+    return;
+  }
+
+  auto ephemeral_message_id = message_info.message_->ephemeral_message_id_;
+  auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
+  if (m == nullptr) {
+    return;
+  }
+  bool need_update = false;
+  bool is_content_changed = false;
+  update_welcome_message_content(m, message_info.message_.get(), dialog_id, is_content_changed, need_update);
+  if (is_content_changed || need_update) {
+    m->content_ = std::move(message_info.message_->content_);
+  }
+  if (need_update) {
+    send_update_chat_welcome_messages_object(dialog_id);
+  }
+  reload_welcome_messages(dialog_id, Promise<Unit>());
+}
+
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
     DialogId dialog_id) const {
   auto it = welcome_messages_.find(dialog_id);
@@ -187,8 +213,10 @@ void WelcomeMessageManager::update_welcome_message_content(WelcomeMessage *old_m
     } else if (new_message->disable_web_page_preview_ && has_message_content_web_page(old_message->content_.get())) {
       need_update = true;
     }
+    old_message->disable_web_page_preview_ = new_message->disable_web_page_preview_;
   }
   if (old_message->invert_media_ != new_message->invert_media_) {
+    old_message->invert_media_ = new_message->invert_media_;
     need_update = true;
   }
   merge_and_compare_message_contents(td_, old_message->content_.get(), new_message->content_.get(), false, dialog_id,
