@@ -30,6 +30,9 @@ class WelcomeMessageManager final : public Actor {
  public:
   WelcomeMessageManager(Td *td, ActorShared<> parent);
 
+  void on_external_update_message_content(EphemeralMessageFullId message_full_id, const char *source,
+                                          bool expect_no_message = false) const;
+
   void load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
   void drop_welcome_messages(DialogId dialog_id);
@@ -98,7 +101,7 @@ class WelcomeMessageManager final : public Actor {
   td_api::object_ptr<td_api::updateChatWelcomeMessages> get_update_chat_welcome_messages_object(
       DialogId dialog_id, const vector<unique_ptr<WelcomeMessage>> &messages) const;
 
-  void send_update_chat_welcome_messages_object(DialogId dialog_id) const;
+  void send_update_chat_welcome_messages(DialogId dialog_id) const;
 
   Td *td_;
   ActorShared<> parent_;

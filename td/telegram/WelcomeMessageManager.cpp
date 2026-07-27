@@ -80,6 +80,19 @@ Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
   return Status::OK();
 }
 
+void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageFullId message_full_id,
+                                                               const char *source, bool expect_no_message) const {
+  auto dialog_id = message_full_id.get_dialog_id();
+  auto ephemeral_message_id = message_full_id.get_ephemeral_message_id();
+  const auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
+  if (expect_no_message && m == nullptr) {
+    return;
+  }
+  LOG_CHECK(m != nullptr) << message_full_id << ' ' << source;
+  send_update_chat_welcome_messages(dialog_id);
+  // must not save welcome messages, because the message itself wasn't changed
+}
+
 WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_message(
     Td *td, telegram_api::object_ptr<telegram_api::ephemeralMessage> message, const char *source) {
   LOG(DEBUG) << "Receive from " << source << ' ' << to_string(message);
@@ -130,7 +143,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   }
   auto &messages = welcome_messages_[dialog_id];
   messages.push_back(std::move(message_info.message_));
-  send_update_chat_welcome_messages_object(dialog_id);
+  send_update_chat_welcome_messages(dialog_id);
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
 
@@ -155,7 +168,7 @@ void WelcomeMessageManager::on_edited_welcome_message(
     m->content_ = std::move(message_info.message_->content_);
   }
   if (need_update) {
-    send_update_chat_welcome_messages_object(dialog_id);
+    send_update_chat_welcome_messages(dialog_id);
   }
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
@@ -197,7 +210,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
   if (messages.empty()) {
     welcome_messages_.erase(dialog_id);
   }
-  send_update_chat_welcome_messages_object(dialog_id);
+  send_update_chat_welcome_messages(dialog_id);
 }
 
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
@@ -347,14 +360,14 @@ void WelcomeMessageManager::on_get_welcome_messages(
     }
   }
   if (need_update) {
-    send_update_chat_welcome_messages_object(dialog_id);
+    send_update_chat_welcome_messages(dialog_id);
   }
   set_promises(promises);
 }
 
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
   if (welcome_messages_.erase(dialog_id) != 0) {
-    send_update_chat_welcome_messages_object(dialog_id);
+    send_update_chat_welcome_messages(dialog_id);
   }
   loaded_welcome_messages_.erase(dialog_id);
 }
@@ -381,7 +394,7 @@ td_api::object_ptr<td_api::updateChatWelcomeMessages> WelcomeMessageManager::get
       get_welcome_messages_object(messages));
 }
 
-void WelcomeMessageManager::send_update_chat_welcome_messages_object(DialogId dialog_id) const {
+void WelcomeMessageManager::send_update_chat_welcome_messages(DialogId dialog_id) const {
   auto messages = get_welcome_messages(dialog_id);
   if (messages == nullptr) {
     send_closure(G()->td(), &Td::send_update,
