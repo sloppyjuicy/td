@@ -10555,6 +10555,11 @@ updateQuickReplyShortcuts shortcut_ids:vector<int32> = Update;
 //@messages The new list of quick reply messages for the shortcut in order from the first to the last sent
 updateQuickReplyShortcutMessages shortcut_id:int32 messages:vector<quickReplyMessage> = Update;
 
+//@description The list of welcome messages of a chat has changed
+//@chat_id The identifier of the chat
+//@messages The new list of welcome messages of the chat in the order from the first to the last sent
+updateChatWelcomeMessages chat_id:int53 messages:vector<welcomeMessage> = Update;
+
 //@description Basic information about a topic in a forum chat was changed @info New information about the topic
 updateForumTopicInfo info:forumTopicInfo = Update;
 

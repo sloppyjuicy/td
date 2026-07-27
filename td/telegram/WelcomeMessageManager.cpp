@@ -7,10 +7,14 @@
 #include "td/telegram/WelcomeMessageManager.h"
 
 #include "td/telegram/DialogId.h"
+#include "td/telegram/DialogManager.h"
+#include "td/telegram/Global.h"
 #include "td/telegram/MessageContent.h"
 #include "td/telegram/MessageId.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/UserId.h"
+
+#include "td/utils/algorithm.h"
 
 namespace td {
 
@@ -30,6 +34,29 @@ td_api::object_ptr<td_api::welcomeMessage> WelcomeMessageManager::get_welcome_me
                                             false, DialogId(), 0, 0, false, true, -1, m->invert_media_,
                                             m->disable_web_page_preview_, "get_welcome_message_object");
   return td_api::make_object<td_api::welcomeMessage>(m->ephemeral_message_id_.get(), std::move(content));
+}
+
+vector<td_api::object_ptr<td_api::welcomeMessage>> WelcomeMessageManager::get_welcome_messages_object(
+    const vector<unique_ptr<WelcomeMessage>> &messages) const {
+  return transform(
+      messages, [&](const unique_ptr<WelcomeMessage> &message) { return get_welcome_message_object(message.get()); });
+}
+
+td_api::object_ptr<td_api::updateChatWelcomeMessages> WelcomeMessageManager::get_update_chat_welcome_messages_object(
+    DialogId dialog_id, const vector<unique_ptr<WelcomeMessage>> &messages) const {
+  return td_api::make_object<td_api::updateChatWelcomeMessages>(
+      td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatWelcomeMessages"),
+      get_welcome_messages_object(messages));
+}
+
+void WelcomeMessageManager::send_update_chat_welcome_messages_object(DialogId dialog_id) const {
+  auto it = welcome_messages_.find(dialog_id);
+  if (it == welcome_messages_.end()) {
+    send_closure(G()->td(), &Td::send_update,
+                 get_update_chat_welcome_messages_object(dialog_id, vector<unique_ptr<WelcomeMessage>>()));
+  } else {
+    send_closure(G()->td(), &Td::send_update, get_update_chat_welcome_messages_object(dialog_id, it->second));
+  }
 }
 
 }  // namespace td

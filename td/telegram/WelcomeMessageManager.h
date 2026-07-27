@@ -6,6 +6,7 @@
 //
 #pragma once
 
+#include "td/telegram/DialogId.h"
 #include "td/telegram/EphemeralMessageId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/td_api.h"
@@ -13,6 +14,7 @@
 #include "td/actor/actor.h"
 
 #include "td/utils/common.h"
+#include "td/utils/FlatHashMap.h"
 
 namespace td {
 
@@ -44,8 +46,18 @@ class WelcomeMessageManager final : public Actor {
 
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
+  vector<td_api::object_ptr<td_api::welcomeMessage>> get_welcome_messages_object(
+      const vector<unique_ptr<WelcomeMessage>> &messages) const;
+
+  td_api::object_ptr<td_api::updateChatWelcomeMessages> get_update_chat_welcome_messages_object(
+      DialogId dialog_id, const vector<unique_ptr<WelcomeMessage>> &messages) const;
+
+  void send_update_chat_welcome_messages_object(DialogId dialog_id) const;
+
   Td *td_;
   ActorShared<> parent_;
+
+  FlatHashMap<DialogId, vector<unique_ptr<WelcomeMessage>>, DialogIdHash> welcome_messages_;
 };
 
 }  // namespace td
