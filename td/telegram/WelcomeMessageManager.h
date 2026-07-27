@@ -16,6 +16,8 @@
 
 #include "td/utils/common.h"
 #include "td/utils/FlatHashMap.h"
+#include "td/utils/Promise.h"
+#include "td/utils/Status.h"
 
 namespace td {
 
@@ -53,6 +55,8 @@ class WelcomeMessageManager final : public Actor {
   };
 
   void tear_down() final;
+
+  Status can_access_welcome_messages(DialogId dialog_id);
 
   static WelcomeMessageInfo parse_welcome_message(Td *td,
                                                   telegram_api::object_ptr<telegram_api::ephemeralMessage> message,

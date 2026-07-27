@@ -6,6 +6,7 @@
 //
 #include "td/telegram/WelcomeMessageManager.h"
 
+#include "td/telegram/AccessRights.h"
 #include "td/telegram/AuthManager.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
@@ -67,6 +68,15 @@ void WelcomeMessageManager::tear_down() {
   parent_.reset();
 }
 
+Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
+  TRY_STATUS(
+      td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Write, "can_access_welcome_messages"));
+  if (!td_->dialog_manager_->get_dialog_status(dialog_id).can_change_info_and_settings_as_administrator()) {
+    return Status::Error(400, "Have no enough rights");
+  }
+  return Status::OK();
+}
+
 WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_message(
     Td *td, telegram_api::object_ptr<telegram_api::ephemeralMessage> message, const char *source) {
   LOG(DEBUG) << "Receive from " << source << ' ' << to_string(message);
@@ -105,7 +115,7 @@ WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_m
 void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message) {
   auto message_info = parse_welcome_message(td_, std::move(message), "on_new_welcome_message");
   auto dialog_id = message_info.dialog_id_;
-  if (!dialog_id.is_valid()) {
+  if (!dialog_id.is_valid() || can_access_welcome_messages(dialog_id).is_error()) {
     return;
   }
 
@@ -165,6 +175,7 @@ WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_messag
 
 void WelcomeMessageManager::reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
   CHECK(dialog_id.is_valid());
+  TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
   auto &queries = reload_welcome_messages_queries_[dialog_id];
   queries.push_back(std::move(promise));
   if (queries.size() == 1u) {
