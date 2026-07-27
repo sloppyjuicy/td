@@ -71,6 +71,9 @@ void WelcomeMessageManager::tear_down() {
 Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
   TRY_STATUS(
       td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Write, "can_access_welcome_messages"));
+  if (dialog_id.get_type() == DialogType::User) {
+    return Status::Error(400, "Chat can't have welcome messages");
+  }
   if (!td_->dialog_manager_->get_dialog_status(dialog_id).can_change_info_and_settings_as_administrator()) {
     return Status::Error(400, "Have no enough rights");
   }
@@ -174,6 +177,15 @@ WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_messag
   return nullptr;
 }
 
+void WelcomeMessageManager::load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
+  TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
+  if (loaded_welcome_messages_.count(dialog_id)) {
+    promise.set_value(Unit());
+    promise = Promise<Unit>();
+  }
+  reload_welcome_messages(dialog_id, std::move(promise));
+}
+
 void WelcomeMessageManager::reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
   CHECK(dialog_id.is_valid());
   TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
@@ -225,29 +237,31 @@ void WelcomeMessageManager::on_get_welcome_messages(
     }
     welcome_messages.push_back(std::move(message_info.message_));
   }
-  loaded_welcome_messages_.insert(dialog_id);
+  if (loaded_welcome_messages_.insert(dialog_id).second) {
+    need_update = true;
+  }
 
   if (welcome_messages.empty()) {
     if (welcome_messages_.erase(dialog_id) != 0) {
-      send_update_chat_welcome_messages_object(dialog_id);
+      need_update = true;
     }
-    return set_promises(promises);
-  }
-  auto &messages = welcome_messages_[dialog_id];
-  if (messages.size() != welcome_messages.size()) {
-    need_update = true;
   } else {
-    for (size_t i = 0; i < messages.size(); i++) {
-      if (messages[i]->ephemeral_message_id_ != welcome_messages[i]->ephemeral_message_id_) {
-        need_update = true;
+    auto &messages = welcome_messages_[dialog_id];
+    if (messages.size() != welcome_messages.size()) {
+      need_update = true;
+    } else {
+      for (size_t i = 0; i < messages.size(); i++) {
+        if (messages[i]->ephemeral_message_id_ != welcome_messages[i]->ephemeral_message_id_) {
+          need_update = true;
+        }
       }
     }
-  }
-  if (need_update || is_content_changed) {
-    messages = std::move(welcome_messages);
-    if (need_update) {
-      send_update_chat_welcome_messages_object(dialog_id);
+    if (need_update || is_content_changed) {
+      messages = std::move(welcome_messages);
     }
+  }
+  if (need_update) {
+    send_update_chat_welcome_messages_object(dialog_id);
   }
   set_promises(promises);
 }

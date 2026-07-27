@@ -12497,6 +12497,11 @@ readdQuickReplyShortcutMessages shortcut_name:string message_ids:vector<int53> =
 editQuickReplyMessage shortcut_id:int32 message_id:int53 input_message_content:InputMessageContent = Ok;
 
 
+//@description Loads welcome messages of a chat; requires can_change_info administrator right in the chat. The loaded messages will be sent through updateChatWelcomeMessages
+//@chat_id The identifier of the chat
+loadChatWelcomeMessages chat_id:int53 = Ok;
+
+
 //@description Returns the list of custom emoji, which can be used as forum topic icon by all users
 getForumTopicDefaultIcons = Stickers;
 

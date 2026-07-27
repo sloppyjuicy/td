@@ -4660,6 +4660,12 @@ void Requests::on_request(uint64 id, td_api::editQuickReplyMessage &request) {
                                                       std::move(request.input_message_content_), std::move(promise));
 }
 
+void Requests::on_request(uint64 id, const td_api::loadChatWelcomeMessages &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->welcome_message_manager_->load_welcome_messages(DialogId(request.chat_id_), std::move(promise));
+}
+
 void Requests::on_request(uint64 id, const td_api::getCurrentWeather &request) {
   CHECK_IS_USER();
   CREATE_REQUEST_PROMISE();

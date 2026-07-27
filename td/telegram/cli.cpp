@@ -6753,6 +6753,10 @@ class CliClient final : public Actor {
       get_args(args, chat_id, message_id, date, repeat_period);
       send_request(td_api::make_object<td_api::editMessageSchedulingState>(
           chat_id, message_id, as_message_scheduling_state(date, repeat_period)));
+    } else if (op == "lcwm") {
+      ChatId chat_id;
+      get_args(args, chat_id);
+      send_request(td_api::make_object<td_api::loadChatWelcomeMessages>(chat_id));
     } else if (op == "smfc") {
       ChatId chat_id;
       MessageId message_id;
