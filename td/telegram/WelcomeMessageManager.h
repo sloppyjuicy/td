@@ -37,6 +37,8 @@ class WelcomeMessageManager final : public Actor {
 
   void load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
+  void reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
+
   void drop_welcome_messages(DialogId dialog_id);
 
   void on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
@@ -87,8 +89,6 @@ class WelcomeMessageManager final : public Actor {
 
   void update_welcome_message_content(WelcomeMessage *old_message, WelcomeMessage *new_message, DialogId dialog_id,
                                       bool &is_content_changed, bool &need_update);
-
-  void reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
   void on_get_welcome_messages(DialogId dialog_id,
                                Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages);
