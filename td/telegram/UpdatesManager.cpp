@@ -99,6 +99,7 @@
 #include "td/telegram/WebAppManager.h"
 #include "td/telegram/WebBrowserManager.h"
 #include "td/telegram/WebPagesManager.h"
+#include "td/telegram/WelcomeMessageManager.h"
 
 #include "td/actor/MultiPromise.h"
 #include "td/actor/PromiseFuture.h"
@@ -3755,7 +3756,11 @@ void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateDeleteMessages>
 }
 
 void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateNewEphemeralMessage> update, Promise<Unit> &&promise) {
-  td_->messages_manager_->on_new_ephemeral_message(std::move(update->message_));
+  if (update->message_->welcome_template_) {
+    td_->welcome_message_manager_->on_new_welcome_message(std::move(update->message_));
+  } else {
+    td_->messages_manager_->on_new_ephemeral_message(std::move(update->message_));
+  }
   promise.set_value(Unit());
 }
 

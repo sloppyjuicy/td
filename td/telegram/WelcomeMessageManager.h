@@ -10,6 +10,7 @@
 #include "td/telegram/EphemeralMessageId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/td_api.h"
+#include "td/telegram/telegram_api.h"
 
 #include "td/actor/actor.h"
 
@@ -24,6 +25,8 @@ class Td;
 class WelcomeMessageManager final : public Actor {
  public:
   WelcomeMessageManager(Td *td, ActorShared<> parent);
+
+  void on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
 
  private:
   struct WelcomeMessage {

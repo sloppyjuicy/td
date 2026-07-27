@@ -63,6 +63,22 @@ WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_m
   return message_info;
 }
 
+void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message) {
+  auto message_info = parse_welcome_message(td_, std::move(message), "on_new_welcome_message");
+  auto dialog_id = message_info.dialog_id_;
+  if (!dialog_id.is_valid()) {
+    return;
+  }
+
+  auto ephemeral_message_id = message_info.message_->ephemeral_message_id_;
+  if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr) {
+    return;
+  }
+  auto &messages = welcome_messages_[dialog_id];
+  messages.push_back(std::move(message_info.message_));
+  send_update_chat_welcome_messages_object(dialog_id);
+}
+
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
     DialogId dialog_id) const {
   auto it = welcome_messages_.find(dialog_id);
