@@ -75,6 +75,10 @@ class WelcomeMessageManager final : public Actor {
 
   Status can_access_welcome_messages(DialogId dialog_id);
 
+  void register_welcome_message(DialogId dialog_id, const WelcomeMessage *m, const char *source);
+
+  void unregister_welcome_message(DialogId dialog_id, const WelcomeMessage *m, const char *source);
+
   static WelcomeMessageInfo parse_welcome_message(Td *td,
                                                   telegram_api::object_ptr<telegram_api::ephemeralMessage> message,
                                                   const char *source);

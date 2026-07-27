@@ -80,6 +80,15 @@ Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
   return Status::OK();
 }
 
+void WelcomeMessageManager::register_welcome_message(DialogId dialog_id, const WelcomeMessage *m, const char *source) {
+  register_welcome_message_content(td_, m->content_.get(), {dialog_id, m->ephemeral_message_id_}, source);
+}
+
+void WelcomeMessageManager::unregister_welcome_message(DialogId dialog_id, const WelcomeMessage *m,
+                                                       const char *source) {
+  unregister_welcome_message_content(td_, m->content_.get(), {dialog_id, m->ephemeral_message_id_}, source);
+}
+
 void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageFullId message_full_id,
                                                                const char *source, bool expect_no_message) const {
   auto dialog_id = message_full_id.get_dialog_id();
@@ -94,11 +103,12 @@ void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageF
 }
 
 void WelcomeMessageManager::delete_pending_message_web_page(EphemeralMessageFullId message_full_id) {
-  auto *m = get_welcome_message(message_full_id.get_dialog_id(), message_full_id.get_ephemeral_message_id());
+  auto dialog_id = message_full_id.get_dialog_id();
+  auto *m = get_welcome_message(dialog_id, message_full_id.get_ephemeral_message_id());
   CHECK(has_message_content_web_page(m->content_.get()));
-  //unregister_message_content(m, "delete_pending_message_web_page");
+  unregister_welcome_message(dialog_id, m, "delete_pending_message_web_page");
   remove_message_content_web_page(m->content_.get());
-  //register_message_content(m, "delete_pending_message_web_page");
+  register_welcome_message(dialog_id, m, "delete_pending_message_web_page");
   // don't need to send updates, because the web page was pending
 }
 
@@ -151,6 +161,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
     return;
   }
   auto &messages = welcome_messages_[dialog_id];
+  register_welcome_message(dialog_id, message_info.message_.get(), "on_new_welcome_message");
   messages.push_back(std::move(message_info.message_));
   send_update_chat_welcome_messages(dialog_id);
   reload_welcome_messages(dialog_id, Promise<Unit>());
@@ -174,7 +185,9 @@ void WelcomeMessageManager::on_edited_welcome_message(
   bool is_content_changed = false;
   update_welcome_message_content(m, message_info.message_.get(), dialog_id, is_content_changed, need_update);
   if (is_content_changed || need_update) {
+    unregister_welcome_message(dialog_id, m, "on_edited_welcome_message");
     m->content_ = std::move(message_info.message_->content_);
+    register_welcome_message(dialog_id, m, "on_edited_welcome_message");
   }
   if (need_update) {
     send_update_chat_welcome_messages(dialog_id);
@@ -214,7 +227,11 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
   }
   auto &messages = welcome_messages_[dialog_id];
   td::remove_if(messages, [&](const auto &welcome_message) {
-    return td::contains(ephemeral_message_ids, welcome_message->ephemeral_message_id_);
+    if (td::contains(ephemeral_message_ids, welcome_message->ephemeral_message_id_)) {
+      unregister_welcome_message(dialog_id, welcome_message.get(), "do_delete_welcome_messages");
+      return true;
+    }
+    return false;
   });
   if (messages.empty()) {
     welcome_messages_.erase(dialog_id);
@@ -313,11 +330,11 @@ void WelcomeMessageManager::reload_welcome_messages(DialogId dialog_id, Promise<
 void WelcomeMessageManager::on_get_welcome_messages(
     DialogId dialog_id, Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages) {
   G()->ignore_result_if_closing(r_messages);
-  auto it = reload_welcome_messages_queries_.find(dialog_id);
-  CHECK(it != reload_welcome_messages_queries_.end());
-  auto promises = std::move(it->second);
+  auto query_it = reload_welcome_messages_queries_.find(dialog_id);
+  CHECK(query_it != reload_welcome_messages_queries_.end());
+  auto promises = std::move(query_it->second);
   CHECK(!promises.empty());
-  reload_welcome_messages_queries_.erase(it);
+  reload_welcome_messages_queries_.erase(query_it);
 
   if (r_messages.is_error()) {
     return fail_promises(promises, r_messages.move_as_error());
@@ -350,7 +367,12 @@ void WelcomeMessageManager::on_get_welcome_messages(
   }
 
   if (welcome_messages.empty()) {
-    if (welcome_messages_.erase(dialog_id) != 0) {
+    auto it = welcome_messages_.find(dialog_id);
+    if (it != welcome_messages_.end()) {
+      for (auto &message : it->second) {
+        unregister_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
+      }
+      welcome_messages_.erase(it);
       need_update = true;
     }
   } else {
@@ -365,7 +387,13 @@ void WelcomeMessageManager::on_get_welcome_messages(
       }
     }
     if (need_update || is_content_changed) {
+      for (auto &message : messages) {
+        unregister_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
+      }
       messages = std::move(welcome_messages);
+      for (auto &message : messages) {
+        register_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
+      }
     }
   }
   if (need_update) {
@@ -375,7 +403,12 @@ void WelcomeMessageManager::on_get_welcome_messages(
 }
 
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
-  if (welcome_messages_.erase(dialog_id) != 0) {
+  auto it = welcome_messages_.find(dialog_id);
+  if (it != welcome_messages_.end()) {
+    for (auto &message : it->second) {
+      unregister_welcome_message(dialog_id, message.get(), "drop_welcome_messages");
+    }
+    welcome_messages_.erase(it);
     send_update_chat_welcome_messages(dialog_id);
   }
   loaded_welcome_messages_.erase(dialog_id);
