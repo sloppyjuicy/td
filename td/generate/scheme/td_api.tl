@@ -6751,6 +6751,12 @@ quickReplyMessages messages:vector<quickReplyMessage> = QuickReplyMessages;
 quickReplyShortcut id:int32 name:string first_message:quickReplyMessage message_count:int32 = QuickReplyShortcut;
 
 
+//@description Describes a set up welcome message
+//@id Welcome message identifier; unique for the chat to which the welcome message belongs
+//@content Content of the welcome message
+welcomeMessage id:int32 content:MessageContent = WelcomeMessage;
+
+
 //@class PublicForward @description Describes a public forward or repost of a story
 
 //@description Contains a public forward as a message @message Information about the message
