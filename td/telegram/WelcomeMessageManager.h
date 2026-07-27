@@ -16,6 +16,7 @@
 
 #include "td/utils/common.h"
 #include "td/utils/FlatHashMap.h"
+#include "td/utils/FlatHashSet.h"
 #include "td/utils/Promise.h"
 #include "td/utils/Status.h"
 
@@ -91,6 +92,8 @@ class WelcomeMessageManager final : public Actor {
   FlatHashMap<DialogId, vector<unique_ptr<WelcomeMessage>>, DialogIdHash> welcome_messages_;
 
   FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> reload_welcome_messages_queries_;
+
+  FlatHashSet<DialogId, DialogIdHash> loaded_welcome_messages_;
 };
 
 }  // namespace td

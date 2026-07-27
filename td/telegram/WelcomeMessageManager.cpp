@@ -115,7 +115,8 @@ WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_m
 void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message) {
   auto message_info = parse_welcome_message(td_, std::move(message), "on_new_welcome_message");
   auto dialog_id = message_info.dialog_id_;
-  if (!dialog_id.is_valid() || can_access_welcome_messages(dialog_id).is_error()) {
+  if (!dialog_id.is_valid() || can_access_welcome_messages(dialog_id).is_error() ||
+      loaded_welcome_messages_.count(dialog_id) == 0) {
     return;
   }
 
@@ -224,6 +225,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
     }
     welcome_messages.push_back(std::move(message_info.message_));
   }
+  loaded_welcome_messages_.insert(dialog_id);
 
   if (welcome_messages.empty()) {
     if (welcome_messages_.erase(dialog_id) != 0) {
