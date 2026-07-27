@@ -44,6 +44,14 @@ class WelcomeMessageManager final : public Actor {
 
   void tear_down() final;
 
+  const vector<unique_ptr<WelcomeMessage>> *get_welcome_messages(DialogId dialog_id) const;
+
+  vector<unique_ptr<WelcomeMessage>> *get_welcome_messages(DialogId dialog_id);
+
+  const WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id) const;
+
+  WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id);
+
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
   vector<td_api::object_ptr<td_api::welcomeMessage>> get_welcome_messages_object(
