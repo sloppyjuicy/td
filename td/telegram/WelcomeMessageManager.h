@@ -76,6 +76,9 @@ class WelcomeMessageManager final : public Actor {
 
   WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id);
 
+  void update_welcome_message_content(WelcomeMessage *old_message, WelcomeMessage *new_message, DialogId dialog_id,
+                                      bool &is_content_changed, bool &need_update);
+
   void reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
   void on_get_welcome_messages(DialogId dialog_id,

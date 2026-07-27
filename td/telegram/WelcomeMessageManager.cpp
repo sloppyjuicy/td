@@ -178,6 +178,24 @@ WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_messag
   return nullptr;
 }
 
+void WelcomeMessageManager::update_welcome_message_content(WelcomeMessage *old_message, WelcomeMessage *new_message,
+                                                           DialogId dialog_id, bool &is_content_changed,
+                                                           bool &need_update) {
+  if (old_message->disable_web_page_preview_ != new_message->disable_web_page_preview_) {
+    if (old_message->disable_web_page_preview_ && has_message_content_web_page(new_message->content_.get())) {
+      need_update = true;
+    } else if (new_message->disable_web_page_preview_ && has_message_content_web_page(old_message->content_.get())) {
+      need_update = true;
+    }
+  }
+  if (old_message->invert_media_ != new_message->invert_media_) {
+    need_update = true;
+  }
+  merge_and_compare_message_contents(td_, old_message->content_.get(), new_message->content_.get(), false, dialog_id,
+                                     false, vector<FileUploadId>(), MessageSelfDestructType(), 0.0, nullptr,
+                                     is_content_changed, need_update);
+}
+
 void WelcomeMessageManager::load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
   TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
   if (loaded_welcome_messages_.count(dialog_id)) {
@@ -232,9 +250,8 @@ void WelcomeMessageManager::on_get_welcome_messages(
     }
     auto *old_message = get_welcome_message(dialog_id, message_info.message_->ephemeral_message_id_);
     if (old_message != nullptr) {
-      merge_and_compare_message_contents(td_, old_message->content_.get(), message_info.message_->content_.get(), false,
-                                         dialog_id, false, vector<FileUploadId>(), MessageSelfDestructType(), 0.0,
-                                         nullptr, is_content_changed, need_update);
+      update_welcome_message_content(old_message, message_info.message_.get(), dialog_id, is_content_changed,
+                                     need_update);
     }
     welcome_messages.push_back(std::move(message_info.message_));
   }
