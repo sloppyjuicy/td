@@ -267,6 +267,12 @@ void WelcomeMessageManager::on_get_welcome_messages(
   set_promises(promises);
 }
 
+void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
+  if (welcome_messages_.erase(dialog_id) != 0) {
+    send_update_chat_welcome_messages_object(dialog_id);
+  }
+}
+
 td_api::object_ptr<td_api::welcomeMessage> WelcomeMessageManager::get_welcome_message_object(
     const WelcomeMessage *m) const {
   CHECK(m != nullptr);

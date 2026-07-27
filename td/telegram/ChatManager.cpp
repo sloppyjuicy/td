@@ -52,6 +52,7 @@
 #include "td/telegram/UpdatesManager.h"
 #include "td/telegram/UserManager.h"
 #include "td/telegram/VerificationStatus.h"
+#include "td/telegram/WelcomeMessageManager.h"
 
 #include "td/db/binlog/BinlogEvent.h"
 #include "td/db/binlog/BinlogHelper.h"
@@ -7247,6 +7248,8 @@ void ChatManager::on_update_chat_status(Chat *c, ChatId chat_id, DialogParticipa
     LOG(INFO) << "Update " << chat_id << " status from " << c->status << " to " << status;
     bool need_reload_group_call = c->status.can_manage_calls() != status.can_manage_calls();
     bool need_drop_invite_link = c->status.can_manage_invite_links() && !status.can_manage_invite_links();
+    bool need_drop_welcome_messages = c->status.can_change_info_and_settings_as_administrator() &&
+                                      !status.can_change_info_and_settings_as_administrator();
 
     c->status = std::move(status);
     c->is_status_changed = true;
@@ -7268,6 +7271,9 @@ void ChatManager::on_update_chat_status(Chat *c, ChatId chat_id, DialogParticipa
     if (need_reload_group_call) {
       send_closure_later(G()->messages_manager(), &MessagesManager::on_update_dialog_group_call_rights,
                          DialogId(chat_id));
+    }
+    if (need_drop_welcome_messages) {
+      td_->welcome_message_manager_->drop_welcome_messages(DialogId(chat_id));
     }
 
     c->is_changed = true;
@@ -7733,6 +7739,11 @@ void ChatManager::on_channel_status_changed(Channel *c, ChannelId channel_id, co
     }
   } else {
     invalidate_channel_full(channel_id, !c->is_slow_mode_enabled, "on_channel_status_changed");
+  }
+  bool need_drop_welcome_messages = old_status.can_change_info_and_settings_as_administrator() &&
+                                    !new_status.can_change_info_and_settings_as_administrator();
+  if (need_drop_welcome_messages) {
+    td_->welcome_message_manager_->drop_welcome_messages(DialogId(channel_id));
   }
 
   if (old_status.is_creator() != new_status.is_creator()) {

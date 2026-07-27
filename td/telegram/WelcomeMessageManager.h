@@ -32,6 +32,8 @@ class WelcomeMessageManager final : public Actor {
 
   void load_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
+  void drop_welcome_messages(DialogId dialog_id);
+
   void on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
 
   void get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const;
