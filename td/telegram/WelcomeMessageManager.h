@@ -7,6 +7,7 @@
 #pragma once
 
 #include "td/telegram/DialogId.h"
+#include "td/telegram/EphemeralMessageFullId.h"
 #include "td/telegram/EphemeralMessageId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/td_api.h"
@@ -96,6 +97,8 @@ class WelcomeMessageManager final : public Actor {
   FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> reload_welcome_messages_queries_;
 
   FlatHashSet<DialogId, DialogIdHash> loaded_welcome_messages_;
+
+  FlatHashSet<EphemeralMessageFullId, EphemeralMessageFullIdHash> deleted_welcome_messages_;
 };
 
 }  // namespace td

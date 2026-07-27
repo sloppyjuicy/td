@@ -124,7 +124,8 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   }
 
   auto ephemeral_message_id = message_info.message_->ephemeral_message_id_;
-  if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr) {
+  if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr ||
+      deleted_welcome_messages_.count({dialog_id, ephemeral_message_id}) != 0) {
     return;
   }
   auto &messages = welcome_messages_[dialog_id];
