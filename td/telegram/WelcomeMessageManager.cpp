@@ -9,15 +9,54 @@
 #include "td/telegram/AuthManager.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
+#include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/MessageContent.h"
 #include "td/telegram/MessageId.h"
+#include "td/telegram/MessageSelfDestructType.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/UserId.h"
 
 #include "td/utils/algorithm.h"
+#include "td/utils/logging.h"
+#include "td/utils/Status.h"
 
 namespace td {
+
+class GetWelcomeMessagesQuery final : public Td::ResultHandler {
+  Promise<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> promise_;
+  DialogId dialog_id_;
+
+ public:
+  explicit GetWelcomeMessagesQuery(Promise<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> &&promise)
+      : promise_(std::move(promise)) {
+  }
+
+  void send(DialogId dialog_id) {
+    dialog_id_ = dialog_id;
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
+    if (input_peer == nullptr) {
+      return on_error(Status::Error(400, "Chat not found"));
+    }
+    send_query(G()->net_query_creator().create(telegram_api::ephemeral_getWelcomeMessages(std::move(input_peer), 0)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::ephemeral_getWelcomeMessages>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for GetWelcomeMessagesQuery: " << to_string(ptr);
+    promise_.set_value(std::move(ptr));
+  }
+
+  void on_error(Status status) final {
+    td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "GetWelcomeMessagesQuery");
+    promise_.set_error(std::move(status));
+  }
+};
 
 WelcomeMessageManager::WelcomeMessage::~WelcomeMessage() = default;
 
@@ -77,6 +116,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   auto &messages = welcome_messages_[dialog_id];
   messages.push_back(std::move(message_info.message_));
   send_update_chat_welcome_messages_object(dialog_id);
+  reload_welcome_messages(dialog_id, Promise<Unit>());
 }
 
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
@@ -121,6 +161,82 @@ WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_messag
     }
   }
   return nullptr;
+}
+
+void WelcomeMessageManager::reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
+  CHECK(dialog_id.is_valid());
+  auto &queries = reload_welcome_messages_queries_[dialog_id];
+  queries.push_back(std::move(promise));
+  if (queries.size() == 1u) {
+    auto query_promise = PromiseCreator::lambda(
+        [actor_id = actor_id(this),
+         dialog_id](Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages) {
+          send_closure(actor_id, &WelcomeMessageManager::on_get_welcome_messages, dialog_id, std::move(r_messages));
+        });
+    td_->create_handler<GetWelcomeMessagesQuery>(std::move(query_promise))->send(dialog_id);
+  }
+}
+
+void WelcomeMessageManager::on_get_welcome_messages(
+    DialogId dialog_id, Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages) {
+  G()->ignore_result_if_closing(r_messages);
+  auto it = reload_welcome_messages_queries_.find(dialog_id);
+  CHECK(it != reload_welcome_messages_queries_.end());
+  auto promises = std::move(it->second);
+  CHECK(!promises.empty());
+  reload_welcome_messages_queries_.erase(it);
+
+  if (r_messages.is_error()) {
+    return fail_promises(promises, r_messages.move_as_error());
+  }
+  auto ephemeral_messages_ptr = r_messages.move_as_ok();
+  if (ephemeral_messages_ptr->get_id() != telegram_api::ephemeral_welcomeMessages::ID) {
+    LOG(ERROR) << "Receive " << to_string(ephemeral_messages_ptr);
+    return fail_promises(promises, Status::Error(500, "Receive invalid response"));
+  }
+  auto ephemeral_messages =
+      telegram_api::move_object_as<telegram_api::ephemeral_welcomeMessages>(ephemeral_messages_ptr);
+  vector<unique_ptr<WelcomeMessage>> welcome_messages;
+  bool need_update = false;
+  bool is_content_changed = false;
+  for (auto &message : ephemeral_messages->messages_) {
+    auto message_info = parse_welcome_message(td_, std::move(message), "on_get_welcome_messages");
+    if (dialog_id != message_info.dialog_id_) {
+      LOG(ERROR) << "Receive welcome message in " << message_info.dialog_id_ << " instead of " << dialog_id;
+      return fail_promises(promises, Status::Error(500, "Receive invalid response"));
+    }
+    auto *old_message = get_welcome_message(dialog_id, message_info.message_->ephemeral_message_id_);
+    if (old_message != nullptr) {
+      merge_and_compare_message_contents(td_, old_message->content_.get(), message_info.message_->content_.get(), false,
+                                         dialog_id, false, vector<FileUploadId>(), MessageSelfDestructType(), 0.0,
+                                         nullptr, is_content_changed, need_update);
+    }
+    welcome_messages.push_back(std::move(message_info.message_));
+  }
+
+  if (welcome_messages.empty()) {
+    if (welcome_messages_.erase(dialog_id) != 0) {
+      send_update_chat_welcome_messages_object(dialog_id);
+    }
+    return set_promises(promises);
+  }
+  auto &messages = welcome_messages_[dialog_id];
+  if (messages.size() != welcome_messages.size()) {
+    need_update = true;
+  } else {
+    for (size_t i = 0; i < messages.size(); i++) {
+      if (messages[i]->ephemeral_message_id_ != welcome_messages[i]->ephemeral_message_id_) {
+        need_update = true;
+      }
+    }
+  }
+  if (need_update || is_content_changed) {
+    messages = std::move(welcome_messages);
+    if (need_update) {
+      send_update_chat_welcome_messages_object(dialog_id);
+    }
+  }
+  set_promises(promises);
 }
 
 td_api::object_ptr<td_api::welcomeMessage> WelcomeMessageManager::get_welcome_message_object(

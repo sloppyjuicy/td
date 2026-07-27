@@ -66,6 +66,11 @@ class WelcomeMessageManager final : public Actor {
 
   WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id);
 
+  void reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
+
+  void on_get_welcome_messages(DialogId dialog_id,
+                               Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages);
+
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
   vector<td_api::object_ptr<td_api::welcomeMessage>> get_welcome_messages_object(
@@ -80,6 +85,8 @@ class WelcomeMessageManager final : public Actor {
   ActorShared<> parent_;
 
   FlatHashMap<DialogId, vector<unique_ptr<WelcomeMessage>>, DialogIdHash> welcome_messages_;
+
+  FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> reload_welcome_messages_queries_;
 };
 
 }  // namespace td
