@@ -6,6 +6,7 @@
 //
 #include "td/telegram/WelcomeMessageManager.h"
 
+#include "td/telegram/AuthManager.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/Global.h"
@@ -25,6 +26,41 @@ WelcomeMessageManager::WelcomeMessageManager(Td *td, ActorShared<> parent) : td_
 
 void WelcomeMessageManager::tear_down() {
   parent_.reset();
+}
+
+WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_message(
+    Td *td, telegram_api::object_ptr<telegram_api::ephemeralMessage> message, const char *source) {
+  LOG(DEBUG) << "Receive from " << source << ' ' << to_string(message);
+  CHECK(message != nullptr);
+
+  WelcomeMessageInfo message_info;
+  if (!message->welcome_template_) {
+    LOG(ERROR) << "Receive non-welcome message from " << source;
+    return message_info;
+  }
+  if (message->peer_id_ == nullptr) {
+    LOG(ERROR) << "Receive welcome message without chat from " << source;
+    return message_info;
+  }
+  auto dialog_id = DialogId(message->peer_id_);
+  auto ephemeral_message_id = EphemeralMessageId(message->id_);
+  if (!dialog_id.is_valid() || !ephemeral_message_id.is_valid()) {
+    LOG(ERROR) << "Ignore " << ephemeral_message_id << " in " << dialog_id << " from " << source;
+    return message_info;
+  }
+  message_info.dialog_id_ = dialog_id;
+  message_info.message_ = make_unique<WelcomeMessage>();
+  auto *m = message_info.message_.get();
+  m->ephemeral_message_id_ = ephemeral_message_id;
+  m->invert_media_ = message->invert_media_;
+  m->content_ = get_message_content(
+      td,
+      get_message_text(td->user_manager_.get(), std::move(message->message_), std::move(message->entities_), true,
+                       td->auth_manager_->is_bot(), 0, false, source),
+      std::move(message->rich_message_), std::move(message->media_), dialog_id, 0, true, UserId(), nullptr,
+      &m->disable_web_page_preview_, source);
+  // m->reply_markup = std::move(message->reply_markup_);
+  return message_info;
 }
 
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(

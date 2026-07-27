@@ -42,7 +42,16 @@ class WelcomeMessageManager final : public Actor {
     ~WelcomeMessage();
   };
 
+  struct WelcomeMessageInfo {
+    DialogId dialog_id_;
+    unique_ptr<WelcomeMessage> message_;
+  };
+
   void tear_down() final;
+
+  static WelcomeMessageInfo parse_welcome_message(Td *td,
+                                                  telegram_api::object_ptr<telegram_api::ephemeralMessage> message,
+                                                  const char *source);
 
   const vector<unique_ptr<WelcomeMessage>> *get_welcome_messages(DialogId dialog_id) const;
 
