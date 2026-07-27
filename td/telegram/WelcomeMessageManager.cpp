@@ -160,6 +160,46 @@ void WelcomeMessageManager::on_edited_welcome_message(
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
 
+void WelcomeMessageManager::on_delete_welcome_messages(DialogId dialog_id,
+                                                       vector<EphemeralMessageId> ephemeral_message_ids) {
+  if (!dialog_id.is_valid() || can_access_welcome_messages(dialog_id).is_error() ||
+      loaded_welcome_messages_.count(dialog_id) == 0) {
+    return;
+  }
+  vector<EphemeralMessageId> message_ids;
+  for (auto ephemeral_message_id : ephemeral_message_ids) {
+    if (!ephemeral_message_id.is_valid()) {
+      LOG(ERROR) << "Receive " << ephemeral_message_id;
+      continue;
+    }
+    auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
+    if (m == nullptr) {
+      continue;
+    }
+    message_ids.push_back(ephemeral_message_id);
+  }
+  do_delete_welcome_messages(dialog_id, message_ids);
+  reload_welcome_messages(dialog_id, Promise<Unit>());
+}
+
+void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
+                                                       vector<EphemeralMessageId> ephemeral_message_ids) {
+  if (ephemeral_message_ids.empty()) {
+    return;
+  }
+  for (auto ephemeral_message_id : ephemeral_message_ids) {
+    deleted_welcome_messages_.insert({dialog_id, ephemeral_message_id});
+  }
+  auto &messages = welcome_messages_[dialog_id];
+  td::remove_if(messages, [&](const auto &welcome_message) {
+    return td::contains(ephemeral_message_ids, welcome_message->ephemeral_message_id_);
+  });
+  if (messages.empty()) {
+    welcome_messages_.erase(dialog_id);
+  }
+  send_update_chat_welcome_messages_object(dialog_id);
+}
+
 const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
     DialogId dialog_id) const {
   auto it = welcome_messages_.find(dialog_id);
@@ -316,6 +356,7 @@ void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
   if (welcome_messages_.erase(dialog_id) != 0) {
     send_update_chat_welcome_messages_object(dialog_id);
   }
+  loaded_welcome_messages_.erase(dialog_id);
 }
 
 td_api::object_ptr<td_api::welcomeMessage> WelcomeMessageManager::get_welcome_message_object(

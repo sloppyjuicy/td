@@ -38,6 +38,8 @@ class WelcomeMessageManager final : public Actor {
 
   void on_edited_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
 
+  void on_delete_welcome_messages(DialogId dialog_id, vector<EphemeralMessageId> ephemeral_message_ids);
+
   void get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const;
 
  private:
@@ -85,6 +87,8 @@ class WelcomeMessageManager final : public Actor {
 
   void on_get_welcome_messages(DialogId dialog_id,
                                Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages);
+
+  void do_delete_welcome_messages(DialogId dialog_id, vector<EphemeralMessageId> ephemeral_message_ids);
 
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
