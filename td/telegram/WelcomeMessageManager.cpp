@@ -155,4 +155,14 @@ void WelcomeMessageManager::send_update_chat_welcome_messages_object(DialogId di
   }
 }
 
+void WelcomeMessageManager::get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const {
+  if (!td_->auth_manager_->is_authorized() || td_->auth_manager_->is_bot()) {
+    return;
+  }
+
+  for (auto &it : welcome_messages_) {
+    updates.push_back(get_update_chat_welcome_messages_object(it.first, it.second));
+  }
+}
+
 }  // namespace td

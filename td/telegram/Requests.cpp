@@ -185,6 +185,7 @@
 #include "td/telegram/WebBrowserManager.h"
 #include "td/telegram/WebPageId.h"
 #include "td/telegram/WebPagesManager.h"
+#include "td/telegram/WelcomeMessageManager.h"
 
 #include "td/utils/algorithm.h"
 #include "td/utils/Slice.h"
@@ -2235,6 +2236,8 @@ void Requests::on_request(uint64 id, const td_api::getCurrentState &request) {
     td_->suggested_action_manager_->get_current_state(updates);
 
     td_->transcription_manager_->get_current_state(updates);
+
+    td_->welcome_message_manager_->get_current_state(updates);
 
     td_->autosave_manager_->get_current_state(updates);
 
