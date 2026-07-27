@@ -36,6 +36,10 @@ struct EphemeralMessageFullId {
     return !(*this == other);
   }
 
+  bool is_valid() const {
+    return dialog_id.is_valid() && ephemeral_message_id.is_valid();
+  }
+
   DialogId get_dialog_id() const {
     return dialog_id;
   }
