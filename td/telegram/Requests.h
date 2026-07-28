@@ -778,6 +778,8 @@ class Requests {
 
   void on_request(uint64 id, const td_api::loadChatWelcomeMessages &request);
 
+  void on_request(uint64 id, td_api::addChatWelcomeMessage &request);
+
   void on_request(uint64 id, const td_api::getCurrentWeather &request);
 
   void on_request(uint64 id, const td_api::getStory &request);

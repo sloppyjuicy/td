@@ -281,9 +281,8 @@ void InlineMessageManager::edit_inline_message_media(
     const string &inline_message_id, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
     td_api::object_ptr<td_api::InputMessageContent> &&input_message_content, Promise<Unit> &&promise) {
   CHECK(td_->auth_manager_->is_bot());
-  bool is_premium = td_->option_manager_->get_option_boolean("is_premium");
   TRY_RESULT_PROMISE(promise, content,
-                     get_input_message_content(DialogId(), std::move(input_message_content), td_, is_premium));
+                     get_input_message_content(DialogId(), std::move(input_message_content), td_, true));
   auto content_type = content.content->get_type();
   if (!is_editable_media_message_content(content_type)) {
     return promise.set_error(400, "Unsupported input message content type");

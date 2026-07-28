@@ -41,6 +41,11 @@ class WelcomeMessageManager final : public Actor {
 
   void reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
 
+  void cancel_upload_welcome_message_content(MessageContentUploadId upload_id, Status status);
+
+  void add_welcome_message(DialogId dialog_id, td_api::object_ptr<td_api::InputMessageContent> &&input_message_content,
+                           Promise<Unit> &&promise, bool is_recursive = false);
+
   void drop_welcome_messages(DialogId dialog_id);
 
   void on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);
@@ -74,6 +79,8 @@ class WelcomeMessageManager final : public Actor {
     DialogId dialog_id_;
     unique_ptr<WelcomeMessage> message_;
   };
+
+  class UploadWelcomeMessageContentCallback;
 
   void tear_down() final;
 
@@ -130,6 +137,18 @@ class WelcomeMessageManager final : public Actor {
   FlatHashSet<EphemeralMessageFullId, EphemeralMessageFullIdHash> deleted_welcome_messages_;
 
   FlatHashMap<DialogId, FileSourceId, DialogIdHash> dialog_to_file_source_id_;
+
+  struct UploadWelcomeMessageRequest {
+    DialogId dialog_id_;
+    EphemeralMessageId ephemeral_message_id_;
+    unique_ptr<MessageContent> content_;
+    bool invert_media_ = false;
+    Promise<Unit> promise_;
+  };
+  FlatHashMap<MessageContentUploadId, UploadWelcomeMessageRequest, MessageContentUploadIdHash>
+      upload_welcome_message_queries_;
+
+  std::shared_ptr<UploadWelcomeMessageContentCallback> upload_welcome_message_content_callback_;
 };
 
 }  // namespace td

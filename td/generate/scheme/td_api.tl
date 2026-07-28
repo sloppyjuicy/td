@@ -12501,6 +12501,13 @@ editQuickReplyMessage shortcut_id:int32 message_id:int53 input_message_content:I
 //@chat_id The identifier of the chat
 loadChatWelcomeMessages chat_id:int53 = Ok;
 
+//@description Adds a message to the list of welcome messages of a chat; requires can_change_info administrator right in the chat
+//@chat_id The identifier of the chat
+//@input_message_content The content of the message to be sent. Must be one of the following types: inputMessageText, inputMessageAnimation,
+//-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote,
+//-inputMessageLocation, inputMessageVenue, inputMessageContact
+addChatWelcomeMessage chat_id:int53 input_message_content:InputMessageContent = Ok;
+
 
 //@description Returns the list of custom emoji, which can be used as forum topic icon by all users
 getForumTopicDefaultIcons = Stickers;
