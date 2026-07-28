@@ -746,11 +746,13 @@ void WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id, Prom
   }
 }
 
-void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
+void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id, bool is_empty) {
   if (delete_all_welcome_messages(dialog_id)) {
     send_update_chat_welcome_messages(dialog_id);
   }
-  loaded_welcome_messages_.erase(dialog_id);
+  if (!is_empty) {
+    loaded_welcome_messages_.erase(dialog_id);
+  }
 }
 
 bool WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id) {

@@ -5787,6 +5787,9 @@ void ChatManager::on_get_chat_full(tl_object_ptr<telegram_api::ChatFull> &&chat_
       td_->messages_manager_->on_update_dialog_has_scheduled_server_messages(DialogId(chat_id), chat->has_scheduled_);
 
       td_->messages_manager_->on_update_dialog_has_welcome_messages(DialogId(chat_id), chat->has_welcome_messages_);
+      if (!chat->has_welcome_messages_) {
+        td_->welcome_message_manager_->drop_welcome_messages(DialogId(chat_id), true);
+      }
 
       {
         InputGroupCallId input_group_call_id;
@@ -6073,7 +6076,11 @@ void ChatManager::on_get_chat_full(tl_object_ptr<telegram_api::ChatFull> &&chat_
       td_->messages_manager_->on_update_dialog_has_scheduled_server_messages(DialogId(channel_id),
                                                                              channel->has_scheduled_);
 
-      td_->messages_manager_->on_update_dialog_has_welcome_messages(DialogId(channel_id), chat->has_welcome_messages_);
+      td_->messages_manager_->on_update_dialog_has_welcome_messages(DialogId(channel_id),
+                                                                    channel->has_welcome_messages_);
+      if (!channel->has_welcome_messages_) {
+        td_->welcome_message_manager_->drop_welcome_messages(DialogId(channel_id), true);
+      }
 
       {
         InputGroupCallId input_group_call_id;
@@ -7278,7 +7285,7 @@ void ChatManager::on_update_chat_status(Chat *c, ChatId chat_id, DialogParticipa
                          DialogId(chat_id));
     }
     if (need_drop_welcome_messages) {
-      td_->welcome_message_manager_->drop_welcome_messages(DialogId(chat_id));
+      td_->welcome_message_manager_->drop_welcome_messages(DialogId(chat_id), false);
     }
 
     c->is_changed = true;
@@ -7748,7 +7755,7 @@ void ChatManager::on_channel_status_changed(Channel *c, ChannelId channel_id, co
   bool need_drop_welcome_messages = old_status.can_change_info_and_settings_as_administrator() &&
                                     !new_status.can_change_info_and_settings_as_administrator();
   if (need_drop_welcome_messages) {
-    td_->welcome_message_manager_->drop_welcome_messages(DialogId(channel_id));
+    td_->welcome_message_manager_->drop_welcome_messages(DialogId(channel_id), false);
   }
 
   if (old_status.is_creator() != new_status.is_creator()) {
