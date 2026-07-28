@@ -303,6 +303,8 @@ class MessagesManager final : public Actor {
 
   void on_update_dialog_has_scheduled_server_messages(DialogId dialog_id, bool has_scheduled_server_messages);
 
+  void on_update_dialog_has_welcome_messages(DialogId dialog_id, bool has_welcome_messages);
+
   void on_update_dialog_folder_id(DialogId dialog_id, FolderId folder_id);
 
   void on_update_dialog_group_call(DialogId dialog_id, bool has_active_group_call, bool is_group_call_empty,
@@ -1403,6 +1405,7 @@ class MessagesManager final : public Actor {
     bool is_has_scheduled_database_messages_checked = false;
     bool has_loaded_scheduled_messages_from_database = false;
     bool sent_scheduled_messages = false;
+    bool has_welcome_messages = false;
     bool had_last_yet_unsent_message = false;  // whether the dialog was stored to database without last message
     bool has_active_group_call = false;
     bool is_group_call_empty = false;
@@ -2504,6 +2507,8 @@ class MessagesManager final : public Actor {
   void send_update_chat_message_auto_delete_time(const Dialog *d);
 
   void send_update_chat_has_scheduled_messages(Dialog *d, bool from_deletion);
+
+  void send_update_chat_has_welcome_messages(Dialog *d);
 
   void repair_dialog_action_bar(Dialog *d, const char *source);
 

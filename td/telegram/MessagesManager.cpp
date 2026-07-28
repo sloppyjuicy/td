@@ -3222,6 +3222,7 @@ void MessagesManager::Dialog::store(StorerT &storer) const {
     STORE_FLAG(is_forum_tabs);
     STORE_FLAG(need_repair_unread_poll_vote_count);
     STORE_FLAG(has_ephemeral_message_ids);  // 25
+    STORE_FLAG(has_welcome_messages);
     END_STORE_FLAGS();
   }
 
@@ -3515,6 +3516,7 @@ void MessagesManager::Dialog::parse(ParserT &parser) {
     PARSE_FLAG(is_forum_tabs);
     PARSE_FLAG(need_repair_unread_poll_vote_count);
     PARSE_FLAG(has_ephemeral_message_ids);
+    PARSE_FLAG(has_welcome_messages);
     END_PARSE_FLAGS();
   } else {
     need_repair_action_bar = false;
@@ -17313,7 +17315,7 @@ td_api::object_ptr<td_api::chat> MessagesManager::get_chat_object(const Dialog *
       get_message_object(d, d->last_message_id, source), get_chat_positions_object(d), std::move(chat_lists),
       get_default_message_sender_object(d), block_list_id.get_block_list_object(),
       td_->dialog_manager_->get_dialog_has_protected_content(d->dialog_id), is_translatable, d->is_marked_as_unread,
-      get_dialog_view_as_topics(d), get_dialog_has_scheduled_messages(d), can_delete.for_self_,
+      get_dialog_view_as_topics(d), get_dialog_has_scheduled_messages(d), d->has_welcome_messages, can_delete.for_self_,
       can_delete.for_all_users_, td_->dialog_manager_->can_report_dialog(d->dialog_id),
       d->notification_settings.silent_send_message, d->server_unread_count + d->local_unread_count,
       d->last_read_inbox_message_id.get(), d->last_read_outbox_message_id.get(), d->unread_mention_count,
@@ -27519,6 +27521,16 @@ void MessagesManager::send_update_chat_has_scheduled_messages(Dialog *d, bool fr
                    get_chat_id_object(d->dialog_id, "updateChatHasScheduledMessages"), has_scheduled_messages));
 }
 
+void MessagesManager::send_update_chat_has_welcome_messages(Dialog *d) {
+  if (td_->auth_manager_->is_bot()) {
+    return;
+  }
+  LOG_CHECK(d->is_update_new_chat_sent) << "Wrong " << d->dialog_id << " in send_update_chat_has_welcome_messages";
+  send_closure(G()->td(), &Td::send_update,
+               td_api::make_object<td_api::updateChatHasWelcomeMessages>(
+                   get_chat_id_object(d->dialog_id, "updateChatHasWelcomeMessages"), d->has_welcome_messages));
+}
+
 void MessagesManager::on_send_message_get_quick_ack(int64 random_id) {
   auto it = being_sent_messages_.find(random_id);
   if (it == being_sent_messages_.end()) {
@@ -28951,6 +28963,18 @@ void MessagesManager::set_dialog_has_scheduled_database_messages_impl(Dialog *d,
 
   d->has_scheduled_database_messages = has_scheduled_database_messages;
   on_dialog_updated(d->dialog_id, "set_dialog_has_scheduled_database_messages");
+}
+
+void MessagesManager::on_update_dialog_has_welcome_messages(DialogId dialog_id, bool has_welcome_messages) {
+  if (td_->auth_manager_->is_bot()) {
+    return;
+  }
+  auto d = get_dialog_force(dialog_id, "on_update_dialog_has_welcome_messages");
+  if (d != nullptr && d->has_welcome_messages != has_welcome_messages) {
+    d->has_welcome_messages = has_welcome_messages;
+    on_dialog_updated(d->dialog_id, "on_update_dialog_has_welcome_messages");
+    send_update_chat_has_welcome_messages(d);
+  }
 }
 
 void MessagesManager::on_update_dialog_folder_id(DialogId dialog_id, FolderId folder_id) {

@@ -5786,6 +5786,8 @@ void ChatManager::on_get_chat_full(tl_object_ptr<telegram_api::ChatFull> &&chat_
 
       td_->messages_manager_->on_update_dialog_has_scheduled_server_messages(DialogId(chat_id), chat->has_scheduled_);
 
+      td_->messages_manager_->on_update_dialog_has_welcome_messages(DialogId(chat_id), chat->has_welcome_messages_);
+
       {
         InputGroupCallId input_group_call_id;
         if (chat->call_ != nullptr) {
@@ -6070,6 +6072,9 @@ void ChatManager::on_get_chat_full(tl_object_ptr<telegram_api::ChatFull> &&chat_
 
       td_->messages_manager_->on_update_dialog_has_scheduled_server_messages(DialogId(channel_id),
                                                                              channel->has_scheduled_);
+
+      td_->messages_manager_->on_update_dialog_has_welcome_messages(DialogId(channel_id), chat->has_welcome_messages_);
+
       {
         InputGroupCallId input_group_call_id;
         if (channel->call_ != nullptr) {
