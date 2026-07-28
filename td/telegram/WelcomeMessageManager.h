@@ -53,6 +53,8 @@ class WelcomeMessageManager final : public Actor {
 
   void delete_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id, Promise<Unit> &&promise);
 
+  void delete_all_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise);
+
   void drop_welcome_messages(DialogId dialog_id);
 
   void on_new_welcome_message(telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message);

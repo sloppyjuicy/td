@@ -12520,6 +12520,9 @@ editChatWelcomeMessage chat_id:int53 welcome_message_id:int32 input_message_cont
 //@welcome_message_id The identifier of the welcome message
 deleteChatWelcomeMessage chat_id:int53 welcome_message_id:int32 = Ok;
 
+//@description Deletes all welcome messages of a chat; requires can_change_info administrator right in the chat @chat_id The identifier of the chat
+deleteAllChatWelcomeMessages chat_id:int53 = Ok;
+
 
 //@description Returns the list of custom emoji, which can be used as forum topic icon by all users
 getForumTopicDefaultIcons = Stickers;

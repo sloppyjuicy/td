@@ -4688,6 +4688,12 @@ void Requests::on_request(uint64 id, const td_api::deleteChatWelcomeMessage &req
       DialogId(request.chat_id_), EphemeralMessageId(request.welcome_message_id_), std::move(promise));
 }
 
+void Requests::on_request(uint64 id, const td_api::deleteAllChatWelcomeMessages &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->welcome_message_manager_->delete_all_welcome_messages(DialogId(request.chat_id_), std::move(promise));
+}
+
 void Requests::on_request(uint64 id, const td_api::getCurrentWeather &request) {
   CHECK_IS_USER();
   CREATE_REQUEST_PROMISE();

@@ -6775,6 +6775,10 @@ class CliClient final : public Actor {
       int32 welcome_message_id;
       get_args(args, chat_id, welcome_message_id);
       send_request(td_api::make_object<td_api::deleteChatWelcomeMessage>(chat_id, welcome_message_id));
+    } else if (op == "dacwm") {
+      ChatId chat_id;
+      get_args(args, chat_id);
+      send_request(td_api::make_object<td_api::deleteAllChatWelcomeMessages>(chat_id));
     } else if (op == "smfc") {
       ChatId chat_id;
       MessageId message_id;

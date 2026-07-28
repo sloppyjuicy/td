@@ -214,6 +214,40 @@ class DeleteWelcomeMessageQuery final : public Td::ResultHandler {
   }
 };
 
+class DeleteAllWelcomeMessagesQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+  DialogId dialog_id_;
+
+ public:
+  explicit DeleteAllWelcomeMessagesQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(DialogId dialog_id) {
+    dialog_id_ = dialog_id;
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
+    if (input_peer == nullptr) {
+      return on_error(Status::Error(400, "Chat not found"));
+    }
+    send_query(
+        G()->net_query_creator().create(telegram_api::ephemeral_deleteAllWelcomeMessages(std::move(input_peer))));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::ephemeral_deleteAllWelcomeMessages>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    LOG(INFO) << "Receive result for DeleteAllWelcomeMessagesQuery: " << result_ptr;
+    promise_.set_value(Unit());
+  }
+
+  void on_error(Status status) final {
+    td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "DeleteAllWelcomeMessagesQuery");
+    promise_.set_error(std::move(status));
+  }
+};
+
 class WelcomeMessageManager::UploadWelcomeMessageContentCallback final
     : public MessageQueryManager::UploadMessageContentCallback {
   WelcomeMessageManager *manager_;
@@ -707,6 +741,13 @@ void WelcomeMessageManager::delete_welcome_message(DialogId dialog_id, Ephemeral
   }
   do_delete_welcome_messages(dialog_id, {ephemeral_message_id});
   td_->create_handler<DeleteWelcomeMessageQuery>(std::move(promise))->send(dialog_id, ephemeral_message_id);
+}
+
+void WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
+  if (delete_all_welcome_messages(dialog_id)) {
+    send_update_chat_welcome_messages(dialog_id);
+    td_->create_handler<DeleteAllWelcomeMessagesQuery>(std::move(promise))->send(dialog_id);
+  }
 }
 
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
