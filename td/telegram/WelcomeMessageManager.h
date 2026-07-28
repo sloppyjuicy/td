@@ -143,8 +143,6 @@ class WelcomeMessageManager final : public Actor {
 
   FlatHashSet<DialogId, DialogIdHash> loaded_welcome_messages_;
 
-  FlatHashSet<EphemeralMessageFullId, EphemeralMessageFullIdHash> deleted_welcome_messages_;
-
   FlatHashMap<DialogId, FileSourceId, DialogIdHash> dialog_to_file_source_id_;
 
   struct UploadWelcomeMessageRequest {

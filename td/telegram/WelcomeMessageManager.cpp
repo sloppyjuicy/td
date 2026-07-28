@@ -417,8 +417,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   }
 
   auto ephemeral_message_id = message_info.message_->ephemeral_message_id_;
-  if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr ||
-      deleted_welcome_messages_.count({dialog_id, ephemeral_message_id}) != 0) {
+  if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr) {
     return;
   }
   auto &messages = welcome_messages_[dialog_id];
@@ -487,9 +486,6 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
                                                        vector<EphemeralMessageId> ephemeral_message_ids) {
   if (ephemeral_message_ids.empty()) {
     return;
-  }
-  for (auto ephemeral_message_id : ephemeral_message_ids) {
-    deleted_welcome_messages_.insert({dialog_id, ephemeral_message_id});
   }
   auto &messages = welcome_messages_[dialog_id];
   auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
