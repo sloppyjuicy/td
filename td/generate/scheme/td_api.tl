@@ -12515,6 +12515,11 @@ addChatWelcomeMessage chat_id:int53 input_message_content:InputMessageContent = 
 //-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote
 editChatWelcomeMessage chat_id:int53 welcome_message_id:int32 input_message_content:InputMessageContent = Ok;
 
+//@description Deletes a welcome message of a chat; requires can_change_info administrator right in the chat
+//@chat_id The identifier of the chat
+//@welcome_message_id The identifier of the welcome message
+deleteChatWelcomeMessage chat_id:int53 welcome_message_id:int32 = Ok;
+
 
 //@description Returns the list of custom emoji, which can be used as forum topic icon by all users
 getForumTopicDefaultIcons = Stickers;

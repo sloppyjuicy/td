@@ -6770,6 +6770,11 @@ class CliClient final : public Actor {
       ChatId chat_id;
       get_args(args, chat_id);
       send_request(td_api::make_object<td_api::loadChatWelcomeMessages>(chat_id));
+    } else if (op == "dcwm") {
+      ChatId chat_id;
+      int32 welcome_message_id;
+      get_args(args, chat_id, welcome_message_id);
+      send_request(td_api::make_object<td_api::deleteChatWelcomeMessage>(chat_id, welcome_message_id));
     } else if (op == "smfc") {
       ChatId chat_id;
       MessageId message_id;
