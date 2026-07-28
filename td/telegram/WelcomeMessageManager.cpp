@@ -125,6 +125,61 @@ class AddWelcomeMessageQuery final : public Td::ResultHandler {
   }
 };
 
+class EditWelcomeMessageQuery final : public Td::ResultHandler {
+  MessageContentUploadId upload_id_;
+
+ public:
+  void send(DialogId dialog_id, EphemeralMessageId ephemeral_message_id, const MessageContent *content,
+            MessageContentUploadId upload_id, bool invert_media, InputMedia &&input_media) {
+    upload_id_ = upload_id;
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
+    if (input_peer == nullptr) {
+      return on_error(Status::Error(400, "Can't access the chat"));
+    }
+    int32 flags = telegram_api::ephemeral_editMessage::MESSAGE_MASK | telegram_api::ephemeral_editMessage::PEER_MASK;
+    vector<telegram_api::object_ptr<telegram_api::MessageEntity>> entities;
+    auto *text = get_message_content_text(content);
+    if (text != nullptr) {
+      entities = get_input_message_entities(td_->user_manager_.get(), text, "EditWelcomeMessageQuery");
+      if (!entities.empty()) {
+        flags |= telegram_api::ephemeral_editMessage::ENTITIES_MASK;
+      }
+    }
+    if (input_media.media_ != nullptr) {
+      flags |= telegram_api::ephemeral_editMessage::MEDIA_MASK;
+    }
+    if (input_media.rich_message_ != nullptr) {
+      flags |= telegram_api::ephemeral_editMessage::RICH_MESSAGE_MASK;
+    }
+    td_->message_query_manager_->on_start_sending_message_content(upload_id_, input_media);
+    send_query(G()->net_query_creator().create(telegram_api::ephemeral_editMessage(
+        flags, invert_media, true, std::move(input_peer), telegram_api::make_object<telegram_api::inputUserEmpty>(),
+        ephemeral_message_id.get(), text == nullptr ? string() : text->text, std::move(input_media.media_),
+        std::move(entities), nullptr, std::move(input_media.rich_message_))));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::ephemeral_editMessage>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for EditWelcomeMessageQuery: " << to_string(ptr);
+    td_->updates_manager_->on_get_updates(
+        std::move(ptr),
+        PromiseCreator::lambda([actor_id = G()->welcome_message_manager(), upload_id = upload_id_](Unit) {
+          send_closure(actor_id, &WelcomeMessageManager::cancel_upload_welcome_message_content, upload_id,
+                       Status::OK());
+        }));
+  }
+
+  void on_error(Status status) final {
+    LOG(INFO) << "Receive error for EditWelcomeMessageQuery: " << status;
+    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(status));
+  }
+};
+
 class WelcomeMessageManager::UploadWelcomeMessageContentCallback final
     : public MessageQueryManager::UploadMessageContentCallback {
   WelcomeMessageManager *manager_;
@@ -136,8 +191,14 @@ class WelcomeMessageManager::UploadWelcomeMessageContentCallback final
 
   void on_message_content_uploaded(MessageContentUploadId upload_id, InputMedia &&input_media) final {
     auto &query = manager_->upload_welcome_message_queries_[upload_id];
-    manager_->td_->create_handler<AddWelcomeMessageQuery>()->send(query.dialog_id_, query.content_.get(), upload_id,
-                                                                  query.invert_media_, std::move(input_media));
+    if (query.ephemeral_message_id_.is_valid()) {
+      manager_->td_->create_handler<EditWelcomeMessageQuery>()->send(query.dialog_id_, query.ephemeral_message_id_,
+                                                                     query.content_.get(), upload_id,
+                                                                     query.invert_media_, std::move(input_media));
+    } else {
+      manager_->td_->create_handler<AddWelcomeMessageQuery>()->send(query.dialog_id_, query.content_.get(), upload_id,
+                                                                    query.invert_media_, std::move(input_media));
+    }
   }
 
   void on_message_content_force_uploaded(MessageContentUploadId upload_id, Status status) final {
@@ -147,8 +208,7 @@ class WelcomeMessageManager::UploadWelcomeMessageContentCallback final
     auto &query = manager_->upload_welcome_message_queries_[upload_id];
     auto input_media = get_message_content_input_media(query.content_.get(), manager_->td_, {}, string(), true, -1);
     CHECK(!input_media.is_empty());
-    manager_->td_->create_handler<AddWelcomeMessageQuery>()->send(query.dialog_id_, query.content_.get(), upload_id,
-                                                                  query.invert_media_, std::move(input_media));
+    on_message_content_uploaded(upload_id, std::move(input_media));
   }
 
   void on_uploaded_message_content_updated(MessageContentUploadId upload_id, unique_ptr<MessageContent> &&content,
@@ -561,22 +621,22 @@ void WelcomeMessageManager::cancel_upload_welcome_message_content(MessageContent
   }
 }
 
-void WelcomeMessageManager::add_welcome_message(DialogId dialog_id,
+void WelcomeMessageManager::add_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id,
                                                 td_api::object_ptr<td_api::InputMessageContent> &&input_message_content,
                                                 Promise<Unit> &&promise, bool is_recursive) {
   TRY_STATUS_PROMISE(promise, G()->close_status());
   TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
   if (!is_recursive && loaded_welcome_messages_.count(dialog_id) == 0) {
-    return reload_welcome_messages(dialog_id,
-                                   PromiseCreator::lambda([actor_id = actor_id(this), dialog_id,
-                                                           input_message_content = std::move(input_message_content),
-                                                           promise = std::move(promise)](Result<Unit> result) mutable {
-                                     if (result.is_error()) {
-                                       return promise.set_error(result.move_as_error());
-                                     }
-                                     send_closure(actor_id, &WelcomeMessageManager::add_welcome_message, dialog_id,
-                                                  std::move(input_message_content), std::move(promise), true);
-                                   }));
+    return reload_welcome_messages(
+        dialog_id, PromiseCreator::lambda([actor_id = actor_id(this), dialog_id, ephemeral_message_id,
+                                           input_message_content = std::move(input_message_content),
+                                           promise = std::move(promise)](Result<Unit> result) mutable {
+          if (result.is_error()) {
+            return promise.set_error(result.move_as_error());
+          }
+          send_closure(actor_id, &WelcomeMessageManager::add_welcome_message, dialog_id, ephemeral_message_id,
+                       std::move(input_message_content), std::move(promise), true);
+        }));
   }
 
   bool is_premium = td_->option_manager_->get_option_boolean("is_premium") || td_->auth_manager_->is_bot();
@@ -595,10 +655,20 @@ void WelcomeMessageManager::add_welcome_message(DialogId dialog_id,
       upload_welcome_message_content_callback_);
   auto &query = upload_welcome_message_queries_[upload_id];
   query.dialog_id_ = dialog_id;
+  query.ephemeral_message_id_ = ephemeral_message_id;
   query.content_ = std::move(content.content);
   query.invert_media_ = content.invert_media;
   query.promise_ = std::move(promise);
   td_->message_query_manager_->start_upload_message_content(upload_id);
+}
+
+void WelcomeMessageManager::edit_welcome_message(
+    DialogId dialog_id, EphemeralMessageId ephemeral_message_id,
+    td_api::object_ptr<td_api::InputMessageContent> &&input_message_content, Promise<Unit> &&promise) {
+  if (!ephemeral_message_id.is_valid()) {
+    return promise.set_error(400, "Invalid welcome message identifier specified");
+  }
+  add_welcome_message(dialog_id, ephemeral_message_id, std::move(input_message_content), std::move(promise));
 }
 
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {

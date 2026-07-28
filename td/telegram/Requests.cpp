@@ -4669,8 +4669,16 @@ void Requests::on_request(uint64 id, const td_api::loadChatWelcomeMessages &requ
 void Requests::on_request(uint64 id, td_api::addChatWelcomeMessage &request) {
   CHECK_IS_USER();
   CREATE_OK_REQUEST_PROMISE();
-  td_->welcome_message_manager_->add_welcome_message(DialogId(request.chat_id_),
+  td_->welcome_message_manager_->add_welcome_message(DialogId(request.chat_id_), EphemeralMessageId(),
                                                      std::move(request.input_message_content_), std::move(promise));
+}
+
+void Requests::on_request(uint64 id, td_api::editChatWelcomeMessage &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->welcome_message_manager_->edit_welcome_message(DialogId(request.chat_id_),
+                                                      EphemeralMessageId(request.welcome_message_id_),
+                                                      std::move(request.input_message_content_), std::move(promise));
 }
 
 void Requests::on_request(uint64 id, const td_api::getCurrentWeather &request) {

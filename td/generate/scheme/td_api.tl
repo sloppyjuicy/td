@@ -12508,6 +12508,13 @@ loadChatWelcomeMessages chat_id:int53 = Ok;
 //-inputMessageLocation, inputMessageVenue, inputMessageContact
 addChatWelcomeMessage chat_id:int53 input_message_content:InputMessageContent = Ok;
 
+//@description Edits a welcome message of a chat; requires can_change_info administrator right in the chat
+//@chat_id The identifier of the chat
+//@welcome_message_id The identifier of the welcome message
+//@input_message_content New content of the message. Must be one of the following types: inputMessageText, inputMessageAnimation,
+//-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote
+editChatWelcomeMessage chat_id:int53 welcome_message_id:int32 input_message_content:InputMessageContent = Ok;
+
 
 //@description Returns the list of custom emoji, which can be used as forum topic icon by all users
 getForumTopicDefaultIcons = Stickers;
