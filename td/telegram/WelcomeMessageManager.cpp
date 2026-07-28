@@ -19,6 +19,7 @@
 #include "td/telegram/MessageId.h"
 #include "td/telegram/MessageQueryManager.h"
 #include "td/telegram/MessageSelfDestructType.h"
+#include "td/telegram/MessagesManager.h"
 #include "td/telegram/OptionManager.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/UpdatesManager.h"
@@ -426,6 +427,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   messages.push_back(std::move(message_info.message_));
   change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
   send_update_chat_welcome_messages(dialog_id);
+  td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, true);
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
 
@@ -498,6 +500,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
   });
   change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
   if (messages.empty()) {
+    td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, false);
     welcome_messages_.erase(dialog_id);
   }
   send_update_chat_welcome_messages(dialog_id);
@@ -656,6 +659,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
       }
       change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
     }
+    td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, true);
   }
   if (need_update) {
     send_update_chat_welcome_messages(dialog_id);
@@ -718,6 +722,7 @@ void WelcomeMessageManager::add_welcome_message(DialogId dialog_id, EphemeralMes
   query.invert_media_ = content.invert_media;
   query.promise_ = std::move(promise);
   td_->message_query_manager_->start_upload_message_content(upload_id);
+  td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, true);
 }
 
 void WelcomeMessageManager::edit_welcome_message(
@@ -756,6 +761,7 @@ void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id, bool is_em
 }
 
 bool WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id) {
+  td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, false);
   auto it = welcome_messages_.find(dialog_id);
   if (it != welcome_messages_.end()) {
     change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
