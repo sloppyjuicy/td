@@ -11,6 +11,7 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/FileReferenceManager.h"
+#include "td/telegram/files/FileManager.h"
 #include "td/telegram/files/FileUploadId.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/MessageContent.h"
@@ -90,6 +91,27 @@ void WelcomeMessageManager::unregister_welcome_message(DialogId dialog_id, const
   unregister_welcome_message_content(td_, m->content_.get(), {dialog_id, m->ephemeral_message_id_}, source);
 }
 
+void WelcomeMessageManager::change_welcome_message_files(DialogId dialog_id, const vector<FileId> &old_file_ids,
+                                                         const vector<FileId> &new_file_ids) {
+  if (new_file_ids == old_file_ids) {
+    return;
+  }
+
+  LOG(INFO) << "Change files in welcome messages of " << dialog_id << " from " << old_file_ids << " to "
+            << new_file_ids;
+  for (auto file_id : old_file_ids) {
+    if (!td::contains(new_file_ids, file_id)) {
+      send_closure(G()->file_manager(), &FileManager::delete_file, file_id, Promise<Unit>(),
+                   "change_welcome_message_files");
+    }
+  }
+
+  auto file_source_id = get_welcome_messages_file_source_id(dialog_id);
+  if (file_source_id.is_valid()) {
+    td_->file_manager_->change_files_source(file_source_id, old_file_ids, new_file_ids, "change_welcome_message_files");
+  }
+}
+
 void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageFullId message_full_id,
                                                                const char *source, bool expect_no_message) const {
   auto dialog_id = message_full_id.get_dialog_id();
@@ -162,8 +184,10 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
     return;
   }
   auto &messages = welcome_messages_[dialog_id];
+  auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
   register_welcome_message(dialog_id, message_info.message_.get(), "on_new_welcome_message");
   messages.push_back(std::move(message_info.message_));
+  change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
   send_update_chat_welcome_messages(dialog_id);
   reload_welcome_messages(dialog_id, Promise<Unit>());
 }
@@ -186,9 +210,12 @@ void WelcomeMessageManager::on_edited_welcome_message(
   bool is_content_changed = false;
   update_welcome_message_content(m, message_info.message_.get(), dialog_id, is_content_changed, need_update);
   if (is_content_changed || need_update) {
+    auto &messages = welcome_messages_[dialog_id];
+    auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
     unregister_welcome_message(dialog_id, m, "on_edited_welcome_message");
     m->content_ = std::move(message_info.message_->content_);
     register_welcome_message(dialog_id, m, "on_edited_welcome_message");
+    change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
   }
   if (need_update) {
     send_update_chat_welcome_messages(dialog_id);
@@ -227,6 +254,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
     deleted_welcome_messages_.insert({dialog_id, ephemeral_message_id});
   }
   auto &messages = welcome_messages_[dialog_id];
+  auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
   td::remove_if(messages, [&](const auto &welcome_message) {
     if (td::contains(ephemeral_message_ids, welcome_message->ephemeral_message_id_)) {
       unregister_welcome_message(dialog_id, welcome_message.get(), "do_delete_welcome_messages");
@@ -234,6 +262,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
     }
     return false;
   });
+  change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
   if (messages.empty()) {
     welcome_messages_.erase(dialog_id);
   }
@@ -370,6 +399,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
   if (welcome_messages.empty()) {
     auto it = welcome_messages_.find(dialog_id);
     if (it != welcome_messages_.end()) {
+      change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
       for (auto &message : it->second) {
         unregister_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
       }
@@ -388,6 +418,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
       }
     }
     if (need_update || is_content_changed) {
+      auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
       for (auto &message : messages) {
         unregister_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
       }
@@ -395,6 +426,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
       for (auto &message : messages) {
         register_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
       }
+      change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
     }
   }
   if (need_update) {
@@ -406,6 +438,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
   auto it = welcome_messages_.find(dialog_id);
   if (it != welcome_messages_.end()) {
+    change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
     for (auto &message : it->second) {
       unregister_welcome_message(dialog_id, message.get(), "drop_welcome_messages");
     }
