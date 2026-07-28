@@ -118,6 +118,8 @@ class WelcomeMessageManager final : public Actor {
 
   void do_delete_welcome_messages(DialogId dialog_id, vector<EphemeralMessageId> ephemeral_message_ids);
 
+  bool delete_all_welcome_messages(DialogId dialog_id);
+
   vector<FileId> get_dialog_welcome_message_file_ids(const vector<unique_ptr<WelcomeMessage>> &messages) const;
 
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;

@@ -601,13 +601,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
   }
 
   if (welcome_messages.empty()) {
-    auto it = welcome_messages_.find(dialog_id);
-    if (it != welcome_messages_.end()) {
-      change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
-      for (auto &message : it->second) {
-        unregister_welcome_message(dialog_id, message.get(), "on_get_welcome_messages");
-      }
-      welcome_messages_.erase(it);
+    if (delete_all_welcome_messages(dialog_id)) {
       need_update = true;
     }
   } else {
@@ -716,16 +710,23 @@ void WelcomeMessageManager::delete_welcome_message(DialogId dialog_id, Ephemeral
 }
 
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id) {
+  if (delete_all_welcome_messages(dialog_id)) {
+    send_update_chat_welcome_messages(dialog_id);
+  }
+  loaded_welcome_messages_.erase(dialog_id);
+}
+
+bool WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id) {
   auto it = welcome_messages_.find(dialog_id);
   if (it != welcome_messages_.end()) {
     change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
     for (auto &message : it->second) {
-      unregister_welcome_message(dialog_id, message.get(), "drop_welcome_messages");
+      unregister_welcome_message(dialog_id, message.get(), "delete_all_welcome_messages");
     }
     welcome_messages_.erase(it);
-    send_update_chat_welcome_messages(dialog_id);
+    return true;
   }
-  loaded_welcome_messages_.erase(dialog_id);
+  return false;
 }
 
 vector<FileId> WelcomeMessageManager::get_dialog_welcome_message_file_ids(
