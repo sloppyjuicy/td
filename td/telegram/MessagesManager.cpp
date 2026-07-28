@@ -25206,34 +25206,15 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_mess
     int64 callback_query_id, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to, int32 sending_id,
     bool only_preview, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
     td_api::object_ptr<td_api::InputMessageContent> &&input_message_content) {
-  if (input_message_content == nullptr) {
-    return Status::Error(400, "Can't send message without content");
-  }
-  switch (input_message_content->get_id()) {
-    case td_api::inputMessageText::ID:
-    case td_api::inputMessageAnimation::ID:
-    case td_api::inputMessageAudio::ID:
-    case td_api::inputMessageDocument::ID:
-    case td_api::inputMessagePhoto::ID:
-    case td_api::inputMessageSticker::ID:
-    case td_api::inputMessageVideo::ID:
-    case td_api::inputMessageVideoNote::ID:
-    case td_api::inputMessageVoiceNote::ID:
-    case td_api::inputMessageLocation::ID:
-    case td_api::inputMessageVenue::ID:
-    case td_api::inputMessageContact::ID:
-      // ok
-      break;
-    default:
-      return Status::Error(400, "Unallowed message content");
-  }
-
   TRY_RESULT(d, check_dialog_access(dialog_id, false, AccessRights::Write, "send_ephemeral_message"));
   TRY_STATUS(td_->user_manager_->get_input_user(receiver_user_id));
   TRY_RESULT(message_topic, MessageTopic::get_send_message_topic(td_, dialog_id, topic_id));
   auto input_reply_to = create_message_input_reply_to(d, message_topic, std::move(reply_to), false, true);
   TRY_RESULT(message_reply_markup, get_dialog_reply_markup(dialog_id, std::move(reply_markup)));
   TRY_RESULT(message_content, process_input_message_content(dialog_id, std::move(input_message_content), false));
+  if (!is_allowed_ephemeral_message_content(message_content.content->get_type())) {
+    return Status::Error(400, "Unallowed message content specified");
+  }
 
   // there must be no errors after get_message_to_send call
 

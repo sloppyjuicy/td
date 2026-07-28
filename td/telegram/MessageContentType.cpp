@@ -358,6 +358,26 @@ bool is_allowed_poll_option_content(MessageContentType content_type) {
   }
 }
 
+bool is_allowed_ephemeral_message_content(MessageContentType content_type) {
+  switch (content_type) {
+    case MessageContentType::Animation:
+    case MessageContentType::Audio:
+    case MessageContentType::Contact:
+    case MessageContentType::Document:
+    case MessageContentType::Location:
+    case MessageContentType::Photo:
+    case MessageContentType::Sticker:
+    case MessageContentType::Text:
+    case MessageContentType::Venue:
+    case MessageContentType::Video:
+    case MessageContentType::VideoNote:
+    case MessageContentType::VoiceNote:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool can_message_content_have_multiple_files(MessageContentType content_type) {
   switch (content_type) {
     case MessageContentType::PaidMedia:
