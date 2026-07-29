@@ -165,10 +165,9 @@ Result<KeyboardButton> KeyboardButton::get_keyboard_button(td_api::object_ptr<td
   return std::move(current_button);
 }
 
-telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button(
-    const KeyboardButton &keyboard_button) {
+telegram_api::object_ptr<telegram_api::keyboardButton> KeyboardButton::get_input_keyboard_button() const {
   auto type = [&]() -> telegram_api::object_ptr<telegram_api::ButtonType> {
-    switch (keyboard_button.type_) {
+    switch (type_) {
       case KeyboardButton::Type::Text:
         return telegram_api::make_object<telegram_api::buttonTypeDefault>();
       case KeyboardButton::Type::RequestPhoneNumber:
@@ -184,27 +183,26 @@ telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button
         return telegram_api::make_object<telegram_api::buttonTypeRequestPoll>(
             telegram_api::buttonTypeRequestPoll::QUIZ_MASK, false);
       case KeyboardButton::Type::WebView:
-        return telegram_api::make_object<telegram_api::buttonTypeSimpleWebView>(keyboard_button.url_);
+        return telegram_api::make_object<telegram_api::buttonTypeSimpleWebView>(url_);
       case KeyboardButton::Type::RequestDialog:
-        CHECK(keyboard_button.requested_dialog_type_ != nullptr);
-        return keyboard_button.requested_dialog_type_->get_input_button_type_request_peer();
+        CHECK(requested_dialog_type_ != nullptr);
+        return requested_dialog_type_->get_input_button_type_request_peer();
       default:
         UNREACHABLE();
         return nullptr;
     }
   }();
   int32 flags = 0;
-  auto style = keyboard_button.style_.get_input_keyboard_button_style();
+  auto style = style_.get_input_keyboard_button_style();
   if (style != nullptr) {
     flags |= 1 << 10;
   }
-  return telegram_api::make_object<telegram_api::keyboardButton>(flags, std::move(style), keyboard_button.text_,
-                                                                 std::move(type));
+  return telegram_api::make_object<telegram_api::keyboardButton>(flags, std::move(style), text_, std::move(type));
 }
 
-td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const KeyboardButton &keyboard_button) {
+td_api::object_ptr<td_api::keyboardButton> KeyboardButton::get_keyboard_button_object() const {
   td_api::object_ptr<td_api::KeyboardButtonType> type;
-  switch (keyboard_button.type_) {
+  switch (type_) {
     case KeyboardButton::Type::Text:
       type = make_tl_object<td_api::keyboardButtonTypeText>();
       break;
@@ -224,18 +222,17 @@ td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const Keyb
       type = make_tl_object<td_api::keyboardButtonTypeRequestPoll>(true, false);
       break;
     case KeyboardButton::Type::WebView:
-      type = make_tl_object<td_api::keyboardButtonTypeWebApp>(keyboard_button.url_ + "#kb");
+      type = make_tl_object<td_api::keyboardButtonTypeWebApp>(url_ + "#kb");
       break;
     case KeyboardButton::Type::RequestDialog:
-      type = keyboard_button.requested_dialog_type_->get_keyboard_button_type_object();
+      type = requested_dialog_type_->get_keyboard_button_type_object();
       break;
     default:
       UNREACHABLE();
       return nullptr;
   }
-  return td_api::make_object<td_api::keyboardButton>(keyboard_button.text_,
-                                                     keyboard_button.style_.get_icon_custom_emoji_id().get(),
-                                                     keyboard_button.style_.get_button_style_object(), std::move(type));
+  return td_api::make_object<td_api::keyboardButton>(text_, style_.get_icon_custom_emoji_id().get(),
+                                                     style_.get_button_style_object(), std::move(type));
 }
 
 bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs) {

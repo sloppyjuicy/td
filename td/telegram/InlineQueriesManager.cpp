@@ -275,7 +275,7 @@ class SavePreparedKeyboardButtonQuery final : public Td::ResultHandler {
 
   void send(telegram_api::object_ptr<telegram_api::InputUser> &&input_user, const KeyboardButton &keyboard_button) {
     send_query(G()->net_query_creator().create(
-        telegram_api::bots_requestWebViewButton(std::move(input_user), get_input_keyboard_button(keyboard_button))));
+        telegram_api::bots_requestWebViewButton(std::move(input_user), keyboard_button.get_input_keyboard_button())));
   }
 
   void on_result(BufferSlice packet) final {
@@ -327,7 +327,7 @@ class GetRequestedWebViewButtonQuery final : public Td::ResultHandler {
     }
     td_->inline_queries_manager_->on_get_requested_web_view_button(bot_user_id_, prepared_button_id_,
                                                                    keyboard_button.requested_dialog_type_.get());
-    promise_.set_value(get_keyboard_button_object(keyboard_button));
+    promise_.set_value(keyboard_button.get_keyboard_button_object());
   }
 
   void on_error(Status status) final {

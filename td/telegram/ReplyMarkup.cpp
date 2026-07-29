@@ -775,7 +775,7 @@ telegram_api::object_ptr<telegram_api::ReplyMarkup> ReplyMarkup::get_input_reply
         vector<tl_object_ptr<telegram_api::keyboardButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
-          buttons.push_back(get_input_keyboard_button(button));
+          buttons.push_back(button.get_input_keyboard_button());
         }
         rows.push_back(telegram_api::make_object<telegram_api::keyboardButtonRow>(std::move(buttons)));
       }
@@ -885,7 +885,7 @@ td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(Use
         vector<tl_object_ptr<td_api::keyboardButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
-          buttons.push_back(get_keyboard_button_object(button));
+          buttons.push_back(button.get_keyboard_button_object());
         }
         rows.push_back(std::move(buttons));
       }
