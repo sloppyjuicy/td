@@ -5955,6 +5955,9 @@ inputPageBlockAnimation animation:inputAnimation caption:pageBlockCaption has_sp
 //@description An audio file @audio The audio to be sent @caption Audio file caption; pass null if none
 inputPageBlockAudio audio:inputAudio caption:pageBlockCaption = InputPageBlock;
 
+//@description A general file @document The file to be sent @caption File caption; pass null if none
+inputPageBlockDocument document:inputDocument caption:pageBlockCaption = InputPageBlock;
+
 //@description A photo
 //@photo The photo to be sent
 //@caption Photo caption; pass null if none

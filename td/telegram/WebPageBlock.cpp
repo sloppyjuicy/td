@@ -5101,6 +5101,18 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
         result.push_back(td::make_unique<WebPageBlockAudio>(audio_file_id, std::move(caption)));
         break;
       }
+      case td_api::inputPageBlockDocument::ID: {
+        auto block = td_api::move_object_as<td_api::inputPageBlockDocument>(input_page_block);
+        TRY_RESULT(input_message_content, get_input_message_content(dialog_id,
+                                                                    td_api::make_object<td_api::inputMessageDocument>(
+                                                                        std::move(block->document_), nullptr),
+                                                                    td, is_premium));
+        CHECK(input_message_content.content->get_type() == MessageContentType::Document);
+        auto document_file_id = get_message_content_any_file_id(input_message_content.content.get());
+        TRY_RESULT(caption, WebPageBlockCaption::get_web_page_block_caption(td, std::move(block->caption_)));
+        result.push_back(td::make_unique<WebPageBlockDocument>(document_file_id, std::move(caption)));
+        break;
+      }
       case td_api::inputPageBlockPhoto::ID: {
         auto block = td_api::move_object_as<td_api::inputPageBlockPhoto>(input_page_block);
         TRY_RESULT(input_message_content,
