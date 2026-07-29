@@ -366,7 +366,7 @@ void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageF
 
 void WelcomeMessageManager::delete_pending_message_web_page(EphemeralMessageFullId message_full_id) {
   auto dialog_id = message_full_id.get_dialog_id();
-  auto *m = get_welcome_message(dialog_id, message_full_id.get_ephemeral_message_id());
+  auto *m = get_welcome_message_editable(dialog_id, message_full_id.get_ephemeral_message_id());
   CHECK(has_message_content_web_page(m->content_.get()));
   unregister_welcome_message(dialog_id, m, "delete_pending_message_web_page");
   remove_message_content_web_page(m->content_.get());
@@ -441,7 +441,7 @@ void WelcomeMessageManager::on_edited_welcome_message(
   }
 
   auto ephemeral_message_id = message_info.message_->ephemeral_message_id_;
-  auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
+  auto *m = get_welcome_message_editable(dialog_id, ephemeral_message_id);
   if (m == nullptr) {
     return;
   }
@@ -474,7 +474,7 @@ void WelcomeMessageManager::on_delete_welcome_messages(DialogId dialog_id,
       LOG(ERROR) << "Receive " << ephemeral_message_id;
       continue;
     }
-    auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
+    const auto *m = get_welcome_message(dialog_id, ephemeral_message_id);
     if (m == nullptr) {
       continue;
     }
@@ -515,7 +515,7 @@ const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageM
   return &it->second;
 }
 
-vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages(
+vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages_editable(
     DialogId dialog_id) {
   auto it = welcome_messages_.find(dialog_id);
   if (it == welcome_messages_.end()) {
@@ -537,9 +537,9 @@ const WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_
   return nullptr;
 }
 
-WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_message(
+WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_message_editable(
     DialogId dialog_id, EphemeralMessageId ephemeral_message_id) {
-  auto messages = get_welcome_messages(dialog_id);
+  auto messages = get_welcome_messages_editable(dialog_id);
   if (messages != nullptr) {
     for (auto &message : *messages) {
       if (message->ephemeral_message_id_ == ephemeral_message_id) {
@@ -622,7 +622,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
       LOG(ERROR) << "Receive welcome message in " << message_info.dialog_id_ << " instead of " << dialog_id;
       return fail_promises(promises, Status::Error(500, "Receive invalid response"));
     }
-    auto *old_message = get_welcome_message(dialog_id, message_info.message_->ephemeral_message_id_);
+    auto *old_message = get_welcome_message_editable(dialog_id, message_info.message_->ephemeral_message_id_);
     if (old_message != nullptr) {
       update_welcome_message_content(old_message, message_info.message_.get(), dialog_id, is_content_changed,
                                      need_update);
