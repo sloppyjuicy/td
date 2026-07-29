@@ -907,8 +907,9 @@ td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(Use
 const RequestedDialogType *ReplyMarkup::get_requested_dialog_type(int32 button_id) const {
   for (auto &row : keyboard) {
     for (auto &button : row) {
-      if (button.requested_dialog_type_ != nullptr && button.requested_dialog_type_->get_button_id() == button_id) {
-        return button.requested_dialog_type_.get();
+      auto requested_dialog_type = button.get_requested_dialog_type();
+      if (requested_dialog_type != nullptr && requested_dialog_type->get_button_id() == button_id) {
+        return requested_dialog_type;
       }
     }
   }

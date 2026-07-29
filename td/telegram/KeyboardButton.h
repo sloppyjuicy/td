@@ -45,6 +45,10 @@ struct KeyboardButton {
   telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button() const;
 
   td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object() const;
+
+  const RequestedDialogType *get_requested_dialog_type() const {
+    return requested_dialog_type_.get();
+  }
 };
 
 bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs);

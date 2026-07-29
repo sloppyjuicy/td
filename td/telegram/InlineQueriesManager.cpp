@@ -320,13 +320,14 @@ class GetRequestedWebViewButtonQuery final : public Td::ResultHandler {
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for GetRequestedWebViewButtonQuery: " << to_string(ptr);
-    auto keyboard_button = KeyboardButton(std::move(ptr));
-    if (keyboard_button.type_ != KeyboardButton::Type::RequestDialog) {
+    const auto keyboard_button = KeyboardButton(std::move(ptr));
+    const auto *requested_dialog_type = keyboard_button.get_requested_dialog_type();
+    if (requested_dialog_type == nullptr) {
       LOG(ERROR) << to_string(ptr);
       return on_error(Status::Error(500, "Receive invalid button type"));
     }
     td_->inline_queries_manager_->on_get_requested_web_view_button(bot_user_id_, prepared_button_id_,
-                                                                   keyboard_button.requested_dialog_type_.get());
+                                                                   requested_dialog_type);
     promise_.set_value(keyboard_button.get_keyboard_button_object());
   }
 
