@@ -120,7 +120,7 @@ class WelcomeMessageManager final : public Actor {
                                                   telegram_api::object_ptr<telegram_api::ephemeralMessage> message,
                                                   const char *source);
 
-  const vector<unique_ptr<WelcomeMessage>> *get_welcome_messages(DialogId dialog_id) const;
+  const WelcomeMessages *get_welcome_messages(DialogId dialog_id) const;
 
   const WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id) const;
 
@@ -140,11 +140,10 @@ class WelcomeMessageManager final : public Actor {
 
   td_api::object_ptr<td_api::welcomeMessage> get_welcome_message_object(const WelcomeMessage *m) const;
 
-  vector<td_api::object_ptr<td_api::welcomeMessage>> get_welcome_messages_object(
-      const vector<unique_ptr<WelcomeMessage>> &messages) const;
+  vector<td_api::object_ptr<td_api::welcomeMessage>> get_welcome_messages_object(const WelcomeMessages &messages) const;
 
   td_api::object_ptr<td_api::updateChatWelcomeMessages> get_update_chat_welcome_messages_object(
-      DialogId dialog_id, const vector<unique_ptr<WelcomeMessage>> &messages) const;
+      DialogId dialog_id, const WelcomeMessages &messages) const;
 
   void send_update_chat_welcome_messages(DialogId dialog_id) const;
 
