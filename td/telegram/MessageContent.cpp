@@ -4627,6 +4627,10 @@ unique_ptr<MessageContent> create_audio_message_content(FileId audio_file_id) {
   return make_unique<MessageAudio>(audio_file_id, FormattedText());
 }
 
+unique_ptr<MessageContent> create_document_message_content(FileId document_file_id) {
+  return make_unique<MessageDocument>(document_file_id, FormattedText());
+}
+
 unique_ptr<MessageContent> create_photo_message_content(Photo photo, FileId video_file_id) {
   return make_unique<MessagePhoto>(std::move(photo), video_file_id, FormattedText(), false);
 }
@@ -9264,8 +9268,8 @@ void unregister_quick_reply_message_content(Td *td, const MessageContent *conten
   }
 }
 
-void register_welcome_message_content(Td *td, const MessageContent *content,
-                                          EphemeralMessageFullId message_full_id, const char *source) {
+void register_welcome_message_content(Td *td, const MessageContent *content, EphemeralMessageFullId message_full_id,
+                                      const char *source) {
   CHECK(content != nullptr);
   switch (content->get_type()) {
     case MessageContentType::Text: {
@@ -9283,8 +9287,8 @@ void register_welcome_message_content(Td *td, const MessageContent *content,
   }
 }
 
-void unregister_welcome_message_content(Td *td, const MessageContent *content,
-                                            EphemeralMessageFullId message_full_id, const char *source) {
+void unregister_welcome_message_content(Td *td, const MessageContent *content, EphemeralMessageFullId message_full_id,
+                                        const char *source) {
   CHECK(content != nullptr);
   switch (content->get_type()) {
     case MessageContentType::Text: {
@@ -9292,8 +9296,8 @@ void unregister_welcome_message_content(Td *td, const MessageContent *content,
       if (text->web_page_id.is_valid()) {
         td->web_pages_manager_->unregister_welcome_message_web_page(text->web_page_id, message_full_id, source);
       } else if (can_be_animated_emoji(text->text)) {
-        td->stickers_manager_->unregister_emoji(text->text.text, get_custom_emoji_id(text->text), {}, {}, message_full_id,
-                                                source);
+        td->stickers_manager_->unregister_emoji(text->text.text, get_custom_emoji_id(text->text), {}, {},
+                                                message_full_id, source);
       }
       return;
     }

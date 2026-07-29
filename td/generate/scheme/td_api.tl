@@ -4221,6 +4221,11 @@ pageBlockAnimation animation:animation caption:pageBlockCaption need_autoplay:Bo
 //@caption Audio file caption; may be null if none
 pageBlockAudio audio:audio caption:pageBlockCaption = PageBlock;
 
+//@description A general file
+//@document The file; may be null
+//@caption File caption; may be null if none
+pageBlockDocument document:document caption:pageBlockCaption = PageBlock;
+
 //@description A photo
 //@photo Photo file; may be null
 //@caption Photo caption; may be null if none

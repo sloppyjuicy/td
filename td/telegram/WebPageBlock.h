@@ -75,6 +75,7 @@ class WebPageBlock {
     Math,
     Thinking,
     BlockQuoteBlocks,
+    Document,
     Size
   };
 

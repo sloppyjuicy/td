@@ -122,6 +122,8 @@ unique_ptr<MessageContent> create_animation_message_content(FileId animation_fil
 
 unique_ptr<MessageContent> create_audio_message_content(FileId audio_file_id);
 
+unique_ptr<MessageContent> create_document_message_content(FileId document_file_id);
+
 unique_ptr<MessageContent> create_photo_message_content(Photo photo, FileId video_file_id);
 
 unique_ptr<MessageContent> create_video_message_content(FileId file_id, Photo cover, int32 start_timestamp);
@@ -279,11 +281,11 @@ void register_quick_reply_message_content(Td *td, const MessageContent *content,
 void unregister_quick_reply_message_content(Td *td, const MessageContent *content,
                                             QuickReplyMessageFullId message_full_id, const char *source);
 
-void register_welcome_message_content(Td *td, const MessageContent *content,
-                                          EphemeralMessageFullId message_full_id, const char *source);
+void register_welcome_message_content(Td *td, const MessageContent *content, EphemeralMessageFullId message_full_id,
+                                      const char *source);
 
-void unregister_welcome_message_content(Td *td, const MessageContent *content,
-                                            EphemeralMessageFullId message_full_id, const char *source);
+void unregister_welcome_message_content(Td *td, const MessageContent *content, EphemeralMessageFullId message_full_id,
+                                        const char *source);
 
 unique_ptr<MessageContent> get_secret_message_content(
     Td *td, string message_text, unique_ptr<EncryptedFile> file,

@@ -4029,6 +4029,104 @@ class WebPageBlockVoiceNote final : public WebPageBlock {
   }
 };
 
+class WebPageBlockDocument final : public WebPageBlock {
+  FileId document_file_id;
+  WebPageBlockCaption caption;
+
+ public:
+  WebPageBlockDocument() = default;
+  WebPageBlockDocument(FileId document_file_id, WebPageBlockCaption &&caption)
+      : document_file_id(document_file_id), caption(std::move(caption)) {
+  }
+
+  Type get_type() const final {
+    return Type::Document;
+  }
+
+  void append_file_ids(const Td *td, vector<FileId> &file_ids) const final {
+    Document(Document::Type::General, document_file_id).append_file_ids(td, file_ids);
+    caption.append_file_ids(td, file_ids);
+  }
+
+  void append_rich_message_media(vector<RichMessageMedia> &media) const final {
+    if (document_file_id.is_valid()) {
+      media.emplace_back(create_document_message_content(document_file_id));
+    }
+  }
+
+  void add_dependencies(Dependencies &dependencies) const final {
+    caption.add_dependencies(dependencies);
+  }
+
+  void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const final {
+    caption.for_each_rich_text(recurse_text, callback);
+  }
+
+  bool can_send(const RestrictedRights &rights) const final {
+    return rights.can_send_documents();
+  }
+
+  int32 get_index_mask() const final {
+    int32 index_mask = caption.get_index_mask();
+    if (document_file_id.is_valid()) {
+      return index_mask | message_search_filter_index_mask(MessageSearchFilter::Document);
+    }
+    return index_mask;
+  }
+
+  unique_ptr<WebPageBlock> clone() const final {
+    return td::make_unique<WebPageBlockDocument>(document_file_id, caption.clone());
+  }
+
+  telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
+    CHECK(context.media_ != nullptr && context.media_pos_ < context.media_->size());
+    auto input_document = (*context.media_)[context.media_pos_++].get_input_document(context.td_);
+    if (input_document != nullptr) {
+      auto id = input_document->id_;
+      context.documents_.push_back(std::move(input_document));
+      return telegram_api::make_object<telegram_api::pageBlockDocument>(id, caption.get_input_page_caption(context));
+    }
+    LOG(INFO) << "Can't create pageBlockDocument for document " << document_file_id;
+    return telegram_api::make_object<telegram_api::pageBlockDivider>();
+  }
+
+  td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
+    return td_api::make_object<td_api::pageBlockDocument>(
+        context->td_->documents_manager_->get_document_object(document_file_id, PhotoFormat::Jpeg),
+        caption.get_page_block_caption_object(context));
+  }
+
+  friend bool operator==(const WebPageBlockDocument &lhs, const WebPageBlockDocument &rhs) {
+    return lhs.document_file_id == rhs.document_file_id && lhs.caption == rhs.caption;
+  }
+
+  template <class StorerT>
+  void store(StorerT &storer) const {
+    using ::td::store;
+    bool has_document = document_file_id.is_valid();
+    BEGIN_STORE_FLAGS();
+    STORE_FLAG(has_document);
+    END_STORE_FLAGS();
+    if (has_document) {
+      storer.context()->td().get_actor_unsafe()->documents_manager_->store_document(document_file_id, storer);
+    }
+    store(caption, storer);
+  }
+
+  template <class ParserT>
+  void parse(ParserT &parser) {
+    using ::td::parse;
+    bool has_document;
+    BEGIN_PARSE_FLAGS();
+    PARSE_FLAG(has_document);
+    END_PARSE_FLAGS();
+    if (has_document) {
+      document_file_id = parser.context()->td().get_actor_unsafe()->documents_manager_->parse_document(parser);
+    }
+    parse(caption, parser);
+  }
+};
+
 vector<RichText> get_rich_texts(vector<tl_object_ptr<telegram_api::RichText>> &&rich_text_ptrs,
                                 const FlatHashMap<int64, FileId> &documents);
 
@@ -4674,8 +4772,13 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
     }
     case telegram_api::pageBlockButtonRow::ID:
       break;
-    case telegram_api::pageBlockDocument::ID:
-      break;
+    case telegram_api::pageBlockDocument::ID: {
+      auto page_block = telegram_api::move_object_as<telegram_api::pageBlockDocument>(page_block_ptr);
+      auto it = documents.find(page_block->document_id_);
+      auto document_file_id = it != documents.end() ? it->second : FileId();
+      return make_unique<WebPageBlockDocument>(document_file_id,
+                                               get_page_block_caption(std::move(page_block->caption_), documents));
+    }
     default:
       UNREACHABLE();
   }
@@ -4803,6 +4906,9 @@ void WebPageBlock::call_impl(Type type, const WebPageBlock *ptr, F &&f) {
       return f(static_cast<const WebPageBlockThinking *>(ptr));
     case Type::BlockQuoteBlocks:
       return f(static_cast<const WebPageBlockBlockQuoteBlocks *>(ptr));
+    case Type::Document:
+      return f(static_cast<const WebPageBlockDocument *>(ptr));
+
     default:
       UNREACHABLE();
   }
