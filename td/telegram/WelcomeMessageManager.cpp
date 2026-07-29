@@ -22,8 +22,11 @@
 #include "td/telegram/MessagesManager.h"
 #include "td/telegram/OptionManager.h"
 #include "td/telegram/Td.h"
+#include "td/telegram/TdDb.h"
 #include "td/telegram/UpdatesManager.h"
 #include "td/telegram/UserId.h"
+
+#include "td/db/SqliteKeyValueAsync.h"
 
 #include "td/utils/algorithm.h"
 #include "td/utils/logging.h"
@@ -316,7 +319,7 @@ void WelcomeMessageManager::WelcomeMessage::parse(ParserT &parser) {
   PARSE_FLAG(disable_web_page_preview_);
   END_PARSE_FLAGS();
   td::parse(ephemeral_message_id_, parser);
-  parse_message_content(content_.get(), parser);
+  parse_message_content(content_, parser);
 }
 
 template <class StorerT>
@@ -385,6 +388,24 @@ void WelcomeMessageManager::change_welcome_message_files(DialogId dialog_id, con
   }
 }
 
+string WelcomeMessageManager::get_welcome_messages_database_key(DialogId dialog_id) {
+  return PSTRING() << "welcome" << dialog_id.get();
+}
+
+void WelcomeMessageManager::save_welcome_messages(DialogId dialog_id) {
+  if (!G()->use_chat_info_database()) {
+    return;
+  }
+  LOG(INFO) << "Save welcome messages in " << dialog_id;
+  auto *messages = get_welcome_messages(dialog_id);
+  if (messages == nullptr) {
+    G()->td_db()->get_sqlite_pmc()->erase(get_welcome_messages_database_key(dialog_id), Auto());
+  } else {
+    G()->td_db()->get_sqlite_pmc()->set(get_welcome_messages_database_key(dialog_id),
+                                        log_event_store(*messages).as_slice().str(), Auto());
+  }
+}
+
 void WelcomeMessageManager::on_external_update_message_content(EphemeralMessageFullId message_full_id,
                                                                const char *source, bool expect_no_message) const {
   auto dialog_id = message_full_id.get_dialog_id();
@@ -406,6 +427,7 @@ void WelcomeMessageManager::delete_pending_message_web_page(EphemeralMessageFull
   remove_message_content_web_page(m->content_.get());
   register_welcome_message(dialog_id, m, "delete_pending_message_web_page");
   // don't need to send updates, because the web page was pending
+  save_welcome_messages(dialog_id);
 }
 
 WelcomeMessageManager::WelcomeMessageInfo WelcomeMessageManager::parse_welcome_message(
@@ -463,6 +485,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   send_update_chat_welcome_messages(dialog_id);
   td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, true);
   reload_welcome_messages(dialog_id, Promise<Unit>());
+  save_welcome_messages(dialog_id);
 }
 
 void WelcomeMessageManager::on_edited_welcome_message(
@@ -489,6 +512,7 @@ void WelcomeMessageManager::on_edited_welcome_message(
     m->content_ = std::move(message_info.message_->content_);
     register_welcome_message(dialog_id, m, "on_edited_welcome_message");
     change_welcome_message_files(dialog_id, old_file_ids, get_dialog_welcome_message_file_ids(messages));
+    save_welcome_messages(dialog_id);
   }
   if (need_update) {
     send_update_chat_welcome_messages(dialog_id);
@@ -538,6 +562,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
     welcome_messages_.erase(dialog_id);
   }
   send_update_chat_welcome_messages(dialog_id);
+  save_welcome_messages(dialog_id);
 }
 
 const WelcomeMessageManager::WelcomeMessages *WelcomeMessageManager::get_welcome_messages(DialogId dialog_id) const {
@@ -688,6 +713,9 @@ void WelcomeMessageManager::on_get_welcome_messages(
   if (need_update) {
     send_update_chat_welcome_messages(dialog_id);
   }
+  if (is_content_changed || need_update) {
+    save_welcome_messages(dialog_id);
+  }
   set_promises(promises);
 }
 
@@ -771,6 +799,7 @@ void WelcomeMessageManager::delete_welcome_message(DialogId dialog_id, Ephemeral
 void WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
   if (delete_all_welcome_messages(dialog_id)) {
     send_update_chat_welcome_messages(dialog_id);
+    save_welcome_messages(dialog_id);
     td_->create_handler<DeleteAllWelcomeMessagesQuery>(std::move(promise))->send(dialog_id);
   }
 }
@@ -778,6 +807,7 @@ void WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id, Prom
 void WelcomeMessageManager::drop_welcome_messages(DialogId dialog_id, bool is_empty) {
   if (delete_all_welcome_messages(dialog_id)) {
     send_update_chat_welcome_messages(dialog_id);
+    save_welcome_messages(dialog_id);
   }
   if (!is_empty) {
     loaded_welcome_messages_.erase(dialog_id);

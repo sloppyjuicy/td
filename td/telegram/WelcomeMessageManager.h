@@ -116,6 +116,10 @@ class WelcomeMessageManager final : public Actor {
   void change_welcome_message_files(DialogId dialog_id, const vector<FileId> &old_file_ids,
                                     const vector<FileId> &new_file_ids);
 
+  static string get_welcome_messages_database_key(DialogId dialog_id);
+
+  void save_welcome_messages(DialogId dialog_id);
+
   static WelcomeMessageInfo parse_welcome_message(Td *td,
                                                   telegram_api::object_ptr<telegram_api::ephemeralMessage> message,
                                                   const char *source);
