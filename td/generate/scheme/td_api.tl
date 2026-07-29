@@ -3683,6 +3683,9 @@ buttonStyleDanger = ButtonStyle;
 //@description The button has green color
 buttonStyleSuccess = ButtonStyle;
 
+//@description The button must be shown as a link. The style is allowed only for callback inline buttons inside rich messages
+buttonStyleLink = ButtonStyle;
+
 
 //@class KeyboardButtonType @description Describes a keyboard button type
 

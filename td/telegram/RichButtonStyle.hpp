@@ -17,7 +17,6 @@ void RichButtonStyle::store(StorerT &storer) const {
   bool has_type = type_ != Type::Default;
   BEGIN_STORE_FLAGS();
   STORE_FLAG(has_type);
-  STORE_FLAG(is_link_);
   END_STORE_FLAGS();
   if (has_type) {
     td::store(type_, storer);
@@ -29,7 +28,6 @@ void RichButtonStyle::parse(ParserT &parser) {
   bool has_type;
   BEGIN_PARSE_FLAGS();
   PARSE_FLAG(has_type);
-  PARSE_FLAG(is_link_);
   END_PARSE_FLAGS();
   if (has_type) {
     td::parse(type_, parser);
