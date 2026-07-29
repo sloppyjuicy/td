@@ -106,8 +106,6 @@ class WelcomeMessageManager final : public Actor {
 
   const vector<unique_ptr<WelcomeMessage>> *get_welcome_messages(DialogId dialog_id) const;
 
-  vector<unique_ptr<WelcomeMessage>> *get_welcome_messages_editable(DialogId dialog_id);
-
   const WelcomeMessage *get_welcome_message(DialogId dialog_id, EphemeralMessageId ephemeral_message_id) const;
 
   WelcomeMessage *get_welcome_message_editable(DialogId dialog_id, EphemeralMessageId ephemeral_message_id);

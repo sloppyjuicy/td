@@ -515,15 +515,6 @@ const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageM
   return &it->second;
 }
 
-vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageManager::get_welcome_messages_editable(
-    DialogId dialog_id) {
-  auto it = welcome_messages_.find(dialog_id);
-  if (it == welcome_messages_.end()) {
-    return nullptr;
-  }
-  return &it->second;
-}
-
 const WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_message(
     DialogId dialog_id, EphemeralMessageId ephemeral_message_id) const {
   auto messages = get_welcome_messages(dialog_id);
@@ -539,9 +530,9 @@ const WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_
 
 WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_message_editable(
     DialogId dialog_id, EphemeralMessageId ephemeral_message_id) {
-  auto messages = get_welcome_messages_editable(dialog_id);
-  if (messages != nullptr) {
-    for (auto &message : *messages) {
+  auto it = welcome_messages_.find(dialog_id);
+  if (it != welcome_messages_.end()) {
+    for (auto &message : it->second) {
       if (message->ephemeral_message_id_ == ephemeral_message_id) {
         return message.get();
       }
