@@ -102,6 +102,9 @@ static StringBuilder &operator<<(StringBuilder &string_builder, const InlineKeyb
     case InlineKeyboardButton::Type::Copy:
       string_builder << "Copy";
       break;
+    case InlineKeyboardButton::Type::Disabled:
+      string_builder << "Disabled";
+      break;
     default:
       UNREACHABLE();
   }
@@ -331,6 +334,7 @@ static InlineKeyboardButton get_inline_keyboard_button(
       break;
     }
     case telegram_api::inlineButtonTypeDisabled::ID:
+      button.type = InlineKeyboardButton::Type::Disabled;
       break;
     default:
       LOG(ERROR) << "Unsupported inline keyboard button: " << to_string(keyboard_button->type_);
@@ -686,6 +690,9 @@ static Result<InlineKeyboardButton> get_inline_keyboard_button(tl_object_ptr<td_
       }
       break;
     }
+    case td_api::inlineKeyboardButtonTypeDisabled::ID:
+      return Status::Error(400, "Invalid button type specified");
+      break;
     default:
       UNREACHABLE();
   }
@@ -951,6 +958,9 @@ static telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_ke
         return telegram_api::make_object<telegram_api::inlineButtonTypeWebView>(keyboard_button.data);
       case InlineKeyboardButton::Type::Copy:
         return telegram_api::make_object<telegram_api::inlineButtonTypeCopy>(keyboard_button.data);
+      case InlineKeyboardButton::Type::Disabled:
+        UNREACHABLE();
+        break;
       default:
         UNREACHABLE();
         return nullptr;
@@ -1098,6 +1108,9 @@ static td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_butt
       break;
     case InlineKeyboardButton::Type::Copy:
       type = make_tl_object<td_api::inlineKeyboardButtonTypeCopyText>(keyboard_button.data);
+      break;
+    case InlineKeyboardButton::Type::Disabled:
+      type = make_tl_object<td_api::inlineKeyboardButtonTypeDisabled>();
       break;
     default:
       UNREACHABLE();

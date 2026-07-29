@@ -3776,6 +3776,9 @@ inlineKeyboardButtonTypeUser user_id:int53 = InlineKeyboardButtonType;
 //@description A button that copies specified text to clipboard @text The text to copy to clipboard
 inlineKeyboardButtonTypeCopyText text:string = InlineKeyboardButtonType;
 
+//@description A disabled button
+inlineKeyboardButtonTypeDisabled = InlineKeyboardButtonType;
+
 
 //@class KeyboardButtonSource @description Describes source of a keyboard button
 
