@@ -929,19 +929,23 @@ static telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_ke
         if (bot_user_id > 0) {
           request_write_access = true;
         } else {
-          bot_user_id = -bot_user_id;
+          bot_user_id = -bot_user_id - 1;
         }
         if (!keyboard_button.forward_text.empty()) {
           flags |= telegram_api::inputInlineButtonTypeUrlAuth::FWD_TEXT_MASK;
         }
-        auto r_input_user = user_manager->get_input_user(UserId(bot_user_id));
-        if (r_input_user.is_error()) {
-          LOG(ERROR) << "Failed to get InputUser for " << bot_user_id << ": " << r_input_user.error();
-          return telegram_api::make_object<telegram_api::inlineButtonTypeUrl>(keyboard_button.data);
+        telegram_api::object_ptr<telegram_api::InputUser> input_user;
+        if (bot_user_id != 0) {
+          auto r_input_user = user_manager->get_input_user(UserId(bot_user_id));
+          if (r_input_user.is_error()) {
+            LOG(ERROR) << "Failed to get InputUser for " << bot_user_id << ": " << r_input_user.error();
+            return telegram_api::make_object<telegram_api::inlineButtonTypeUrl>(keyboard_button.data);
+          }
+          flags |= telegram_api::inputInlineButtonTypeUrlAuth::BOT_MASK;
+          input_user = r_input_user.move_as_ok();
         }
-        flags |= telegram_api::inputInlineButtonTypeUrlAuth::BOT_MASK;
         return telegram_api::make_object<telegram_api::inputInlineButtonTypeUrlAuth>(
-            flags, request_write_access, keyboard_button.forward_text, keyboard_button.data, r_input_user.move_as_ok());
+            flags, request_write_access, keyboard_button.forward_text, keyboard_button.data, std::move(input_user));
       }
       case InlineKeyboardButton::Type::CallbackWithPassword:
         UNREACHABLE();

@@ -59,7 +59,7 @@ struct InlineKeyboardButton {
   };
 
   Type type = Type::Disabled;
-  int64 id = 0;    // UrlAuth: button_id or (2 * request_write_access - 1) * bot_user_id
+  int64 id = 0;    // UrlAuth: button_id or (2 * request_write_access - 1) * bot_user_id + request_write_access - 1
                    // SwitchInline: mask of allowed target chats; 0 if any
   UserId user_id;  // User only
   KeyboardButtonStyle style;
