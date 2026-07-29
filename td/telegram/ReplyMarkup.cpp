@@ -303,7 +303,7 @@ unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup
         vector<KeyboardButton> buttons;
         buttons.reserve(row->buttons_.size());
         for (auto &button : row->buttons_) {
-          buttons.push_back(get_keyboard_button(std::move(button)));
+          buttons.emplace_back(std::move(button));
           if (buttons.back().text_.empty() && (buttons.back().type_ == KeyboardButton::Type::Text ||
                                                !buttons.back().style_.get_icon_custom_emoji_id().is_valid())) {
             buttons.pop_back();
@@ -550,7 +550,7 @@ static Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_ap
             continue;
           }
 
-          TRY_RESULT(current_button, get_keyboard_button(std::move(button), request_buttons_allowed));
+          TRY_RESULT(current_button, KeyboardButton::get_keyboard_button(std::move(button), request_buttons_allowed));
 
           row_buttons.push_back(std::move(current_button));
           row_button_count++;

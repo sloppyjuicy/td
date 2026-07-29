@@ -320,7 +320,7 @@ class GetRequestedWebViewButtonQuery final : public Td::ResultHandler {
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for GetRequestedWebViewButtonQuery: " << to_string(ptr);
-    auto keyboard_button = get_keyboard_button(std::move(ptr));
+    auto keyboard_button = KeyboardButton(std::move(ptr));
     if (keyboard_button.type_ != KeyboardButton::Type::RequestDialog) {
       LOG(ERROR) << to_string(ptr);
       return on_error(Status::Error(500, "Receive invalid button type"));
@@ -811,7 +811,7 @@ void InlineQueriesManager::save_prepared_keyboard_button(UserId user_id,
                                                          td_api::object_ptr<td_api::keyboardButton> &&button,
                                                          Promise<string> &&promise) {
   TRY_RESULT_PROMISE(promise, input_user, td_->user_manager_->get_input_user(user_id));
-  TRY_RESULT_PROMISE(promise, keyboard_button, get_keyboard_button(std::move(button), true));
+  TRY_RESULT_PROMISE(promise, keyboard_button, KeyboardButton::get_keyboard_button(std::move(button), true));
 
   td_->create_handler<SavePreparedKeyboardButtonQuery>(std::move(promise))
       ->send(std::move(input_user), keyboard_button);

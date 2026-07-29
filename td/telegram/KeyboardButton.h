@@ -34,12 +34,14 @@ struct KeyboardButton {
   string text_;
   string url_;                                             // WebView only
   unique_ptr<RequestedDialogType> requested_dialog_type_;  // RequestDialog only
+
+  KeyboardButton() = default;
+
+  explicit KeyboardButton(telegram_api::object_ptr<telegram_api::keyboardButton> &&keyboard_button);
+
+  static Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
+                                                    bool request_buttons_allowed);
 };
-
-KeyboardButton get_keyboard_button(tl_object_ptr<telegram_api::keyboardButton> &&keyboard_button);
-
-Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
-                                           bool request_buttons_allowed);
 
 telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button(const KeyboardButton &keyboard_button);
 

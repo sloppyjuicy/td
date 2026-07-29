@@ -14,30 +14,29 @@
 
 namespace td {
 
-KeyboardButton get_keyboard_button(telegram_api::object_ptr<telegram_api::keyboardButton> &&keyboard_button) {
+KeyboardButton::KeyboardButton(telegram_api::object_ptr<telegram_api::keyboardButton> &&keyboard_button) {
   CHECK(keyboard_button != nullptr);
 
-  KeyboardButton button;
   switch (keyboard_button->type_->get_id()) {
     case telegram_api::buttonTypeDefault::ID:
-      button.type_ = KeyboardButton::Type::Text;
+      type_ = KeyboardButton::Type::Text;
       break;
     case telegram_api::buttonTypeRequestPhone::ID:
-      button.type_ = KeyboardButton::Type::RequestPhoneNumber;
+      type_ = KeyboardButton::Type::RequestPhoneNumber;
       break;
     case telegram_api::buttonTypeRequestGeoLocation::ID:
-      button.type_ = KeyboardButton::Type::RequestLocation;
+      type_ = KeyboardButton::Type::RequestLocation;
       break;
     case telegram_api::buttonTypeRequestPoll::ID: {
       auto type = telegram_api::move_object_as<telegram_api::buttonTypeRequestPoll>(keyboard_button->type_);
       if ((type->flags_ & telegram_api::buttonTypeRequestPoll::QUIZ_MASK) != 0) {
         if (type->quiz_) {
-          button.type_ = KeyboardButton::Type::RequestPollQuiz;
+          type_ = KeyboardButton::Type::RequestPollQuiz;
         } else {
-          button.type_ = KeyboardButton::Type::RequestPollRegular;
+          type_ = KeyboardButton::Type::RequestPollRegular;
         }
       } else {
-        button.type_ = KeyboardButton::Type::RequestPoll;
+        type_ = KeyboardButton::Type::RequestPoll;
       }
       break;
     }
@@ -49,27 +48,26 @@ KeyboardButton get_keyboard_button(telegram_api::object_ptr<telegram_api::keyboa
         break;
       }
 
-      button.type_ = KeyboardButton::Type::WebView;
-      button.url_ = r_url.move_as_ok();
+      type_ = KeyboardButton::Type::WebView;
+      url_ = r_url.move_as_ok();
       break;
     }
     case telegram_api::buttonTypeRequestPeer::ID: {
       auto type = telegram_api::move_object_as<telegram_api::buttonTypeRequestPeer>(keyboard_button->type_);
-      button.type_ = KeyboardButton::Type::RequestDialog;
-      button.requested_dialog_type_ =
+      type_ = KeyboardButton::Type::RequestDialog;
+      requested_dialog_type_ =
           td::make_unique<RequestedDialogType>(std::move(type->peer_type_), type->button_id_, type->max_quantity_);
       break;
     }
     default:
       LOG(ERROR) << "Unsupported keyboard button: " << to_string(keyboard_button->type_);
   }
-  button.style_ = KeyboardButtonStyle(std::move(keyboard_button->style_));
-  button.text_ = std::move(keyboard_button->text_);
-  return button;
+  style_ = KeyboardButtonStyle(std::move(keyboard_button->style_));
+  text_ = std::move(keyboard_button->text_);
 }
 
-Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
-                                           bool request_buttons_allowed) {
+Result<KeyboardButton> KeyboardButton::get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
+                                                           bool request_buttons_allowed) {
   CHECK(button != nullptr);
 
   if (!clean_input_string(button->text_)) {
