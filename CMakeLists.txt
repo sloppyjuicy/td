@@ -494,6 +494,7 @@ set(TDLIB_SOURCE_PART1
   td/telegram/InputMessageText.cpp
   td/telegram/JoinChatBotResult.cpp
   td/telegram/JsonValue.cpp
+  td/telegram/KeyboardButton.cpp
   td/telegram/KeyboardButtonStyle.cpp
   td/telegram/LabeledPricePart.cpp
   td/telegram/LanguagePackManager.cpp
@@ -898,6 +899,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/InputMessageText.h
   td/telegram/JoinChatBotResult.h
   td/telegram/JsonValue.h
+  td/telegram/KeyboardButton.h
   td/telegram/KeyboardButtonStyle.h
   td/telegram/LabeledPricePart.h
   td/telegram/LanguagePackManager.h
@@ -1212,6 +1214,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/GroupCallMessageLimit.hpp
   td/telegram/InputInvoice.hpp
   td/telegram/InputMessageText.hpp
+  td/telegram/KeyboardButton.hpp
   td/telegram/KeyboardButtonStyle.hpp
   td/telegram/MediaArea.hpp
   td/telegram/MediaAreaCoordinates.hpp

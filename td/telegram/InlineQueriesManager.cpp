@@ -22,6 +22,7 @@
 #include "td/telegram/Global.h"
 #include "td/telegram/InputInvoice.h"
 #include "td/telegram/InputMessageText.h"
+#include "td/telegram/KeyboardButton.h"
 #include "td/telegram/LinkManager.h"
 #include "td/telegram/Location.h"
 #include "td/telegram/MessageContent.h"

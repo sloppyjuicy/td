@@ -7,6 +7,7 @@
 #pragma once
 
 #include "td/telegram/DialogId.h"
+#include "td/telegram/KeyboardButton.h"
 #include "td/telegram/KeyboardButtonStyle.h"
 #include "td/telegram/RequestedDialogType.h"
 #include "td/telegram/td_api.h"
@@ -21,25 +22,6 @@ namespace td {
 
 class Dependencies;
 class UserManager;
-
-struct KeyboardButton {
-  // append only
-  enum class Type : int32 {
-    Text,
-    RequestPhoneNumber,
-    RequestLocation,
-    RequestPoll,
-    RequestPollQuiz,
-    RequestPollRegular,
-    WebView,
-    RequestDialog
-  };
-  Type type = Type::Text;
-  KeyboardButtonStyle style;
-  string text;
-  string url;                                             // WebView only
-  unique_ptr<RequestedDialogType> requested_dialog_type;  // RequestDialog only
-};
 
 struct InlineKeyboardButton {
   // append only
@@ -97,15 +79,6 @@ bool operator==(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 bool operator!=(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 
 StringBuilder &operator<<(StringBuilder &string_builder, const ReplyMarkup &reply_markup);
-
-KeyboardButton get_keyboard_button(tl_object_ptr<telegram_api::keyboardButton> &&keyboard_button);
-
-Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
-                                           bool request_buttons_allowed);
-
-td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const KeyboardButton &keyboard_button);
-
-telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button(const KeyboardButton &keyboard_button);
 
 unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr, bool is_bot,
                                          bool only_inline_keyboard, bool message_contains_mention);
