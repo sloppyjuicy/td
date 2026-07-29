@@ -608,6 +608,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/RequestedDialogType.cpp
   td/telegram/Requests.cpp
   td/telegram/RestrictionReason.cpp
+  td/telegram/RichButtonStyle.cpp
   td/telegram/RichMessage.cpp
   td/telegram/RichMessageMedia.cpp
   td/telegram/SavedMessagesManager.cpp
@@ -1042,6 +1043,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/RequestedDialogType.h
   td/telegram/Requests.h
   td/telegram/RestrictionReason.h
+  td/telegram/RichButtonStyle.h
   td/telegram/RichMessage.h
   td/telegram/RichMessageMedia.h
   td/telegram/SavedMessagesManager.h
@@ -1245,6 +1247,7 @@ set(TDLIB_SOURCE_PART2
   td/telegram/RepliedMessageInfo.hpp
   td/telegram/ReplyMarkup.hpp
   td/telegram/RequestedDialogType.hpp
+  td/telegram/RichButtonStyle.hpp
   td/telegram/RichMessage.hpp
   td/telegram/RichMessageMedia.hpp
   td/telegram/ScopeNotificationSettings.hpp

@@ -430,6 +430,7 @@ function split_file($file, $chunks, $undo) {
             'referral_program_manager[_(-](?![.]get[(][)])|ReferralProgramManager' => 'ReferralProgramManager',
             'ReferralProgramParameters' => 'ReferralProgramParameters',
             'RequestActor|RequestOnceActor' => 'RequestActor',
+            'RichButtonStyle' => 'RuchButtonStyle',
             'RichMessage[^M]' => 'RichMessage',
             'RichMessageMedia' => 'RichMessageMedia',
             'saved_messages_manager[_(-](?![.]get[(][)])|SavedMessagesManager' => 'SavedMessagesManager',
