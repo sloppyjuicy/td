@@ -319,6 +319,20 @@ void WelcomeMessageManager::WelcomeMessage::parse(ParserT &parser) {
   parse_message_content(content_.get(), parser);
 }
 
+template <class StorerT>
+void WelcomeMessageManager::WelcomeMessages::store(StorerT &storer) const {
+  BEGIN_STORE_FLAGS();
+  END_STORE_FLAGS();
+  td::store(messages_, storer);
+}
+
+template <class ParserT>
+void WelcomeMessageManager::WelcomeMessages::parse(ParserT &parser) {
+  BEGIN_PARSE_FLAGS();
+  END_PARSE_FLAGS();
+  td::parse(messages_, parser);
+}
+
 WelcomeMessageManager::WelcomeMessage::~WelcomeMessage() = default;
 
 WelcomeMessageManager::WelcomeMessageManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
@@ -441,7 +455,7 @@ void WelcomeMessageManager::on_new_welcome_message(telegram_api::object_ptr<tele
   if (get_welcome_message(dialog_id, ephemeral_message_id) != nullptr) {
     return;
   }
-  auto &messages = welcome_messages_[dialog_id];
+  auto &messages = welcome_messages_[dialog_id].messages_;
   auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
   register_welcome_message(dialog_id, message_info.message_.get(), "on_new_welcome_message");
   messages.push_back(std::move(message_info.message_));
@@ -469,7 +483,7 @@ void WelcomeMessageManager::on_edited_welcome_message(
   bool is_content_changed = false;
   update_welcome_message_content(m, message_info.message_.get(), dialog_id, is_content_changed, need_update);
   if (is_content_changed || need_update) {
-    auto &messages = welcome_messages_[dialog_id];
+    auto &messages = welcome_messages_[dialog_id].messages_;
     auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
     unregister_welcome_message(dialog_id, m, "on_edited_welcome_message");
     m->content_ = std::move(message_info.message_->content_);
@@ -509,7 +523,7 @@ void WelcomeMessageManager::do_delete_welcome_messages(DialogId dialog_id,
   if (ephemeral_message_ids.empty()) {
     return;
   }
-  auto &messages = welcome_messages_[dialog_id];
+  auto &messages = welcome_messages_[dialog_id].messages_;
   auto old_file_ids = get_dialog_welcome_message_file_ids(messages);
   td::remove_if(messages, [&](const auto &welcome_message) {
     if (td::contains(ephemeral_message_ids, welcome_message->ephemeral_message_id_)) {
@@ -532,7 +546,7 @@ const vector<unique_ptr<WelcomeMessageManager::WelcomeMessage>> *WelcomeMessageM
   if (it == welcome_messages_.end()) {
     return nullptr;
   }
-  return &it->second;
+  return &it->second.messages_;
 }
 
 const WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_message(
@@ -552,7 +566,7 @@ WelcomeMessageManager::WelcomeMessage *WelcomeMessageManager::get_welcome_messag
     DialogId dialog_id, EphemeralMessageId ephemeral_message_id) {
   auto it = welcome_messages_.find(dialog_id);
   if (it != welcome_messages_.end()) {
-    for (auto &message : it->second) {
+    for (auto &message : it->second.messages_) {
       if (message->ephemeral_message_id_ == ephemeral_message_id) {
         return message.get();
       }
@@ -649,7 +663,7 @@ void WelcomeMessageManager::on_get_welcome_messages(
       need_update = true;
     }
   } else {
-    auto &messages = welcome_messages_[dialog_id];
+    auto &messages = welcome_messages_[dialog_id].messages_;
     if (messages.size() != welcome_messages.size()) {
       need_update = true;
     } else {
@@ -775,8 +789,8 @@ bool WelcomeMessageManager::delete_all_welcome_messages(DialogId dialog_id) {
   td_->messages_manager_->on_update_dialog_has_welcome_messages(dialog_id, false);
   auto it = welcome_messages_.find(dialog_id);
   if (it != welcome_messages_.end()) {
-    change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second), {});
-    for (auto &message : it->second) {
+    change_welcome_message_files(dialog_id, get_dialog_welcome_message_file_ids(it->second.messages_), {});
+    for (auto &message : it->second.messages_) {
       unregister_welcome_message(dialog_id, message.get(), "delete_all_welcome_messages");
     }
     welcome_messages_.erase(it);
@@ -852,7 +866,7 @@ void WelcomeMessageManager::get_current_state(vector<td_api::object_ptr<td_api::
   }
 
   for (auto &it : welcome_messages_) {
-    updates.push_back(get_update_chat_welcome_messages_object(it.first, it.second));
+    updates.push_back(get_update_chat_welcome_messages_object(it.first, it.second.messages_));
   }
 }
 

@@ -93,6 +93,16 @@ class WelcomeMessageManager final : public Actor {
     unique_ptr<WelcomeMessage> message_;
   };
 
+  struct WelcomeMessages {
+    vector<unique_ptr<WelcomeMessage>> messages_;
+
+    template <class StorerT>
+    void store(StorerT &storer) const;
+
+    template <class ParserT>
+    void parse(ParserT &parser);
+  };
+
   class UploadWelcomeMessageContentCallback;
 
   void tear_down() final;
@@ -141,7 +151,7 @@ class WelcomeMessageManager final : public Actor {
   Td *td_;
   ActorShared<> parent_;
 
-  FlatHashMap<DialogId, vector<unique_ptr<WelcomeMessage>>, DialogIdHash> welcome_messages_;
+  FlatHashMap<DialogId, WelcomeMessages, DialogIdHash> welcome_messages_;
 
   FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> reload_welcome_messages_queries_;
 
