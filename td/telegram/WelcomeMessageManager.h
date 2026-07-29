@@ -80,6 +80,12 @@ class WelcomeMessageManager final : public Actor {
     WelcomeMessage(WelcomeMessage &&) = delete;
     WelcomeMessage &operator=(WelcomeMessage &&) = delete;
     ~WelcomeMessage();
+
+    template <class StorerT>
+    void store(StorerT &storer) const;
+
+    template <class ParserT>
+    void parse(ParserT &parser);
   };
 
   struct WelcomeMessageInfo {

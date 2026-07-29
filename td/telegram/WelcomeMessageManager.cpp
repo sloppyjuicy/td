@@ -299,6 +299,26 @@ class WelcomeMessageManager::UploadWelcomeMessageContentCallback final
   }
 };
 
+template <class StorerT>
+void WelcomeMessageManager::WelcomeMessage::store(StorerT &storer) const {
+  BEGIN_STORE_FLAGS();
+  STORE_FLAG(invert_media_);
+  STORE_FLAG(disable_web_page_preview_);
+  END_STORE_FLAGS();
+  td::store(ephemeral_message_id_, storer);
+  store_message_content(content_.get(), storer);
+}
+
+template <class ParserT>
+void WelcomeMessageManager::WelcomeMessage::parse(ParserT &parser) {
+  BEGIN_PARSE_FLAGS();
+  PARSE_FLAG(invert_media_);
+  PARSE_FLAG(disable_web_page_preview_);
+  END_PARSE_FLAGS();
+  td::parse(ephemeral_message_id_, parser);
+  parse_message_content(content_.get(), parser);
+}
+
 WelcomeMessageManager::WelcomeMessage::~WelcomeMessage() = default;
 
 WelcomeMessageManager::WelcomeMessageManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
