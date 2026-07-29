@@ -133,6 +133,8 @@ class WelcomeMessageManager final : public Actor {
   void update_welcome_message_content(WelcomeMessage *old_message, WelcomeMessage *new_message, DialogId dialog_id,
                                       bool &is_content_changed, bool &need_update);
 
+  void on_load_welcome_messages_from_database(DialogId dialog_id, string value);
+
   void on_get_welcome_messages(DialogId dialog_id,
                                Result<telegram_api::object_ptr<telegram_api::ephemeral_WelcomeMessages>> r_messages);
 
@@ -155,6 +157,8 @@ class WelcomeMessageManager final : public Actor {
   ActorShared<> parent_;
 
   FlatHashMap<DialogId, WelcomeMessages, DialogIdHash> welcome_messages_;
+
+  FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> load_welcome_messages_from_database_queries_;
 
   FlatHashMap<DialogId, vector<Promise<Unit>>, DialogIdHash> reload_welcome_messages_queries_;
 

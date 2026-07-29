@@ -8,6 +8,7 @@
 
 #include "td/telegram/AccessRights.h"
 #include "td/telegram/AuthManager.h"
+#include "td/telegram/Dependencies.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/FileReferenceManager.h"
@@ -25,6 +26,7 @@
 #include "td/telegram/TdDb.h"
 #include "td/telegram/UpdatesManager.h"
 #include "td/telegram/UserId.h"
+#include "td/telegram/UserManager.h"
 
 #include "td/db/SqliteKeyValueAsync.h"
 
@@ -623,9 +625,54 @@ void WelcomeMessageManager::load_welcome_messages(DialogId dialog_id, Promise<Un
   TRY_STATUS_PROMISE(promise, can_access_welcome_messages(dialog_id));
   if (loaded_welcome_messages_.count(dialog_id)) {
     promise.set_value(Unit());
-    promise = Promise<Unit>();
+    return reload_welcome_messages(dialog_id, Promise<Unit>());
+  }
+  if (G()->use_chat_info_database() && reload_welcome_messages_queries_.count(dialog_id) == 0) {
+    auto &queries = load_welcome_messages_from_database_queries_[dialog_id];
+    queries.push_back(std::move(promise));
+    if (queries.size() == 1u) {
+      LOG(INFO) << "Load welcome messages of " << dialog_id << " from database";
+      G()->td_db()->get_sqlite_pmc()->get(get_welcome_messages_database_key(dialog_id),
+                                          PromiseCreator::lambda([actor_id = actor_id(this), dialog_id](string value) {
+                                            send_closure(actor_id,
+                                                         &WelcomeMessageManager::on_load_welcome_messages_from_database,
+                                                         dialog_id, std::move(value));
+                                          }));
+    }
+    return;
   }
   reload_welcome_messages(dialog_id, std::move(promise));
+}
+
+void WelcomeMessageManager::on_load_welcome_messages_from_database(DialogId dialog_id, string value) {
+  auto query_it = load_welcome_messages_from_database_queries_.find(dialog_id);
+  CHECK(query_it != load_welcome_messages_from_database_queries_.end());
+  auto promises = std::move(query_it->second);
+  CHECK(!promises.empty());
+  load_welcome_messages_from_database_queries_.erase(query_it);
+
+  if (loaded_welcome_messages_.count(dialog_id) != 0) {
+    // ignore database value
+    return set_promises(promises);
+  }
+  WelcomeMessages messages;
+  if (!value.empty() && log_event_parse(messages, value).is_ok()) {
+    auto my_user_id = td_->user_manager_->get_my_id();
+    auto is_bot = td_->auth_manager_->is_bot();
+    Dependencies dependencies;
+    for (auto &message : messages.messages_) {
+      add_message_content_dependencies(dependencies, message->content_.get(), my_user_id, is_bot);
+    }
+    if (dependencies.resolve_force(td_, "on_load_welcome_messages_from_database")) {
+      loaded_welcome_messages_.insert(dialog_id);
+      welcome_messages_[dialog_id] = std::move(messages);
+      send_update_chat_welcome_messages(dialog_id);
+      return set_promises(promises);
+    }
+  }
+  for (auto &promise : promises) {
+    reload_welcome_messages(dialog_id, std::move(promise));
+  }
 }
 
 void WelcomeMessageManager::reload_welcome_messages(DialogId dialog_id, Promise<Unit> &&promise) {
