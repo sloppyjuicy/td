@@ -304,8 +304,8 @@ unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup
         buttons.reserve(row->buttons_.size());
         for (auto &button : row->buttons_) {
           buttons.push_back(get_keyboard_button(std::move(button)));
-          if (buttons.back().text.empty() && (buttons.back().type == KeyboardButton::Type::Text ||
-                                              !buttons.back().style.get_icon_custom_emoji_id().is_valid())) {
+          if (buttons.back().text_.empty() && (buttons.back().type_ == KeyboardButton::Type::Text ||
+                                               !buttons.back().style_.get_icon_custom_emoji_id().is_valid())) {
             buttons.pop_back();
           }
         }
@@ -657,11 +657,11 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   result->keyboard = transform(reply_markup->keyboard, [](const vector<KeyboardButton> &row) {
     return transform(row, [](const KeyboardButton &button) {
       KeyboardButton result;
-      result.type = button.type;
-      result.style = button.style;
-      result.text = button.text;
-      result.url = button.url;
-      result.requested_dialog_type = td::make_unique<RequestedDialogType>(*button.requested_dialog_type);
+      result.type_ = button.type_;
+      result.style_ = button.style_;
+      result.text_ = button.text_;
+      result.url_ = button.url_;
+      result.requested_dialog_type_ = td::make_unique<RequestedDialogType>(*button.requested_dialog_type_);
       return result;
     });
   });
@@ -907,8 +907,8 @@ td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(Use
 const RequestedDialogType *ReplyMarkup::get_requested_dialog_type(int32 button_id) const {
   for (auto &row : keyboard) {
     for (auto &button : row) {
-      if (button.requested_dialog_type != nullptr && button.requested_dialog_type->get_button_id() == button_id) {
-        return button.requested_dialog_type.get();
+      if (button.requested_dialog_type_ != nullptr && button.requested_dialog_type_->get_button_id() == button_id) {
+        return button.requested_dialog_type_.get();
       }
     }
   }

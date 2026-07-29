@@ -29,11 +29,11 @@ struct KeyboardButton {
     WebView,
     RequestDialog
   };
-  Type type = Type::Text;
-  KeyboardButtonStyle style;
-  string text;
-  string url;                                             // WebView only
-  unique_ptr<RequestedDialogType> requested_dialog_type;  // RequestDialog only
+  Type type_ = Type::Text;
+  KeyboardButtonStyle style_;
+  string text_;
+  string url_;                                             // WebView only
+  unique_ptr<RequestedDialogType> requested_dialog_type_;  // RequestDialog only
 };
 
 KeyboardButton get_keyboard_button(tl_object_ptr<telegram_api::keyboardButton> &&keyboard_button);

@@ -20,24 +20,24 @@ KeyboardButton get_keyboard_button(telegram_api::object_ptr<telegram_api::keyboa
   KeyboardButton button;
   switch (keyboard_button->type_->get_id()) {
     case telegram_api::buttonTypeDefault::ID:
-      button.type = KeyboardButton::Type::Text;
+      button.type_ = KeyboardButton::Type::Text;
       break;
     case telegram_api::buttonTypeRequestPhone::ID:
-      button.type = KeyboardButton::Type::RequestPhoneNumber;
+      button.type_ = KeyboardButton::Type::RequestPhoneNumber;
       break;
     case telegram_api::buttonTypeRequestGeoLocation::ID:
-      button.type = KeyboardButton::Type::RequestLocation;
+      button.type_ = KeyboardButton::Type::RequestLocation;
       break;
     case telegram_api::buttonTypeRequestPoll::ID: {
       auto type = telegram_api::move_object_as<telegram_api::buttonTypeRequestPoll>(keyboard_button->type_);
       if ((type->flags_ & telegram_api::buttonTypeRequestPoll::QUIZ_MASK) != 0) {
         if (type->quiz_) {
-          button.type = KeyboardButton::Type::RequestPollQuiz;
+          button.type_ = KeyboardButton::Type::RequestPollQuiz;
         } else {
-          button.type = KeyboardButton::Type::RequestPollRegular;
+          button.type_ = KeyboardButton::Type::RequestPollRegular;
         }
       } else {
-        button.type = KeyboardButton::Type::RequestPoll;
+        button.type_ = KeyboardButton::Type::RequestPoll;
       }
       break;
     }
@@ -49,22 +49,22 @@ KeyboardButton get_keyboard_button(telegram_api::object_ptr<telegram_api::keyboa
         break;
       }
 
-      button.type = KeyboardButton::Type::WebView;
-      button.url = r_url.move_as_ok();
+      button.type_ = KeyboardButton::Type::WebView;
+      button.url_ = r_url.move_as_ok();
       break;
     }
     case telegram_api::buttonTypeRequestPeer::ID: {
       auto type = telegram_api::move_object_as<telegram_api::buttonTypeRequestPeer>(keyboard_button->type_);
-      button.type = KeyboardButton::Type::RequestDialog;
-      button.requested_dialog_type =
+      button.type_ = KeyboardButton::Type::RequestDialog;
+      button.requested_dialog_type_ =
           td::make_unique<RequestedDialogType>(std::move(type->peer_type_), type->button_id_, type->max_quantity_);
       break;
     }
     default:
       LOG(ERROR) << "Unsupported keyboard button: " << to_string(keyboard_button->type_);
   }
-  button.style = KeyboardButtonStyle(std::move(keyboard_button->style_));
-  button.text = std::move(keyboard_button->text_);
+  button.style_ = KeyboardButtonStyle(std::move(keyboard_button->style_));
+  button.text_ = std::move(keyboard_button->text_);
   return button;
 }
 
@@ -80,24 +80,24 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
   }
 
   KeyboardButton current_button;
-  current_button.text = std::move(button->text_);
-  current_button.style = KeyboardButtonStyle(std::move(button->style_), button->icon_custom_emoji_id_);
+  current_button.text_ = std::move(button->text_);
+  current_button.style_ = KeyboardButtonStyle(std::move(button->style_), button->icon_custom_emoji_id_);
 
   switch (button->type_ == nullptr ? td_api::keyboardButtonTypeText::ID : button->type_->get_id()) {
     case td_api::keyboardButtonTypeText::ID:
-      current_button.type = KeyboardButton::Type::Text;
+      current_button.type_ = KeyboardButton::Type::Text;
       break;
     case td_api::keyboardButtonTypeRequestPhoneNumber::ID:
       if (!request_buttons_allowed) {
         return Status::Error(400, "Phone number can be requested in private chats only");
       }
-      current_button.type = KeyboardButton::Type::RequestPhoneNumber;
+      current_button.type_ = KeyboardButton::Type::RequestPhoneNumber;
       break;
     case td_api::keyboardButtonTypeRequestLocation::ID:
       if (!request_buttons_allowed) {
         return Status::Error(400, "Location can be requested in private chats only");
       }
-      current_button.type = KeyboardButton::Type::RequestLocation;
+      current_button.type_ = KeyboardButton::Type::RequestLocation;
       break;
     case td_api::keyboardButtonTypeRequestPoll::ID: {
       if (!request_buttons_allowed) {
@@ -108,11 +108,11 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
         return Status::Error(400, "Can't force quiz mode and regular poll simultaneously");
       }
       if (request_poll->force_quiz_) {
-        current_button.type = KeyboardButton::Type::RequestPollQuiz;
+        current_button.type_ = KeyboardButton::Type::RequestPollQuiz;
       } else if (request_poll->force_regular_) {
-        current_button.type = KeyboardButton::Type::RequestPollRegular;
+        current_button.type_ = KeyboardButton::Type::RequestPollRegular;
       } else {
-        current_button.type = KeyboardButton::Type::RequestPoll;
+        current_button.type_ = KeyboardButton::Type::RequestPoll;
       }
       break;
     }
@@ -130,8 +130,8 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
       if (r_url.is_error()) {
         return Status::Error(400, PSLICE() << "Keyboard button Web App " << r_url.error().message());
       }
-      current_button.type = KeyboardButton::Type::WebView;
-      current_button.url = std::move(button_type->url_);
+      current_button.type_ = KeyboardButton::Type::WebView;
+      current_button.url_ = std::move(button_type->url_);
       break;
     }
     case td_api::keyboardButtonTypeRequestUsers::ID: {
@@ -139,8 +139,8 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
         return Status::Error(400, "Users can be requested in private chats only");
       }
       auto button_type = move_tl_object_as<td_api::keyboardButtonTypeRequestUsers>(button->type_);
-      current_button.type = KeyboardButton::Type::RequestDialog;
-      current_button.requested_dialog_type = td::make_unique<RequestedDialogType>(std::move(button_type));
+      current_button.type_ = KeyboardButton::Type::RequestDialog;
+      current_button.requested_dialog_type_ = td::make_unique<RequestedDialogType>(std::move(button_type));
       break;
     }
     case td_api::keyboardButtonTypeRequestChat::ID: {
@@ -148,8 +148,8 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
         return Status::Error(400, "Chats can be requested in private chats only");
       }
       auto button_type = move_tl_object_as<td_api::keyboardButtonTypeRequestChat>(button->type_);
-      current_button.type = KeyboardButton::Type::RequestDialog;
-      current_button.requested_dialog_type = td::make_unique<RequestedDialogType>(std::move(button_type));
+      current_button.type_ = KeyboardButton::Type::RequestDialog;
+      current_button.requested_dialog_type_ = td::make_unique<RequestedDialogType>(std::move(button_type));
       break;
     }
     case td_api::keyboardButtonTypeRequestManagedBot::ID: {
@@ -157,8 +157,8 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
         return Status::Error(400, "Managed bots can be requested in private chats only");
       }
       auto button_type = move_tl_object_as<td_api::keyboardButtonTypeRequestManagedBot>(button->type_);
-      current_button.type = KeyboardButton::Type::RequestDialog;
-      current_button.requested_dialog_type = td::make_unique<RequestedDialogType>(std::move(button_type));
+      current_button.type_ = KeyboardButton::Type::RequestDialog;
+      current_button.requested_dialog_type_ = td::make_unique<RequestedDialogType>(std::move(button_type));
       break;
     }
     default:
@@ -170,7 +170,7 @@ Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardBu
 telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button(
     const KeyboardButton &keyboard_button) {
   auto type = [&]() -> telegram_api::object_ptr<telegram_api::ButtonType> {
-    switch (keyboard_button.type) {
+    switch (keyboard_button.type_) {
       case KeyboardButton::Type::Text:
         return telegram_api::make_object<telegram_api::buttonTypeDefault>();
       case KeyboardButton::Type::RequestPhoneNumber:
@@ -186,27 +186,27 @@ telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button
         return telegram_api::make_object<telegram_api::buttonTypeRequestPoll>(
             telegram_api::buttonTypeRequestPoll::QUIZ_MASK, false);
       case KeyboardButton::Type::WebView:
-        return telegram_api::make_object<telegram_api::buttonTypeSimpleWebView>(keyboard_button.url);
+        return telegram_api::make_object<telegram_api::buttonTypeSimpleWebView>(keyboard_button.url_);
       case KeyboardButton::Type::RequestDialog:
-        CHECK(keyboard_button.requested_dialog_type != nullptr);
-        return keyboard_button.requested_dialog_type->get_input_button_type_request_peer();
+        CHECK(keyboard_button.requested_dialog_type_ != nullptr);
+        return keyboard_button.requested_dialog_type_->get_input_button_type_request_peer();
       default:
         UNREACHABLE();
         return nullptr;
     }
   }();
   int32 flags = 0;
-  auto style = keyboard_button.style.get_input_keyboard_button_style();
+  auto style = keyboard_button.style_.get_input_keyboard_button_style();
   if (style != nullptr) {
     flags |= 1 << 10;
   }
-  return telegram_api::make_object<telegram_api::keyboardButton>(flags, std::move(style), keyboard_button.text,
+  return telegram_api::make_object<telegram_api::keyboardButton>(flags, std::move(style), keyboard_button.text_,
                                                                  std::move(type));
 }
 
 td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const KeyboardButton &keyboard_button) {
   td_api::object_ptr<td_api::KeyboardButtonType> type;
-  switch (keyboard_button.type) {
+  switch (keyboard_button.type_) {
     case KeyboardButton::Type::Text:
       type = make_tl_object<td_api::keyboardButtonTypeText>();
       break;
@@ -226,27 +226,27 @@ td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object(const Keyb
       type = make_tl_object<td_api::keyboardButtonTypeRequestPoll>(true, false);
       break;
     case KeyboardButton::Type::WebView:
-      type = make_tl_object<td_api::keyboardButtonTypeWebApp>(keyboard_button.url + "#kb");
+      type = make_tl_object<td_api::keyboardButtonTypeWebApp>(keyboard_button.url_ + "#kb");
       break;
     case KeyboardButton::Type::RequestDialog:
-      type = keyboard_button.requested_dialog_type->get_keyboard_button_type_object();
+      type = keyboard_button.requested_dialog_type_->get_keyboard_button_type_object();
       break;
     default:
       UNREACHABLE();
       return nullptr;
   }
-  return td_api::make_object<td_api::keyboardButton>(keyboard_button.text,
-                                                     keyboard_button.style.get_icon_custom_emoji_id().get(),
-                                                     keyboard_button.style.get_button_style_object(), std::move(type));
+  return td_api::make_object<td_api::keyboardButton>(keyboard_button.text_,
+                                                     keyboard_button.style_.get_icon_custom_emoji_id().get(),
+                                                     keyboard_button.style_.get_button_style_object(), std::move(type));
 }
 
 bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs) {
-  return lhs.type == rhs.type && lhs.style == rhs.style && lhs.text == rhs.text && lhs.url == rhs.url;
+  return lhs.type_ == rhs.type_ && lhs.style_ == rhs.style_ && lhs.text_ == rhs.text_ && lhs.url_ == rhs.url_;
 }
 
 StringBuilder &operator<<(StringBuilder &string_builder, const KeyboardButton &keyboard_button) {
   string_builder << "Button[";
-  switch (keyboard_button.type) {
+  switch (keyboard_button.type_) {
     case KeyboardButton::Type::Text:
       string_builder << "Text";
       break;
@@ -274,7 +274,7 @@ StringBuilder &operator<<(StringBuilder &string_builder, const KeyboardButton &k
     default:
       UNREACHABLE();
   }
-  return string_builder << ", " << keyboard_button.text << keyboard_button.style << ']';
+  return string_builder << ", " << keyboard_button.text_ << keyboard_button.style_ << ']';
 }
 
 }  // namespace td
