@@ -17,7 +17,7 @@
 
 namespace td {
 
-struct KeyboardButton {
+class KeyboardButton {
   // append only
   enum class Type : int32 {
     Text,
@@ -35,6 +35,11 @@ struct KeyboardButton {
   string url_;                                             // WebView only
   unique_ptr<RequestedDialogType> requested_dialog_type_;  // RequestDialog only
 
+  friend bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs);
+
+  friend StringBuilder &operator<<(StringBuilder &string_builder, const KeyboardButton &keyboard_button);
+
+ public:
   KeyboardButton() = default;
 
   explicit KeyboardButton(telegram_api::object_ptr<telegram_api::keyboardButton> &&keyboard_button);
