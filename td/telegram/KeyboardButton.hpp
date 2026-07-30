@@ -16,30 +16,32 @@
 namespace td {
 
 template <class StorerT>
-void store(const KeyboardButton &button, StorerT &storer) {
-  bool has_url = !button.url_.empty();
-  bool has_requested_dialog_type = button.requested_dialog_type_ != nullptr;
-  bool has_style = !button.style_.is_default();
+void KeyboardButton::store(StorerT &storer) const {
+  using td::store;
+  bool has_url = !url_.empty();
+  bool has_requested_dialog_type = requested_dialog_type_ != nullptr;
+  bool has_style = !style_.is_default();
   BEGIN_STORE_FLAGS();
   STORE_FLAG(has_url);
   STORE_FLAG(has_requested_dialog_type);
   STORE_FLAG(has_style);
   END_STORE_FLAGS();
-  store(button.type_, storer);
-  store(button.text_, storer);
+  store(type_, storer);
+  store(text_, storer);
   if (has_url) {
-    store(button.url_, storer);
+    store(url_, storer);
   }
   if (has_requested_dialog_type) {
-    store(button.requested_dialog_type_, storer);
+    store(requested_dialog_type_, storer);
   }
   if (has_style) {
-    store(button.style_, storer);
+    store(style_, storer);
   }
 }
 
 template <class ParserT>
-void parse(KeyboardButton &button, ParserT &parser) {
+void KeyboardButton::parse(ParserT &parser) {
+  using td::parse;
   bool has_url;
   bool has_requested_dialog_type;
   bool has_style;
@@ -54,16 +56,16 @@ void parse(KeyboardButton &button, ParserT &parser) {
     has_requested_dialog_type = false;
     has_style = false;
   }
-  parse(button.type_, parser);
-  parse(button.text_, parser);
+  parse(type_, parser);
+  parse(text_, parser);
   if (has_url) {
-    parse(button.url_, parser);
+    parse(url_, parser);
   }
   if (has_requested_dialog_type) {
-    parse(button.requested_dialog_type_, parser);
+    parse(requested_dialog_type_, parser);
   }
   if (has_style) {
-    parse(button.style_, parser);
+    parse(style_, parser);
   }
 }
 

@@ -55,6 +55,12 @@ struct KeyboardButton {
   const RequestedDialogType *get_requested_dialog_type() const {
     return requested_dialog_type_.get();
   }
+
+  template <class StorerT>
+  void store(StorerT &storer) const;
+
+  template <class ParserT>
+  void parse(ParserT &parser);
 };
 
 bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs);
