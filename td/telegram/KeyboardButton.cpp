@@ -66,6 +66,18 @@ KeyboardButton::KeyboardButton(telegram_api::object_ptr<telegram_api::keyboardBu
   text_ = std::move(keyboard_button->text_);
 }
 
+KeyboardButton KeyboardButton::clone() const {
+  KeyboardButton result;
+  result.type_ = type_;
+  result.style_ = style_;
+  result.text_ = text_;
+  result.url_ = url_;
+  if (requested_dialog_type_ != nullptr) {
+    result.requested_dialog_type_ = td::make_unique<RequestedDialogType>(*requested_dialog_type_);
+  }
+  return result;
+}
+
 Result<KeyboardButton> KeyboardButton::get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
                                                            bool request_buttons_allowed) {
   CHECK(button != nullptr);

@@ -655,15 +655,7 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   result->is_persistent = reply_markup->is_persistent;
   result->need_resize_keyboard = reply_markup->need_resize_keyboard;
   result->keyboard = transform(reply_markup->keyboard, [](const vector<KeyboardButton> &row) {
-    return transform(row, [](const KeyboardButton &button) {
-      KeyboardButton result;
-      result.type_ = button.type_;
-      result.style_ = button.style_;
-      result.text_ = button.text_;
-      result.url_ = button.url_;
-      result.requested_dialog_type_ = td::make_unique<RequestedDialogType>(*button.requested_dialog_type_);
-      return result;
-    });
+    return transform(row, [](const KeyboardButton &button) { return button.clone(); });
   });
   result->placeholder = reply_markup->placeholder;
   result->inline_keyboard = reply_markup->inline_keyboard;

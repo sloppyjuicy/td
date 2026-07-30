@@ -42,6 +42,8 @@ struct KeyboardButton {
   static Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
                                                     bool request_buttons_allowed);
 
+  KeyboardButton clone() const;
+
   telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button() const;
 
   td_api::object_ptr<td_api::keyboardButton> get_keyboard_button_object() const;
