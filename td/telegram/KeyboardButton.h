@@ -42,6 +42,10 @@ struct KeyboardButton {
   static Result<KeyboardButton> get_keyboard_button(td_api::object_ptr<td_api::keyboardButton> &&button,
                                                     bool request_buttons_allowed);
 
+  bool is_empty() const {
+    return text_.empty() && (type_ == KeyboardButton::Type::Text || !style_.get_icon_custom_emoji_id().is_valid());
+  }
+
   KeyboardButton clone() const;
 
   telegram_api::object_ptr<telegram_api::keyboardButton> get_input_keyboard_button() const;
