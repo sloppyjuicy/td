@@ -8174,7 +8174,7 @@ storePaymentPurposePremiumSubscription is_restore:Bool is_upgrade:Bool = StorePa
 //@description The user gifting Telegram Premium to another user
 //@currency ISO 4217 currency code of the payment currency
 //@amount Paid amount, in the smallest units of the currency
-//@user_id Identifiers of the user which will receive Telegram Premium
+//@user_id Identifier of the user which will receive Telegram Premium
 //@text Text to show along with the gift codes; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
 storePaymentPurposePremiumGift currency:string amount:int53 user_id:int53 text:formattedText = StorePaymentPurpose;
 
@@ -12142,7 +12142,7 @@ deleteMessages chat_id:int53 message_ids:vector<int53> revoke:Bool = Ok;
 //@description Deletes an ephemeral message; for bots only
 //@chat_id Chat identifier
 //@receiver_user_id Identifier of the user who received the message
-//@ephemeral_message_id Identifiers of the message to be deleted
+//@ephemeral_message_id Identifier of the message to be deleted
 deleteEphemeralMessage chat_id:int53 receiver_user_id:int53 ephemeral_message_id:int32 = Ok;
 
 //@description Deletes all messages sent by the specified message sender in a chat. Supported only for supergroups; requires can_delete_messages administrator right @chat_id Chat identifier @sender_id Identifier of the sender of messages to delete
