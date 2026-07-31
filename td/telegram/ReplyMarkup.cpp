@@ -29,8 +29,8 @@ void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
 }
 
 static bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs) {
-  return lhs.type == rhs.type && lhs.style == rhs.style && lhs.text == rhs.text && lhs.data == rhs.data &&
-         lhs.id == rhs.id;
+  return lhs.type == rhs.type && lhs.id == rhs.id && lhs.user_id == rhs.user_id && lhs.style == rhs.style &&
+         lhs.text == rhs.text && lhs.forward_text == rhs.forward_text && lhs.data == rhs.data;
 }
 
 static StringBuilder &operator<<(StringBuilder &string_builder, const InlineKeyboardButton &keyboard_button) {
