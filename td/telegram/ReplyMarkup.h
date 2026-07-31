@@ -90,7 +90,7 @@ InlineKeyboardButton get_inline_keyboard_button(
 Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_api::inlineKeyboardButton> &&button,
                                                         bool switch_inline_buttons_allowed);
 
-telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_button(
+telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_inline_button(
     const UserManager *user_manager, const InlineKeyboardButton &keyboard_button);
 
 td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_object(

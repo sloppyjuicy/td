@@ -665,7 +665,7 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   return result;
 }
 
-telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_button(
+telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_inline_button(
     const UserManager *user_manager, const InlineKeyboardButton &keyboard_button) {
   auto type = [&]() -> telegram_api::object_ptr<telegram_api::InlineButtonType> {
     switch (keyboard_button.type) {
@@ -757,7 +757,7 @@ telegram_api::object_ptr<telegram_api::ReplyMarkup> ReplyMarkup::get_input_reply
         vector<tl_object_ptr<telegram_api::keyboardInlineButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
-          buttons.push_back(get_input_keyboard_button(user_manager, button));
+          buttons.push_back(get_input_keyboard_inline_button(user_manager, button));
         }
         rows.push_back(telegram_api::make_object<telegram_api::keyboardInlineButtonRow>(std::move(buttons)));
       }

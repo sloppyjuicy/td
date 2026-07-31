@@ -579,7 +579,7 @@ class RichText {
           flags |= telegram_api::textButton::STYLE_MASK;
         }
         CHECK(button != nullptr);
-        auto input_button = get_input_keyboard_button(context.td_->user_manager_.get(), *button);
+        auto input_button = get_input_keyboard_inline_button(context.td_->user_manager_.get(), *button);
         return telegram_api::make_object<telegram_api::textButton>(flags, texts[0].get_input_rich_text(context),
                                                                    std::move(input_button->type_), std::move(style));
       }
@@ -2451,7 +2451,7 @@ class WebPageBlockButtonRow final : public WebPageBlock {
       if (input_style != nullptr) {
         flags |= telegram_api::textButton::STYLE_MASK;
       }
-      auto input_button = get_input_keyboard_button(context.td_->user_manager_.get(), button);
+      auto input_button = get_input_keyboard_inline_button(context.td_->user_manager_.get(), button);
       return telegram_api::make_object<telegram_api::pageButton>(
           flags, text.get_input_rich_text(context), std::move(input_button->type_), std::move(input_style));
     }
