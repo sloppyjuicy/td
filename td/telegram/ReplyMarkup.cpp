@@ -24,6 +24,10 @@
 
 namespace td {
 
+void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
+  dependencies.add(user_id);
+}
+
 static bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs) {
   return lhs.type == rhs.type && lhs.style == rhs.style && lhs.text == rhs.text && lhs.data == rhs.data &&
          lhs.id == rhs.id;
@@ -931,7 +935,7 @@ void add_reply_markup_dependencies(Dependencies &dependencies, const ReplyMarkup
   }
   for (auto &row : reply_markup->inline_keyboard) {
     for (auto &button : row) {
-      dependencies.add(button.user_id);
+      button.add_dependencies(dependencies);
     }
   }
 }

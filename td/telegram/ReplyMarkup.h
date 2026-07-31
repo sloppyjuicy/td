@@ -48,6 +48,8 @@ struct InlineKeyboardButton {
   string text;
   string forward_text;  // UrlAuth only
   string data;
+
+  void add_dependencies(Dependencies &dependencies) const;
 };
 
 struct ReplyMarkup {
