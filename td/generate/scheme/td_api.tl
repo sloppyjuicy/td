@@ -4001,7 +4001,8 @@ themeSettings base_theme:BuiltInTheme accent_color:int32 background:background o
 //@style Style of the button
 //@type Type of the button; must be one of inlineKeyboardButtonTypeUrl, inlineKeyboardButtonTypeLoginUrl, inlineKeyboardButtonTypeWebApp, inlineKeyboardButtonTypeCallback,
 //-inlineKeyboardButtonTypeSwitchInline, inlineKeyboardButtonTypeUser, inlineKeyboardButtonTypeCopyText. Additionally,
-//-inlineKeyboardButtonTypeCallbackWithPassword and inlineKeyboardButtonTypeDisabled may be received in incoming messages
+//-inlineKeyboardButtonTypeCallbackWithPassword and inlineKeyboardButtonTypeDisabled may be received in incoming messages. Regular users may use only inlineKeyboardButtonTypeUrl,
+//-inlineKeyboardButtonTypeUser and inlineKeyboardButtonTypeCopyText
 inlineButton text:RichText style:ButtonStyle type:InlineKeyboardButtonType = InlineButton;
 
 
@@ -4327,7 +4328,7 @@ pageBlockRelatedArticles header:RichText articles:vector<pageBlockRelatedArticle
 //@caption Block caption; may be null if none
 pageBlockMap location:location zoom:int32 width:int32 height:int32 caption:pageBlockCaption = PageBlock;
 
-//@description A list of bot buttons shown in a row
+//@description A list of buttons shown in a row
 //@buttons The buttons
 //@align Horizontal alignment of the buttons; may be null if the buttons must be shown full-width
 pageBlockButtonRow buttons:vector<inlineButton> align:PageBlockHorizontalAlignment = PageBlock;
@@ -6019,6 +6020,11 @@ inputPageBlockDetails header:RichText blocks:vector<InputPageBlock> is_open:Bool
 //@height Map height; 0-10000
 //@caption Block caption; pass null if none
 inputPageBlockMap location:location zoom:int32 width:int32 height:int32 caption:pageBlockCaption = InputPageBlock;
+
+//@description A list of buttons shown in a row
+//@buttons The buttons
+//@align Horizontal alignment of the buttons; pass null if the buttons must be shown full-width
+inputPageBlockButtonRow buttons:vector<inlineButton> align:PageBlockHorizontalAlignment = InputPageBlock;
 
 
 //@class InputMessageContent @description The content of a message to send

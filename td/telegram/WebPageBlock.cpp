@@ -5528,6 +5528,38 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
             std::move(caption)));
         break;
       }
+      case td_api::inputPageBlockButtonRow::ID: {
+        auto block = td_api::move_object_as<td_api::inputPageBlockButtonRow>(input_page_block);
+        vector<WebPageBlockButtonRow::Button> buttons;
+        for (auto &input_button : block->buttons_) {
+          TRY_RESULT(button, WebPageBlockButtonRow::Button::get_button(td, std::move(input_button)));
+          buttons.push_back(std::move(button));
+        }
+        if (buttons.empty()) {
+          return Status::Error(400, "Button row must be non-empty");
+        }
+        bool align_left = false;
+        bool align_center = false;
+        bool align_right = false;
+        if (block->align_ != nullptr) {
+          switch (block->align_->get_id()) {
+            case td_api::pageBlockHorizontalAlignmentLeft::ID:
+              align_left = true;
+              break;
+            case td_api::pageBlockHorizontalAlignmentCenter::ID:
+              align_center = true;
+              break;
+            case td_api::pageBlockHorizontalAlignmentRight::ID:
+              align_right = true;
+              break;
+            default:
+              UNREACHABLE();
+          }
+        }
+        result.push_back(
+            td::make_unique<WebPageBlockButtonRow>(std::move(buttons), align_left, align_center, align_right));
+        break;
+      }
       default:
         UNREACHABLE();
     }
