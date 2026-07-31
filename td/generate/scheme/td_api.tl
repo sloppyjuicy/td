@@ -4327,6 +4327,11 @@ pageBlockRelatedArticles header:RichText articles:vector<pageBlockRelatedArticle
 //@caption Block caption; may be null if none
 pageBlockMap location:location zoom:int32 width:int32 height:int32 caption:pageBlockCaption = PageBlock;
 
+//@description A list of bot buttons shown in a row
+//@buttons The buttons
+//@align Horizontal alignment of the buttons; may be null if the buttons must be shown full-width
+pageBlockButtonRow buttons:vector<inlineButton> align:PageBlockHorizontalAlignment = PageBlock;
+
 
 //@description Describes an instant view page for a web page
 //@blocks Content of the instant view page

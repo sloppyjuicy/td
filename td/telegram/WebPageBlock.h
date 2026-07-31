@@ -76,6 +76,7 @@ class WebPageBlock {
     Thinking,
     BlockQuoteBlocks,
     Document,
+    ButtonRow,
     Size
   };
 

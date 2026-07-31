@@ -2401,6 +2401,203 @@ class WebPageBlockList final : public WebPageBlock {
   }
 };
 
+class WebPageBlockButtonRow final : public WebPageBlock {
+ public:
+  struct Button {
+    RichText text;
+    RichButtonStyle style;
+    InlineKeyboardButton button;
+
+    static Result<Button> get_button(Td *td, td_api::object_ptr<td_api::inlineButton> &&button) {
+      Button result;
+      if (button == nullptr) {
+        return Status::Error(400, "Button must be non-empty");
+      }
+      TRY_RESULT_ASSIGN(result.text, RichText::get_rich_text(td, std::move(button->text_)));
+      TRY_RESULT_ASSIGN(result.button, get_inline_keyboard_button(td_api::make_object<td_api::inlineKeyboardButton>(
+                                                                      "1", 0, nullptr, std::move(button->type_)),
+                                                                  true));
+      result.style = RichButtonStyle(std::move(button->style_));
+      return result;
+    }
+
+    void append_file_ids(const Td *td, vector<FileId> &file_ids) const {
+      text.append_file_ids(td, file_ids);
+    }
+
+    void add_dependencies(Dependencies &dependencies) const {
+      button.add_dependencies(dependencies);
+    }
+
+    void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const {
+      text.for_each_rich_text(recurse_text, callback);
+    }
+
+    int32 get_index_mask() const {
+      return text.get_index_mask();
+    }
+
+    Button clone() const {
+      Button result;
+      result.text = text.clone();
+      result.style = style;
+      result.button = button;
+      return result;
+    }
+
+    telegram_api::object_ptr<telegram_api::pageButton> get_input_page_button(InputContext &context) const {
+      int32 flags = 0;
+      auto input_style = style.get_input_rich_button_style();
+      if (input_style != nullptr) {
+        flags |= telegram_api::textButton::STYLE_MASK;
+      }
+      auto input_button = get_input_keyboard_button(context.td_->user_manager_.get(), button);
+      return telegram_api::make_object<telegram_api::pageButton>(
+          flags, text.get_input_rich_text(context), std::move(input_button->type_), std::move(input_style));
+    }
+
+    td_api::object_ptr<td_api::inlineButton> get_inline_button_object(Context *context) const {
+      auto button_object = get_inline_keyboard_button_object(context->td_->user_manager_.get(), button);
+      return td_api::make_object<td_api::inlineButton>(
+          text.get_rich_text_object(context), style.get_button_style_object(), std::move(button_object->type_));
+    }
+
+    friend bool operator==(const Button &lhs, const Button &rhs) {
+      return lhs.text == rhs.text && lhs.style == rhs.style && lhs.button == rhs.button;
+    }
+
+    template <class StorerT>
+    void store(StorerT &storer) const {
+      using ::td::store;
+      bool has_style = !style.is_default();
+      BEGIN_STORE_FLAGS();
+      STORE_FLAG(has_style);
+      END_STORE_FLAGS();
+      store(text, storer);
+      store(button, storer);
+      if (has_style) {
+        store(style, storer);
+      }
+    }
+
+    template <class ParserT>
+    void parse(ParserT &parser) {
+      using ::td::parse;
+      bool has_style = !style.is_default();
+      BEGIN_PARSE_FLAGS();
+      PARSE_FLAG(has_style);
+      END_PARSE_FLAGS();
+      parse(text, parser);
+      parse(button, parser);
+      if (has_style) {
+        parse(style, parser);
+      }
+    }
+  };
+
+ private:
+  vector<Button> buttons;
+  bool align_left = false;
+  bool align_center = false;
+  bool align_right = false;
+
+ public:
+  WebPageBlockButtonRow() = default;
+  WebPageBlockButtonRow(vector<Button> &&buttons, bool align_left, bool align_center, bool align_right)
+      : buttons(std::move(buttons)), align_left(align_left), align_center(align_center), align_right(align_right) {
+  }
+
+  Type get_type() const final {
+    return Type::ButtonRow;
+  }
+
+  void append_file_ids(const Td *td, vector<FileId> &file_ids) const final {
+    for (auto &button : buttons) {
+      button.append_file_ids(td, file_ids);
+    }
+  }
+
+  void add_dependencies(Dependencies &dependencies) const final {
+    for (auto &button : buttons) {
+      button.add_dependencies(dependencies);
+    }
+  }
+
+  void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const final {
+    for (auto &button : buttons) {
+      button.for_each_rich_text(recurse_text, callback);
+    }
+  }
+
+  bool can_send(const RestrictedRights &rights) const final {
+    return true;
+  }
+
+  int32 get_index_mask() const final {
+    int32 index_mask = 0;
+    for (const auto &button : buttons) {
+      index_mask |= button.get_index_mask();
+    }
+    return index_mask;
+  }
+
+  unique_ptr<WebPageBlock> clone() const final {
+    auto new_buttons = transform(buttons, [](const Button &button) { return button.clone(); });
+    return td::make_unique<WebPageBlockButtonRow>(std::move(new_buttons), align_left, align_center, align_right);
+  }
+
+  telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
+    return telegram_api::make_object<telegram_api::pageBlockButtonRow>(
+        0, align_left, align_center, align_right,
+        transform(buttons, [&](const Button &button) { return button.get_input_page_button(context); }));
+  }
+
+  td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
+    auto align = [&]() -> td_api::object_ptr<td_api::PageBlockHorizontalAlignment> {
+      if (align_left) {
+        return td_api::make_object<td_api::pageBlockHorizontalAlignmentLeft>();
+      }
+      if (align_center) {
+        return td_api::make_object<td_api::pageBlockHorizontalAlignmentCenter>();
+      }
+      if (align_right) {
+        return td_api::make_object<td_api::pageBlockHorizontalAlignmentRight>();
+      }
+      return nullptr;
+    }();
+    return td_api::make_object<td_api::pageBlockButtonRow>(
+        transform(buttons, [context](const Button &button) { return button.get_inline_button_object(context); }),
+        std::move(align));
+  }
+
+  friend bool operator==(const WebPageBlockButtonRow &lhs, const WebPageBlockButtonRow &rhs) {
+    return lhs.buttons == rhs.buttons && lhs.align_left == rhs.align_left && lhs.align_center == rhs.align_center &&
+           lhs.align_right == rhs.align_right;
+  }
+
+  template <class StorerT>
+  void store(StorerT &storer) const {
+    using ::td::store;
+    BEGIN_STORE_FLAGS();
+    STORE_FLAG(align_left);
+    STORE_FLAG(align_center);
+    STORE_FLAG(align_right);
+    END_STORE_FLAGS();
+    store(buttons, storer);
+  }
+
+  template <class ParserT>
+  void parse(ParserT &parser) {
+    using ::td::parse;
+    BEGIN_PARSE_FLAGS();
+    PARSE_FLAG(align_left);
+    PARSE_FLAG(align_center);
+    PARSE_FLAG(align_right);
+    END_PARSE_FLAGS();
+    parse(buttons, parser);
+  }
+};
+
 class WebPageBlockBlockQuote final : public WebPageBlock {
   RichText text;
   RichText credit;
@@ -4872,8 +5069,21 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
                               voice_notes),
           get_rich_text(std::move(page_block->caption_), documents));
     }
-    case telegram_api::pageBlockButtonRow::ID:
-      break;
+    case telegram_api::pageBlockButtonRow::ID: {
+      auto page_block = telegram_api::move_object_as<telegram_api::pageBlockButtonRow>(page_block_ptr);
+      return td::make_unique<WebPageBlockButtonRow>(
+          transform(std::move(page_block->buttons_),
+                    [&](auto &&button) {
+                      WebPageBlockButtonRow::Button result;
+                      result.text = get_rich_text(std::move(button->text_), documents);
+                      result.style = RichButtonStyle(std::move(button->style_));
+                      result.button =
+                          get_inline_keyboard_button(telegram_api::make_object<telegram_api::keyboardInlineButton>(
+                              0, nullptr, "1", std::move(button->type_)));
+                      return result;
+                    }),
+          page_block->align_left_, page_block->align_center_, page_block->align_right_);
+    }
     case telegram_api::pageBlockDocument::ID: {
       auto page_block = telegram_api::move_object_as<telegram_api::pageBlockDocument>(page_block_ptr);
       auto it = documents.find(page_block->document_id_);
@@ -5016,6 +5226,8 @@ void WebPageBlock::call_impl(Type type, const WebPageBlock *ptr, F &&f) {
       return f(static_cast<const WebPageBlockBlockQuoteBlocks *>(ptr));
     case Type::Document:
       return f(static_cast<const WebPageBlockDocument *>(ptr));
+    case Type::ButtonRow:
+      return f(static_cast<const WebPageBlockButtonRow *>(ptr));
 
     default:
       UNREACHABLE();
