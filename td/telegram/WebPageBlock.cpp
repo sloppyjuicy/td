@@ -5464,6 +5464,13 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
         result.push_back(td::make_unique<WebPageBlockBlockQuoteBlocks>(std::move(blocks), std::move(credit)));
         break;
       }
+      case td_api::inputPageBlockExpandableBlockQuote::ID: {
+        auto block = td_api::move_object_as<td_api::inputPageBlockExpandableBlockQuote>(input_page_block);
+        TRY_RESULT(text, RichText::get_rich_text(td, std::move(block->text_)));
+        TRY_RESULT(credit, RichText::get_rich_text(td, std::move(block->credit_)));
+        result.push_back(td::make_unique<WebPageBlockExpandableBlockQuote>(std::move(text), std::move(credit)));
+        break;
+      }
       case td_api::inputPageBlockPullQuote::ID: {
         auto block = td_api::move_object_as<td_api::inputPageBlockPullQuote>(input_page_block);
         TRY_RESULT(text, RichText::get_rich_text(td, std::move(block->text_)));

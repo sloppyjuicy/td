@@ -5969,6 +5969,9 @@ inputPageBlockList items:vector<inputPageBlockListItem> = InputPageBlock;
 //@description A block quote @blocks Quote blocks @credit Quote credit; pass null if none
 inputPageBlockBlockQuote blocks:vector<InputPageBlock> credit:RichText = InputPageBlock;
 
+//@description An expandable block quote @text Quote text @credit Quote credit; pass null if none
+inputPageBlockExpandableBlockQuote text:RichText credit:RichText = InputPageBlock;
+
 //@description A pull quote @text Quote text @credit Quote credit; pass null if none
 inputPageBlockPullQuote text:RichText credit:RichText = InputPageBlock;
 
