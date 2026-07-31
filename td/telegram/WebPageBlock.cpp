@@ -102,6 +102,13 @@ class RichText {
   }
 
  public:
+  RichText() = default;
+  RichText(const RichText &) = delete;
+  RichText &operator=(const RichText &) = delete;
+  RichText(RichText &&) = default;
+  RichText &operator=(RichText &&) = default;
+  ~RichText() = default;
+
   enum class Type : int32 {
     Plain,
     Bold,
@@ -443,7 +450,18 @@ class RichText {
   }
 
   RichText clone() const {
-    return *this;
+    RichText result;
+    result.type = type;
+    result.content = content;
+    for (auto &text : texts) {
+      result.texts.push_back(text.clone());
+    }
+    result.document_file_id = document_file_id;
+    result.custom_emoji_id = custom_emoji_id;
+    result.web_page_id = web_page_id;
+    result.date = date;
+    result.user_id = user_id;
+    return result;
   }
 
   telegram_api::object_ptr<telegram_api::RichText> get_input_rich_text(GetInputPageBlockContext &context) const {
@@ -813,6 +831,20 @@ class WebPageBlockTableCell {
   bool valign_bottom = false;
   int32 colspan = 1;
   int32 rowspan = 1;
+
+  WebPageBlockTableCell clone() const {
+    WebPageBlockTableCell result;
+    result.is_header = is_header;
+    result.align_left = align_left;
+    result.align_center = align_center;
+    result.align_right = align_right;
+    result.valign_top = valign_top;
+    result.valign_middle = valign_middle;
+    result.valign_bottom = valign_bottom;
+    result.colspan = colspan;
+    result.rowspan = rowspan;
+    return result;
+  }
 
   static Result<WebPageBlockTableCell> get_web_page_block_table_cell(
       const Td *td, td_api::object_ptr<td_api::pageBlockTableCell> &&cell) {
@@ -3542,8 +3574,15 @@ class WebPageBlockTable final : public WebPageBlock {
   }
 
   unique_ptr<WebPageBlock> clone() const final {
-    return td::make_unique<WebPageBlockTable>(title.clone(), vector<vector<WebPageBlockTableCell>>(cells), is_bordered,
-                                              is_striped);
+    vector<vector<WebPageBlockTableCell>> new_cells;
+    for (auto &row : cells) {
+      vector<WebPageBlockTableCell> new_row;
+      for (auto &cell : row) {
+        new_row.push_back(cell.clone());
+      }
+      new_cells.push_back(std::move(new_row));
+    }
+    return td::make_unique<WebPageBlockTable>(title.clone(), std::move(new_cells), is_bordered, is_striped);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
