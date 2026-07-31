@@ -21868,12 +21868,13 @@ void MessagesManager::on_cover_upload(DialogId dialog_id, MessageId message_id, 
 void MessagesManager::do_send_message(DialogId dialog_id, const Message *m, int32 media_pos, vector<int> bad_parts) {
   CHECK(m != nullptr);
   bool is_edit = m->message_id.is_any_server();
+  auto message_full_id = MessageFullId(dialog_id, m->message_id);
   if (is_edit) {
     LOG(INFO) << "Do edit " << (media_pos == -1 ? "" : (PSTRING() << "media " << media_pos << " of "))
-              << MessageFullId(dialog_id, m->message_id) << " with generation " << m->edit_generation;
+              << message_full_id << " with generation " << m->edit_generation;
   } else {
     LOG(INFO) << "Do send " << (media_pos == -1 ? "" : (PSTRING() << "media " << media_pos << " of "))
-              << MessageFullId(dialog_id, m->message_id);
+              << message_full_id;
   }
   bool is_secret = dialog_id.get_type() == DialogType::SecretChat;
 
@@ -21889,7 +21890,7 @@ void MessagesManager::do_send_message(DialogId dialog_id, const Message *m, int3
 
   const EditedMessage *edited_message = nullptr;
   if (is_edit) {
-    edited_message = edited_messages_.get_pointer(dialog_id, m->message_id);
+    edited_message = edited_messages_.get_pointer(message_full_id);
     CHECK(edited_message != nullptr);
   }
 
@@ -21961,10 +21962,9 @@ void MessagesManager::do_send_message(DialogId dialog_id, const Message *m, int3
       CHECK(file_upload_id.is_valid());
       FileView file_view = td_->file_manager_->get_file_view(file_upload_id.get_file_id());
       CHECK(file_view.is_encrypted_secret());
-      bool is_inserted = being_uploaded_files_
-                             .emplace(file_upload_id,
-                                      UploadedFileInfo{MessageFullId(dialog_id, m->message_id), -1, m->edit_generation})
-                             .second;
+      bool is_inserted =
+          being_uploaded_files_.emplace(file_upload_id, UploadedFileInfo{message_full_id, -1, m->edit_generation})
+              .second;
       CHECK(is_inserted);
       // need to call resume_upload synchronously to make upload process consistent with being_uploaded_files_
       td_->file_manager_->resume_upload(file_upload_id, std::move(bad_parts), upload_media_callback_, 1,
@@ -21987,9 +21987,9 @@ void MessagesManager::do_send_message(DialogId dialog_id, const Message *m, int3
       CHECK(can_have_multiple_files || !file_upload_ids.empty());
       if (can_have_multiple_files && bad_parts.empty()) {
         CHECK(media_pos == -1);
-        LOG(INFO) << "Add internal media send for " << MessageFullId{dialog_id, m->message_id} << " with "
-                  << file_upload_ids.size() << " files";
-        auto &request = pending_internal_media_sends_[{dialog_id, m->message_id}];
+        LOG(INFO) << "Add internal media send for " << message_full_id << " with " << file_upload_ids.size()
+                  << " files";
+        auto &request = pending_internal_media_sends_[message_full_id];
         CHECK(request.is_finished.empty());
         request.is_finished.resize(file_upload_ids.size());
         request.results.resize(file_upload_ids.size());
