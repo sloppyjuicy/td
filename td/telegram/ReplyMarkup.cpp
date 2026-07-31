@@ -28,7 +28,7 @@ void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
   dependencies.add(user_id);
 }
 
-static bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs) {
+bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs) {
   return lhs.type == rhs.type && lhs.id == rhs.id && lhs.user_id == rhs.user_id && lhs.style == rhs.style &&
          lhs.text == rhs.text && lhs.forward_text == rhs.forward_text && lhs.data == rhs.data;
 }
@@ -165,7 +165,7 @@ StringBuilder &operator<<(StringBuilder &string_builder, const ReplyMarkup &repl
   return reply_markup.print(string_builder);
 }
 
-static InlineKeyboardButton get_inline_keyboard_button(
+InlineKeyboardButton get_inline_keyboard_button(
     telegram_api::object_ptr<telegram_api::keyboardInlineButton> &&keyboard_button) {
   CHECK(keyboard_button != nullptr);
 
@@ -354,8 +354,8 @@ unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup
   return reply_markup;
 }
 
-static Result<InlineKeyboardButton> get_inline_keyboard_button(tl_object_ptr<td_api::inlineKeyboardButton> &&button,
-                                                               bool switch_inline_buttons_allowed) {
+Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_api::inlineKeyboardButton> &&button,
+                                                        bool switch_inline_buttons_allowed) {
   CHECK(button != nullptr);
   if (!clean_input_string(button->text_)) {
     return Status::Error(400, "Inline keyboard button text must be encoded in UTF-8");
@@ -665,8 +665,8 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   return result;
 }
 
-static telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_button(
-    UserManager *user_manager, const InlineKeyboardButton &keyboard_button) {
+telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_button(
+    const UserManager *user_manager, const InlineKeyboardButton &keyboard_button) {
   auto type = [&]() -> telegram_api::object_ptr<telegram_api::InlineButtonType> {
     switch (keyboard_button.type) {
       case InlineKeyboardButton::Type::Url:
@@ -798,7 +798,7 @@ telegram_api::object_ptr<telegram_api::ReplyMarkup> ReplyMarkup::get_input_reply
   }
 }
 
-static td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_object(
+td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_object(
     UserManager *user_manager, const InlineKeyboardButton &keyboard_button) {
   td_api::object_ptr<td_api::InlineKeyboardButtonType> type;
   switch (keyboard_button.type) {

@@ -36,6 +36,10 @@
 #include "td/telegram/Photo.h"
 #include "td/telegram/Photo.hpp"
 #include "td/telegram/PhotoFormat.h"
+#include "td/telegram/ReplyMarkup.h"
+#include "td/telegram/ReplyMarkup.hpp"
+#include "td/telegram/RichButtonStyle.h"
+#include "td/telegram/RichButtonStyle.hpp"
 #include "td/telegram/Td.h"
 #include "td/telegram/telegram_api.h"
 #include "td/telegram/ThemeManager.h"
@@ -138,7 +142,8 @@ class RichText {
     FormattedDate,
     BankCardNumber,
     MentionName,
-    Diff
+    Diff,
+    Button
   };
   Type type = Type::Plain;
   string content;
@@ -148,6 +153,8 @@ class RichText {
   WebPageId web_page_id;
   FormattedDate date;
   UserId user_id;
+  RichButtonStyle button_style;
+  unique_ptr<InlineKeyboardButton> button;
 
   static Result<RichText> get_rich_text(const Td *td, td_api::object_ptr<td_api::RichText> &&rich_text) {
     RichText result;
@@ -324,6 +331,21 @@ class RichText {
         result.content = std::move(text->expression_);
         break;
       }
+      case td_api::richTextButton::ID: {
+        auto text = td_api::move_object_as<td_api::richTextButton>(rich_text);
+        if (text->button_ == nullptr) {
+          return Status::Error(400, "Button must be non-empty");
+        }
+        TRY_RESULT(t, get_rich_text(td, std::move(text->button_->text_)));
+        TRY_RESULT(button, get_inline_keyboard_button(td_api::make_object<td_api::inlineKeyboardButton>(
+                                                          "1", 0, nullptr, std::move(text->button_->type_)),
+                                                      true));
+        result.type = Type::Button;
+        result.texts.push_back(std::move(t));
+        result.button_style = RichButtonStyle(std::move(text->button_->style_));
+        result.button = make_unique<InlineKeyboardButton>(std::move(button));
+        break;
+      }
       case td_api::richTextReference::ID: {
         auto text = td_api::move_object_as<td_api::richTextReference>(rich_text);
         if (!clean_input_string(text->name_)) {
@@ -411,6 +433,9 @@ class RichText {
     }
     dependencies.add(web_page_id);
     dependencies.add(user_id);
+    if (button != nullptr) {
+      button->add_dependencies(dependencies);
+    }
   }
 
   void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const {
@@ -461,6 +486,10 @@ class RichText {
     result.web_page_id = web_page_id;
     result.date = date;
     result.user_id = user_id;
+    result.button_style = button_style;
+    if (button != nullptr) {
+      result.button = make_unique<InlineKeyboardButton>(*button);
+    }
     return result;
   }
 
@@ -543,6 +572,17 @@ class RichText {
         CHECK(texts.size() == 2u);
         return telegram_api::make_object<telegram_api::textDiff>(texts[0].get_input_rich_text(context),
                                                                  texts[1].get_input_rich_text(context));
+      case Type::Button: {
+        int32 flags = 0;
+        auto style = button_style.get_input_rich_button_style();
+        if (style != nullptr) {
+          flags |= telegram_api::textButton::STYLE_MASK;
+        }
+        CHECK(button != nullptr);
+        auto input_button = get_input_keyboard_button(context.td_->user_manager_.get(), *button);
+        return telegram_api::make_object<telegram_api::textButton>(flags, texts[0].get_input_rich_text(context),
+                                                                   std::move(input_button->type_), std::move(style));
+      }
       default:
         UNREACHABLE();
         return nullptr;
@@ -676,6 +716,13 @@ class RichText {
         CHECK(texts.size() == 2u);
         return td_api::make_object<td_api::richTextDiff>(texts[0].get_rich_text_object(context),
                                                          texts[1].get_rich_text_object(context));
+      case RichText::Type::Button: {
+        CHECK(button != nullptr);
+        auto button_object = get_inline_keyboard_button_object(context->td_->user_manager_.get(), *button);
+        return td_api::make_object<td_api::richTextButton>(td_api::make_object<td_api::inlineButton>(
+            texts[0].get_rich_text_object(context), button_style.get_button_style_object(),
+            std::move(button_object->type_)));
+      }
       default:
         UNREACHABLE();
         return nullptr;
@@ -685,7 +732,8 @@ class RichText {
   friend bool operator==(const RichText &lhs, const RichText &rhs) {
     return lhs.type == rhs.type && lhs.content == rhs.content && lhs.texts == rhs.texts &&
            lhs.document_file_id == rhs.document_file_id && lhs.custom_emoji_id == rhs.custom_emoji_id &&
-           lhs.web_page_id == rhs.web_page_id && lhs.date == rhs.date && lhs.user_id == rhs.user_id;
+           lhs.web_page_id == rhs.web_page_id && lhs.date == rhs.date && lhs.user_id == rhs.user_id &&
+           lhs.button_style == rhs.button_style && lhs.button == rhs.button;
   }
 
   template <class StorerT>
@@ -708,6 +756,10 @@ class RichText {
     }
     if (type == Type::MentionName) {
       store(user_id, storer);
+    }
+    if (type == Type::Button) {
+      store(button_style, storer);
+      store(button, storer);
     }
   }
 
@@ -735,6 +787,10 @@ class RichText {
     }
     if (type == Type::MentionName) {
       parse(user_id, parser);
+    }
+    if (type == Type::Button) {
+      parse(button_style, parser);
+      parse(button, parser);
     }
   }
 };
@@ -4375,8 +4431,15 @@ RichText get_rich_text(tl_object_ptr<telegram_api::RichText> &&rich_text_ptr,
       result.texts.push_back(get_rich_text(std::move(rich_text->old_text_), documents));
       break;
     }
-    case telegram_api::textButton::ID:
+    case telegram_api::textButton::ID: {
+      auto rich_text = telegram_api::move_object_as<telegram_api::textButton>(rich_text_ptr);
+      result.type = RichText::Type::Button;
+      result.texts.push_back(get_rich_text(std::move(rich_text->text_), documents));
+      result.button_style = RichButtonStyle(std::move(rich_text->style_));
+      result.button = make_unique<InlineKeyboardButton>(get_inline_keyboard_button(
+          telegram_api::make_object<telegram_api::keyboardInlineButton>(0, nullptr, "1", std::move(rich_text->type_))));
       break;
+    }
     default:
       UNREACHABLE();
   }
@@ -4834,6 +4897,12 @@ void WebPageBlock::append_user_ids(vector<UserId> &user_ids) const {
   for_each_rich_text(true, [&](const RichText *text) {
     if (text->user_id.is_valid()) {
       user_ids.push_back(text->user_id);
+    }
+    if (text->button != nullptr) {
+      auto user_id = text->button->user_id;
+      if (user_id.is_valid()) {
+        user_ids.push_back(user_id);
+      }
     }
   });
 }

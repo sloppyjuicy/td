@@ -3683,7 +3683,7 @@ buttonStyleDanger = ButtonStyle;
 //@description The button has green color
 buttonStyleSuccess = ButtonStyle;
 
-//@description The button must be shown as a link. The style is allowed only for callback inline buttons inside rich messages
+//@description The button must be shown as a link. The style is allowed only for callback buttons in inlineButton
 buttonStyleLink = ButtonStyle;
 
 
@@ -3996,6 +3996,15 @@ builtInThemeArctic = BuiltInTheme;
 themeSettings base_theme:BuiltInTheme accent_color:int32 background:background outgoing_message_fill:BackgroundFill animate_outgoing_message_fill:Bool outgoing_message_accent_color:int32 = ThemeSettings;
 
 
+//@description Represents a button inside a rich message
+//@text Text of the button; only richTexts, richTextPlain, and richTextCustomEmoji are allowed
+//@style Style of the button
+//@type Type of the button; must be one of inlineKeyboardButtonTypeUrl, inlineKeyboardButtonTypeLoginUrl, inlineKeyboardButtonTypeWebApp, inlineKeyboardButtonTypeCallback,
+//-inlineKeyboardButtonTypeSwitchInline, inlineKeyboardButtonTypeUser, inlineKeyboardButtonTypeCopyText. Additionally,
+//-inlineKeyboardButtonTypeCallbackWithPassword and inlineKeyboardButtonTypeDisabled may be received in incoming messages
+inlineButton text:RichText style:ButtonStyle type:InlineKeyboardButtonType = InlineButton;
+
+
 //@class RichText @description Describes a formatted text object
 
 //@description A plain text @text Text
@@ -4072,6 +4081,9 @@ richTextIcon document:document width:int32 height:int32 = RichText;
 
 //@description A mathematical expression @expression The expression in LaTeX format
 richTextMathematicalExpression expression:string = RichText;
+
+//@description A button @button The button
+richTextButton button:inlineButton = RichText;
 
 //@description A rich text replacing another rich text; not supported in inputRichMessage @text Text @old_text The old text
 richTextDiff text:RichText old_text:RichText = RichText;

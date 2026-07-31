@@ -52,6 +52,8 @@ struct InlineKeyboardButton {
   void add_dependencies(Dependencies &dependencies) const;
 };
 
+bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);
+
 struct ReplyMarkup {
   // append only
   enum class Type : int32 { InlineKeyboard, ShowKeyboard, RemoveKeyboard, ForceReply };
@@ -81,6 +83,18 @@ bool operator==(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 bool operator!=(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 
 StringBuilder &operator<<(StringBuilder &string_builder, const ReplyMarkup &reply_markup);
+
+InlineKeyboardButton get_inline_keyboard_button(
+    telegram_api::object_ptr<telegram_api::keyboardInlineButton> &&keyboard_button);
+
+Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_api::inlineKeyboardButton> &&button,
+                                                        bool switch_inline_buttons_allowed);
+
+telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_button(
+    const UserManager *user_manager, const InlineKeyboardButton &keyboard_button);
+
+td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_object(
+    UserManager *user_manager, const InlineKeyboardButton &keyboard_button);
 
 unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr, bool is_bot,
                                          bool only_inline_keyboard, bool message_contains_mention);
