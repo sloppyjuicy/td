@@ -77,6 +77,7 @@ class WebPageBlock {
     BlockQuoteBlocks,
     Document,
     ButtonRow,
+    ExpandableBlockQuote,
     Size
   };
 

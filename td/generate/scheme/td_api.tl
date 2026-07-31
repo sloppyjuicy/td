@@ -4220,6 +4220,11 @@ pageBlockList items:vector<pageBlockListItem> = PageBlock;
 //@credit Quote credit; may be null if none
 pageBlockBlockQuote blocks:vector<PageBlock> credit:RichText = PageBlock;
 
+//@description An expandable block quote
+//@text Text of the quote
+//@credit Quote credit; may be null if none
+pageBlockExpandableBlockQuote text:RichText credit:RichText = PageBlock;
+
 //@description A pull quote
 //@text Quote text
 //@credit Quote credit; may be null if none

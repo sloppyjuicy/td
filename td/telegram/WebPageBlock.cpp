@@ -2665,6 +2665,76 @@ class WebPageBlockBlockQuote final : public WebPageBlock {
   }
 };
 
+class WebPageBlockExpandableBlockQuote final : public WebPageBlock {
+  RichText text;
+  RichText credit;
+
+ public:
+  WebPageBlockExpandableBlockQuote() = default;
+  WebPageBlockExpandableBlockQuote(RichText &&text, RichText &&credit)
+      : text(std::move(text)), credit(std::move(credit)) {
+  }
+
+  Type get_type() const final {
+    return Type::ExpandableBlockQuote;
+  }
+
+  void append_file_ids(const Td *td, vector<FileId> &file_ids) const final {
+    text.append_file_ids(td, file_ids);
+    credit.append_file_ids(td, file_ids);
+  }
+
+  void add_dependencies(Dependencies &dependencies) const final {
+    text.add_dependencies(dependencies);
+    credit.add_dependencies(dependencies);
+  }
+
+  void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const final {
+    text.for_each_rich_text(recurse_text, callback);
+    credit.for_each_rich_text(recurse_text, callback);
+  }
+
+  int32 get_index_mask() const final {
+    return text.get_index_mask() | credit.get_index_mask();
+  }
+
+  unique_ptr<WebPageBlock> clone() const final {
+    return td::make_unique<WebPageBlockExpandableBlockQuote>(text.clone(), credit.clone());
+  }
+
+  telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
+    return telegram_api::make_object<telegram_api::pageBlockBlockquote>(0, true, text.get_input_rich_text(context),
+                                                                        credit.get_input_rich_text(context));
+  }
+
+  td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
+    return td_api::make_object<td_api::pageBlockExpandableBlockQuote>(text.get_rich_text_object(context),
+                                                                      credit.get_rich_text_object(context, true));
+  }
+
+  friend bool operator==(const WebPageBlockExpandableBlockQuote &lhs, const WebPageBlockExpandableBlockQuote &rhs) {
+    return lhs.text == rhs.text && lhs.credit == rhs.credit;
+  }
+
+  template <class StorerT>
+  void store(StorerT &storer) const {
+    using ::td::store;
+    BEGIN_STORE_FLAGS();
+    END_STORE_FLAGS();
+    store(text, storer);
+    store(credit, storer);
+  }
+
+  template <class ParserT>
+  void parse(ParserT &parser) {
+    using ::td::parse;
+    BEGIN_PARSE_FLAGS();
+    END_PARSE_FLAGS();
+    parse(text, parser);
+    parse(credit, parser);
+  }
+};
+
 class WebPageBlockPullQuote final : public WebPageBlock {
   RichText text;
   RichText credit;
@@ -4810,6 +4880,10 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
     }
     case telegram_api::pageBlockBlockquote::ID: {
       auto page_block = telegram_api::move_object_as<telegram_api::pageBlockBlockquote>(page_block_ptr);
+      if (page_block->collapsed_) {
+        return make_unique<WebPageBlockExpandableBlockQuote>(get_rich_text(std::move(page_block->text_), documents),
+                                                             get_rich_text(std::move(page_block->caption_), documents));
+      }
       return make_unique<WebPageBlockBlockQuote>(get_rich_text(std::move(page_block->text_), documents),
                                                  get_rich_text(std::move(page_block->caption_), documents));
     }
@@ -5228,6 +5302,8 @@ void WebPageBlock::call_impl(Type type, const WebPageBlock *ptr, F &&f) {
       return f(static_cast<const WebPageBlockDocument *>(ptr));
     case Type::ButtonRow:
       return f(static_cast<const WebPageBlockButtonRow *>(ptr));
+    case Type::ExpandableBlockQuote:
+      return f(static_cast<const WebPageBlockExpandableBlockQuote *>(ptr));
 
     default:
       UNREACHABLE();
