@@ -48,6 +48,8 @@ class RequestedDialogType {
 
   telegram_api::object_ptr<telegram_api::RequestPeerType> get_input_request_peer_type_object() const;
 
+  friend bool operator==(const RequestedDialogType &lhs, const RequestedDialogType &rhs);
+
  public:
   RequestedDialogType() = default;
 
@@ -76,5 +78,7 @@ class RequestedDialogType {
   template <class ParserT>
   void parse(ParserT &parser);
 };
+
+bool operator==(const RequestedDialogType &lhs, const RequestedDialogType &rhs);
 
 }  // namespace td

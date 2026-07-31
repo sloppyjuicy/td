@@ -334,4 +334,20 @@ Status RequestedDialogType::check_shared_dialog_count(size_t count) const {
   return Status::OK();
 }
 
+bool operator==(const RequestedDialogType &lhs, const RequestedDialogType &rhs) {
+  return lhs.type_ == rhs.type_ && lhs.button_id_ == rhs.button_id_ && lhs.max_quantity_ == rhs.max_quantity_ &&
+         lhs.restrict_is_bot_ == rhs.restrict_is_bot_ && lhs.is_bot_ == rhs.is_bot_ &&
+         lhs.restrict_is_premium_ == rhs.restrict_is_premium_ && lhs.is_premium_ == rhs.is_premium_ &&
+         lhs.request_name_ == rhs.request_name_ && lhs.request_username_ == rhs.request_username_ &&
+         lhs.request_photo_ == rhs.request_photo_ && lhs.restrict_is_forum_ == rhs.restrict_is_forum_ &&
+         lhs.is_forum_ == rhs.is_forum_ && lhs.bot_is_participant_ == rhs.bot_is_participant_ &&
+         lhs.restrict_has_username_ == rhs.restrict_has_username_ && lhs.has_username_ == rhs.has_username_ &&
+         lhs.is_created_ == rhs.is_created_ &&
+         lhs.restrict_user_administrator_rights_ == rhs.restrict_user_administrator_rights_ &&
+         lhs.restrict_bot_administrator_rights_ == rhs.restrict_bot_administrator_rights_ &&
+         lhs.user_administrator_rights_ == rhs.user_administrator_rights_ &&
+         lhs.bot_administrator_rights_ == rhs.bot_administrator_rights_ && lhs.suggested_name_ == rhs.suggested_name_ &&
+         lhs.suggested_username_ == rhs.suggested_username_;
+}
+
 }  // namespace td

@@ -248,7 +248,8 @@ td_api::object_ptr<td_api::keyboardButton> KeyboardButton::get_keyboard_button_o
 }
 
 bool operator==(const KeyboardButton &lhs, const KeyboardButton &rhs) {
-  return lhs.type_ == rhs.type_ && lhs.style_ == rhs.style_ && lhs.text_ == rhs.text_ && lhs.url_ == rhs.url_;
+  return lhs.type_ == rhs.type_ && lhs.style_ == rhs.style_ && lhs.text_ == rhs.text_ && lhs.url_ == rhs.url_ &&
+         lhs.requested_dialog_type_ == rhs.requested_dialog_type_;
 }
 
 StringBuilder &operator<<(StringBuilder &string_builder, const KeyboardButton &keyboard_button) {
