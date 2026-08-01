@@ -22330,29 +22330,29 @@ void MessagesManager::on_upload_message_media_fail(DialogId dialog_id, MessageId
 
 void MessagesManager::on_upload_message_media_finished(int64 media_album_id, DialogId dialog_id, MessageId message_id,
                                                        int32 media_pos, uint64 edit_generation, Status result) {
+  auto message_full_id = MessageFullId(dialog_id, message_id);
   if (media_pos >= 0) {
     CHECK(media_album_id == 0);
-    LOG(INFO) << "Finished to upload media " << media_pos << " from " << message_id << " in " << dialog_id;
-    if (pending_internal_media_sends_.count(dialog_id, message_id) == 0) {
+    LOG(INFO) << "Finished to upload media " << media_pos << " from " << message_full_id;
+    if (pending_internal_media_sends_.count(message_full_id) == 0) {
       LOG(INFO) << "The message doesn't need to be sent";
       // the message may be already sent or failed to be sent
       return;
     }
-    const auto *m = get_message({dialog_id, message_id});
+    const auto *m = get_message(message_full_id);
     auto is_edit = message_id.is_any_server();
     if (m == nullptr || (is_edit && m->edit_generation != edit_generation)) {
       LOG(INFO) << "The message edit generation doesn't match";
       return;
     }
-    auto &request = pending_internal_media_sends_[{dialog_id, message_id}];
+    auto &request = pending_internal_media_sends_[message_full_id];
     CHECK(static_cast<size_t>(media_pos) < request.is_finished.size());
     if (request.is_finished[media_pos]) {
-      LOG(INFO) << "Upload media of " << message_id << " in " << dialog_id << " at pos " << media_pos
-                << " was already finished";
+      LOG(INFO) << "Upload media of " << message_full_id << " at pos " << media_pos << " was already finished";
       return;
     }
-    LOG(INFO) << "Finish to upload media of " << message_id << " in " << dialog_id << " at pos " << media_pos
-              << " out of " << request.is_finished.size() << " with result " << result
+    LOG(INFO) << "Finish to upload media of " << message_full_id << " at pos " << media_pos << " out of "
+              << request.is_finished.size() << " with result " << result
               << " and previous finished_count = " << request.finished_count;
 
     request.results[media_pos] = std::move(result);
@@ -22376,20 +22376,20 @@ void MessagesManager::on_upload_message_media_finished(int64 media_album_id, Dia
   if (message_it == request.message_ids.end()) {
     // the message may be already deleted and the album is recreated without it
     CHECK(message_id.is_yet_unsent());
-    LOG_CHECK(get_message({dialog_id, message_id}) == nullptr)
-        << dialog_id << ' ' << request.message_ids << ' ' << message_id << ' ' << request.finished_count << ' '
-        << request.is_finished << ' ' << request.results;
+    LOG_CHECK(get_message(message_full_id) == nullptr)
+        << message_full_id << ' ' << request.message_ids << ' ' << request.finished_count << ' ' << request.is_finished
+        << ' ' << request.results;
     return;
   }
   auto pos = static_cast<size_t>(message_it - request.message_ids.begin());
 
   if (request.is_finished[pos]) {
-    LOG(INFO) << "Upload media of " << message_id << " in " << dialog_id << " from group " << media_album_id
-              << " at pos " << pos << " out of " << request.results.size() << " was already finished";
+    LOG(INFO) << "Upload media of " << message_full_id << " from group " << media_album_id << " at pos " << pos
+              << " out of " << request.results.size() << " was already finished";
     return;
   }
-  LOG(INFO) << "Finish to upload media of " << message_id << " in " << dialog_id << " from group " << media_album_id
-            << " at pos " << pos << " out of " << request.results.size() << " with result " << result
+  LOG(INFO) << "Finish to upload media of " << message_full_id << " from group " << media_album_id << " at pos " << pos
+            << " out of " << request.results.size() << " with result " << result
             << " and previous finished_count = " << request.finished_count;
 
   request.results[pos] = std::move(result);
