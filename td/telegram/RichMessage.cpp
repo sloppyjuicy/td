@@ -205,6 +205,15 @@ bool RichMessage::can_send(const RestrictedRights &rights) const {
   return true;
 }
 
+bool RichMessage::need_reget() const {
+  for (const auto &block : blocks_) {
+    if (!block->need_reget()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int32 RichMessage::get_index_mask() const {
   return get_web_page_blocks_index_mask(blocks_);
 }

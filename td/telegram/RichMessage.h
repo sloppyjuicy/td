@@ -84,6 +84,8 @@ class RichMessage {
 
   bool can_send(const RestrictedRights &rights) const;
 
+  bool need_reget() const;
+
   int32 get_index_mask() const;
 
   telegram_api::object_ptr<telegram_api::InputRichMessage> get_input_rich_message(

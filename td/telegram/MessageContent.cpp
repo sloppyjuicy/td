@@ -13143,6 +13143,10 @@ bool need_reget_message_content(const Td *td, const MessageContent *content) {
       }
       return false;
     }
+    case MessageContentType::RichText: {
+      const auto *m = static_cast<const MessageRichText *>(content);
+      return m->rich_message.need_reget();
+    }
     default:
       return false;
   }

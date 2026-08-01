@@ -1217,6 +1217,10 @@ class WebPageBlockUnsupported final : public WebPageBlock {
     return td::make_unique<WebPageBlockUnsupported>();
   }
 
+  bool need_reget() const final {
+    return version != CURRENT_VERSION;
+  }
+
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
     return telegram_api::make_object<telegram_api::pageBlockDivider>();
   }
@@ -1226,7 +1230,7 @@ class WebPageBlockUnsupported final : public WebPageBlock {
   }
 
   friend bool operator==(const WebPageBlockUnsupported &lhs, const WebPageBlockUnsupported &rhs) {
-    return true;
+    return lhs.version == rhs.version;
   }
 
   template <class StorerT>
@@ -2215,6 +2219,15 @@ class WebPageBlockList final : public WebPageBlock {
       return true;
     }
 
+    bool need_reget() const {
+      for (const auto &page_block : page_blocks) {
+        if (page_block->need_reget()) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     int32 get_index_mask() const {
       return get_web_page_blocks_index_mask(page_blocks);
     }
@@ -2355,6 +2368,15 @@ class WebPageBlockList final : public WebPageBlock {
       }
     }
     return true;
+  }
+
+  bool need_reget() const final {
+    for (auto &item : items) {
+      if (item.need_reget()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   int32 get_index_mask() const final {
@@ -2584,10 +2606,6 @@ class WebPageBlockButtonRow final : public WebPageBlock {
     for (auto &button : buttons) {
       button.for_each_rich_text(recurse_text, callback);
     }
-  }
-
-  bool can_send(const RestrictedRights &rights) const final {
-    return true;
   }
 
   int32 get_index_mask() const final {
@@ -3250,6 +3268,10 @@ class WebPageBlockCover final : public WebPageBlock {
     return cover->can_send(rights);
   }
 
+  bool need_reget() const final {
+    return cover->need_reget();
+  }
+
   int32 get_index_mask() const final {
     return cover->get_index_mask();
   }
@@ -3532,6 +3554,15 @@ class WebPageBlockCollage final : public WebPageBlock {
     return true;
   }
 
+  bool need_reget() const final {
+    for (const auto &page_block : page_blocks) {
+      if (page_block->need_reget()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   int32 get_index_mask() const final {
     return get_web_page_blocks_index_mask(page_blocks) | caption.get_index_mask();
   }
@@ -3617,6 +3648,15 @@ class WebPageBlockSlideshow final : public WebPageBlock {
       }
     }
     return true;
+  }
+
+  bool need_reget() const final {
+    for (const auto &page_block : page_blocks) {
+      if (page_block->need_reget()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   int32 get_index_mask() const final {
@@ -4063,6 +4103,15 @@ class WebPageBlockDetails final : public WebPageBlock {
     return true;
   }
 
+  bool need_reget() const final {
+    for (const auto &page_block : page_blocks) {
+      if (page_block->need_reget()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   int32 get_index_mask() const final {
     return header.get_index_mask() | get_web_page_blocks_index_mask(page_blocks);
   }
@@ -4154,6 +4203,15 @@ class WebPageBlockBlockQuoteBlocks final : public WebPageBlock {
       }
     }
     return true;
+  }
+
+  bool need_reget() const final {
+    for (const auto &page_block : page_blocks) {
+      if (page_block->need_reget()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   int32 get_index_mask() const final {

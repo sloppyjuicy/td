@@ -137,6 +137,10 @@ class WebPageBlock {
     return true;
   }
 
+  virtual bool need_reget() const {
+    return false;
+  }
+
   virtual int32 get_index_mask() const = 0;
 
   virtual unique_ptr<WebPageBlock> clone() const = 0;
