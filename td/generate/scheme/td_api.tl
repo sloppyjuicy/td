@@ -4338,6 +4338,9 @@ pageBlockMap location:location zoom:int32 width:int32 height:int32 caption:pageB
 //@align Horizontal alignment of the buttons; may be null if the buttons must be shown full-width
 pageBlockButtonRow buttons:vector<inlineButton> align:PageBlockHorizontalAlignment = PageBlock;
 
+//@description Represents a block unsupported by the current application version
+pageBlockUnsupported = PageBlock;
+
 
 //@description Describes an instant view page for a web page
 //@blocks Content of the instant view page

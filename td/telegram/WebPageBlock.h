@@ -78,6 +78,7 @@ class WebPageBlock {
     Document,
     ButtonRow,
     ExpandableBlockQuote,
+    Unsupported,
     Size
   };
 

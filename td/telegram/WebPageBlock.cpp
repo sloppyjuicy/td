@@ -1189,6 +1189,63 @@ class RelatedArticle {
   }
 };
 
+class WebPageBlockUnsupported final : public WebPageBlock {
+  static constexpr int32 CURRENT_VERSION = 1;
+  int32 version = CURRENT_VERSION;
+
+ public:
+  WebPageBlockUnsupported() = default;
+
+  Type get_type() const final {
+    return Type::Unsupported;
+  }
+
+  void append_file_ids(const Td *td, vector<FileId> &file_ids) const final {
+  }
+
+  void add_dependencies(Dependencies &dependencies) const final {
+  }
+
+  void for_each_rich_text(bool recurse_text, const std::function<void(const RichText *text)> &callback) const final {
+  }
+
+  int32 get_index_mask() const final {
+    return 0;
+  }
+
+  unique_ptr<WebPageBlock> clone() const final {
+    return td::make_unique<WebPageBlockUnsupported>();
+  }
+
+  telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
+    return telegram_api::make_object<telegram_api::pageBlockDivider>();
+  }
+
+  td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
+    return td_api::make_object<td_api::pageBlockUnsupported>();
+  }
+
+  friend bool operator==(const WebPageBlockUnsupported &lhs, const WebPageBlockUnsupported &rhs) {
+    return true;
+  }
+
+  template <class StorerT>
+  void store(StorerT &storer) const {
+    using ::td::store;
+    BEGIN_STORE_FLAGS();
+    END_STORE_FLAGS();
+    store(version, storer);
+  }
+
+  template <class ParserT>
+  void parse(ParserT &parser) {
+    using ::td::parse;
+    BEGIN_PARSE_FLAGS();
+    END_PARSE_FLAGS();
+    parse(version, parser);
+  }
+};
+
 class WebPageBlockTitle final : public WebPageBlock {
   RichText title;
 
@@ -5367,9 +5424,10 @@ vector<unique_ptr<WebPageBlock>> get_web_page_blocks(
   for (auto &page_block_ptr : page_block_ptrs) {
     auto page_block =
         get_web_page_block(td, std::move(page_block_ptr), animations, audios, documents, photos, videos, voice_notes);
-    if (page_block != nullptr) {
-      result.push_back(std::move(page_block));
+    if (page_block == nullptr) {
+      page_block = make_unique<WebPageBlockUnsupported>();
     }
+    result.push_back(std::move(page_block));
   }
   return result;
 }
