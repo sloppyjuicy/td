@@ -32867,13 +32867,6 @@ MessagesManager::Dialog *MessagesManager::add_new_dialog(unique_ptr<Dialog> &&di
         d->last_new_message_id = MessageId::min().get_next_message_id(MessageType::Local);
       }
 
-      if (!d->notification_settings.is_secret_chat_show_preview_fixed) {
-        d->notification_settings.use_default_show_preview = true;
-        d->notification_settings.show_preview = false;
-        d->notification_settings.is_secret_chat_show_preview_fixed = true;
-        on_dialog_updated(dialog_id, "fix secret chat show preview");
-      }
-
       d->have_full_history = true;
       d->have_full_history_source = 4;
       d->need_restore_reply_markup = false;

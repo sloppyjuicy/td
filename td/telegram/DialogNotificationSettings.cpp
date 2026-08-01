@@ -46,7 +46,6 @@ DialogNotificationSettings DialogNotificationSettings::clone_for_secret_chat() c
       use_default_mute_until, mute_until, dup_notification_sound(sound), true /*use_default_show_preview*/,
       false /*show_preview*/, use_default_mute_stories, mute_stories, dup_notification_sound(story_sound),
       use_default_hide_story_sender, hide_story_sender, silent_send_message, true, false, true, false);
-  notification_settings.is_secret_chat_show_preview_fixed = true;
   return notification_settings;
 }
 
