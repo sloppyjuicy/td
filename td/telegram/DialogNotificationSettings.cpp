@@ -211,7 +211,6 @@ NeedUpdateDialogNotificationSettings need_update_dialog_notification_settings(
   result.are_changed =
       result.need_update_server || result.need_update_local ||
       current_settings->is_synchronized != new_settings.is_synchronized ||
-      current_settings->is_use_default_fixed != new_settings.is_use_default_fixed ||
       are_different_equivalent_notification_sounds(current_settings->sound, new_settings.sound) ||
       are_different_equivalent_notification_sounds(current_settings->story_sound, new_settings.story_sound);
   return result;

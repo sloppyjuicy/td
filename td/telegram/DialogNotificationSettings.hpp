@@ -32,12 +32,12 @@ void store(const DialogNotificationSettings &notification_settings, StorerT &sto
   STORE_FLAG(notification_settings.use_default_mute_until);
   STORE_FLAG(false);  // use_default_sound
   STORE_FLAG(notification_settings.use_default_show_preview);
-  STORE_FLAG(notification_settings.is_use_default_fixed);
+  STORE_FLAG(true);
   STORE_FLAG(!notification_settings.use_default_disable_pinned_message_notifications);
   STORE_FLAG(notification_settings.disable_pinned_message_notifications);
   STORE_FLAG(!notification_settings.use_default_disable_mention_notifications);
   STORE_FLAG(notification_settings.disable_mention_notifications);
-  STORE_FLAG(false);
+  STORE_FLAG(true);
   STORE_FLAG(has_ringtone_support);
   STORE_FLAG(notification_settings.mute_stories);
   STORE_FLAG(use_mute_stories);
@@ -67,6 +67,7 @@ void parse(DialogNotificationSettings &notification_settings, ParserT &parser) {
   bool use_mute_stories;
   bool has_story_sound;
   bool use_hide_story_sender;
+  bool legacy_is_use_default_fixed;
   bool legacy_is_secret_chat_show_preview_fixed;
   BEGIN_PARSE_FLAGS();
   PARSE_FLAG(is_muted);
@@ -77,7 +78,7 @@ void parse(DialogNotificationSettings &notification_settings, ParserT &parser) {
   PARSE_FLAG(notification_settings.use_default_mute_until);
   PARSE_FLAG(use_default_sound);
   PARSE_FLAG(notification_settings.use_default_show_preview);
-  PARSE_FLAG(notification_settings.is_use_default_fixed);
+  PARSE_FLAG(legacy_is_use_default_fixed);
   PARSE_FLAG(use_disable_pinned_message_notifications);
   PARSE_FLAG(notification_settings.disable_pinned_message_notifications);
   PARSE_FLAG(use_disable_mention_notifications);
@@ -90,6 +91,7 @@ void parse(DialogNotificationSettings &notification_settings, ParserT &parser) {
   PARSE_FLAG(notification_settings.hide_story_sender);
   PARSE_FLAG(use_hide_story_sender);
   END_PARSE_FLAGS();
+  (void)legacy_is_use_default_fixed;
   (void)legacy_is_secret_chat_show_preview_fixed;
   notification_settings.use_default_disable_pinned_message_notifications = !use_disable_pinned_message_notifications;
   notification_settings.use_default_disable_mention_notifications = !use_disable_mention_notifications;

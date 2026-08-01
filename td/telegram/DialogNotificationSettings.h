@@ -29,7 +29,6 @@ class DialogNotificationSettings {
   bool use_default_show_preview = true;
   bool use_default_mute_stories = true;
   bool use_default_hide_story_sender = true;
-  bool is_use_default_fixed = true;
   bool is_synchronized = false;
 
   // local settings

@@ -17348,7 +17348,7 @@ std::pair<bool, int32> MessagesManager::get_dialog_mute_until(DialogId dialog_id
     return {false, td_->notification_settings_manager_->get_scope_mute_until(scope)};
   }
 
-  return {d->notification_settings.is_use_default_fixed, get_dialog_mute_until(d)};
+  return {true, get_dialog_mute_until(d)};
 }
 
 int64 MessagesManager::get_dialog_notification_ringtone_id(DialogId dialog_id, const Dialog *d) const {
@@ -33084,18 +33084,6 @@ void MessagesManager::fix_new_dialog(Dialog *d, unique_ptr<DraftMessage> &&draft
   }
   if (d->has_active_group_call && !d->active_group_call_id.is_valid() && !td_->auth_manager_->is_bot()) {
     repair_dialog_active_group_call_id(dialog_id);
-  }
-
-  if (d->notification_settings.is_synchronized && !d->notification_settings.is_use_default_fixed &&
-      td_->dialog_manager_->have_input_peer(dialog_id, true, AccessRights::Read) && !td_->auth_manager_->is_bot()) {
-    LOG(INFO) << "Reget notification settings of " << dialog_id;
-    if (dialog_type == DialogType::SecretChat) {
-      d->notification_settings.is_use_default_fixed = true;
-      on_dialog_updated(dialog_id, "reget notification settings");
-    } else {
-      td_->notification_settings_manager_->send_get_dialog_notification_settings_query(dialog_id, ForumTopicId(),
-                                                                                       Promise<Unit>());
-    }
   }
   if (td_->auth_manager_->is_bot() || d->notification_settings.use_default_mute_until ||
       d->notification_settings.mute_until <= G()->unix_time()) {
