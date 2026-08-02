@@ -10407,7 +10407,6 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       case telegram_api::messageActionSuggestedPostRefund::ID:
       case telegram_api::messageActionNewCreatorPending::ID:
       case telegram_api::messageActionChangeCreator::ID:
-      case telegram_api::messageActionChangeCommunity::ID:
       case telegram_api::messageActionChatJoinedViaCommunity::ID:
         LOG(ERROR) << "Receive business " << to_string(action_ptr);
         break;
@@ -10454,6 +10453,7 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       case telegram_api::messageActionTopicEdit::ID:
       case telegram_api::messageActionRequestedPeer::ID:
       case telegram_api::messageActionManagedBotCreated::ID:
+      case telegram_api::messageActionChangeCommunity::ID:
         // ok in chats with bots
         if (owner_dialog_id.get_type() == DialogType::User) {
           auto user_id = owner_dialog_id.get_user_id();
