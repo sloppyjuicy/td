@@ -13,6 +13,7 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/DialogPhoto.hpp"
+#include "td/telegram/FileReferenceManager.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/logevent/LogEvent.h"
 #include "td/telegram/Photo.h"
@@ -202,7 +203,7 @@ CommunityManager::CommunityManager(Td *td, ActorShared<> parent) : td_(td), pare
 
 CommunityManager::~CommunityManager() {
   Scheduler::instance()->destroy_on_scheduler(G()->get_gc_scheduler_id(), communities_, unknown_communities_,
-                                              communities_full_);
+                                              communities_full_, community_full_file_source_ids_);
 }
 
 void CommunityManager::tear_down() {
@@ -835,6 +836,26 @@ void CommunityManager::on_update_community_full_photo(CommunityFull *community_f
     community_full->photo = std::move(photo);
     community_full->is_changed = true;
   }
+}
+
+FileSourceId CommunityManager::get_community_full_file_source_id(CommunityId community_id) {
+  if (!community_id.is_valid()) {
+    return FileSourceId();
+  }
+
+  auto community_full = get_community_full_const(community_id);
+  if (community_full != nullptr) {
+    VLOG(file_references) << "Don't need to create file source for full " << community_id;
+    // community full was already added, source ID was registered and shouldn't be needed
+    return community_full->is_update_community_full_sent ? FileSourceId() : community_full->file_source_id;
+  }
+
+  auto &source_id = community_full_file_source_ids_[community_id];
+  if (!source_id.is_valid()) {
+    source_id = td_->file_reference_manager_->create_community_full_file_source(community_id);
+  }
+  VLOG(file_references) << "Return " << source_id << " for full " << community_id;
+  return source_id;
 }
 
 int64 CommunityManager::get_community_id_object(CommunityId community_id, const char *source) const {

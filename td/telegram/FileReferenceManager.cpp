@@ -204,6 +204,7 @@ fileSourceSavedMusic user_id:int53 file_id:int32 = FileSource;                  
 fileSourceDraftMessage chat_id:int53 topic:MessageTopic = FileSource;                      // messages.getPeerDialogs/messages.getForumTopicsByID/messages.getSavedDialogsByID
 fileSourceRichMessage chat_id:int53 message_id:int53 = FileSource;                         // messages.getRichMessage
 fileSourceWelcomeMessages chat_id:int53 = FileSource;                                      // ephemeral.getWelcomeMessages
+fileSourceCommunityFull community_id:int53 = FileSource;                                   // messages.getFullChannel
 */
 
 FileSourceId FileReferenceManager::get_current_file_source_id() const {
@@ -339,6 +340,11 @@ FileSourceId FileReferenceManager::create_rich_message_file_source(MessageFullId
 FileSourceId FileReferenceManager::create_welcome_messages_file_source(DialogId dialog_id) {
   FileSourceWelcomeMessages source{dialog_id};
   return add_file_source_id(source, PSLICE() << "welcome messages of " << dialog_id);
+}
+
+FileSourceId FileReferenceManager::create_community_full_file_source(CommunityId community_id) {
+  FileSourceCommunityFull source{community_id};
+  return add_file_source_id(source, PSLICE() << "full " << community_id);
 }
 
 FileReferenceManager::Node &FileReferenceManager::add_node(NodeId node_id) {
@@ -594,6 +600,10 @@ void FileReferenceManager::send_query(Destination dest, FileSourceId file_source
       [&](const FileSourceWelcomeMessages &source) {
         send_closure_later(G()->welcome_message_manager(), &WelcomeMessageManager::reload_welcome_messages,
                            source.dialog_id, std::move(promise));
+      },
+      [&](const FileSourceCommunityFull &source) {
+        send_closure_later(G()->community_manager(), &CommunityManager::reload_community_full, source.community_id,
+                           std::move(promise), "FileSourceCommunityFull");
       }));
 }
 

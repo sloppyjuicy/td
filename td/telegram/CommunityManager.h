@@ -9,6 +9,7 @@
 #include "td/telegram/CommunityId.h"
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/DialogPhoto.h"
+#include "td/telegram/files/FileSourceId.h"
 #include "td/telegram/Photo.h"
 #include "td/telegram/QueryCombiner.h"
 #include "td/telegram/QueryMerger.h"
@@ -52,6 +53,8 @@ class CommunityManager final : public Actor {
   void reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source);
 
   void on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community);
+
+  FileSourceId get_community_full_file_source_id(CommunityId community_id);
 
   int64 get_community_id_object(CommunityId community_id, const char *source) const;
 
@@ -129,6 +132,8 @@ class CommunityManager final : public Actor {
     int32 administrator_count = 0;
     int32 banned_count = 0;
     int32 peer_link_requests_pending = 0;
+
+    FileSourceId file_source_id;
 
     bool is_update_community_full_sent = false;
     bool is_being_updated = false;
@@ -217,6 +222,7 @@ class CommunityManager final : public Actor {
   WaitFreeHashMap<CommunityId, unique_ptr<Community>, CommunityIdHash> communities_;
   mutable FlatHashSet<CommunityId, CommunityIdHash> unknown_communities_;
   WaitFreeHashMap<CommunityId, unique_ptr<CommunityFull>, CommunityIdHash> communities_full_;
+  WaitFreeHashMap<CommunityId, FileSourceId, CommunityIdHash> community_full_file_source_ids_;
 
   FlatHashMap<CommunityId, vector<Promise<Unit>>, CommunityIdHash> load_community_from_database_queries_;
   FlatHashSet<CommunityId, CommunityIdHash> loaded_from_database_communities_;

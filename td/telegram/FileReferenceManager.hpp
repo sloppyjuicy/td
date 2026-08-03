@@ -13,6 +13,8 @@
 #include "td/telegram/ChannelId.h"
 #include "td/telegram/ChatId.h"
 #include "td/telegram/ChatManager.h"
+#include "td/telegram/CommunityId.h"
+#include "td/telegram/CommunityManager.h"
 #include "td/telegram/DraftMessageManager.h"
 #include "td/telegram/FileReferenceManager.h"
 #include "td/telegram/files/FileSourceId.h"
@@ -94,7 +96,8 @@ void FileReferenceManager::store_file_source(FileSourceId file_source_id, Storer
                             td::store(source.topic, storer);
                           },
                           [&](const FileSourceRichMessage &source) { td::store(source.message_full_id, storer); },
-                          [&](const FileSourceWelcomeMessages &source) { td::store(source.dialog_id, storer); }));
+                          [&](const FileSourceWelcomeMessages &source) { td::store(source.dialog_id, storer); },
+                          [&](const FileSourceCommunityFull &source) { td::store(source.community_id, storer); }));
 }
 
 template <class ParserT>
@@ -238,6 +241,11 @@ FileSourceId FileReferenceManager::parse_file_source(Td *td, ParserT &parser) {
       DialogId dialog_id;
       td::parse(dialog_id, parser);
       return td->welcome_message_manager_->get_welcome_messages_file_source_id(dialog_id);
+    }
+    case 27: {
+      CommunityId community_id;
+      td::parse(community_id, parser);
+      return td->community_manager_->get_community_full_file_source_id(community_id);
     }
     default:
       parser.set_error("Invalid type in FileSource");
