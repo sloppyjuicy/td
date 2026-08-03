@@ -666,7 +666,8 @@ void FileReferenceManager::reload_photo(PhotoSizeSource source, Promise<Unit> pr
       if (dialog_id.get_type() == DialogType::Channel) {
         auto channel_id = dialog_id.get_channel_id();
         if (!channel_id.is_regular_channel()) {
-          td_->community_manager_->reload_community(CommunityId(channel_id.get()), std::move(promise), "reload_photo");
+          td_->community_manager_->reload_community_full(CommunityId(channel_id.get()), std::move(promise),
+                                                         "reload_photo");
           break;
         }
       }
