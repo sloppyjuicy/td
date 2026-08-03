@@ -932,11 +932,12 @@ void CommunityManager::on_get_community_full(telegram_api::object_ptr<telegram_a
   CommunityFull *community_full = add_community_full(community_id);
   auto community_dialogs =
       transform(std::move(community->linked_peers_), [](auto &&linked_peer) { return CommunityDialog(linked_peer); });
-  td::remove_if(community_dialogs, [](const CommunityDialog &dialog) {
+  td::remove_if(community_dialogs, [td = td_](const CommunityDialog &dialog) {
     if (!dialog.is_valid()) {
       LOG(ERROR) << "Receive an invalid community chat";
       return true;
     }
+    td->dialog_manager_->force_create_dialog(dialog.get_dialog_id(), "CommunityDialog", true);
     return false;
   });
   auto administrator_count = community->admins_count_;

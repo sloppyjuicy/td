@@ -119,6 +119,10 @@ class CommunityManager final : public Actor {
       return dialog_id_.is_valid();
     }
 
+    DialogId get_dialog_id() const {
+      return dialog_id_;
+    }
+
     void add_dependencies(Dependencies &dependencies) const;
 
     td_api::object_ptr<td_api::communityChat> get_community_chat_object(const Td *td) const;
