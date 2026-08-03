@@ -5391,8 +5391,10 @@ messageCustomServiceAction text:string = MessageContent;
 //@description A new high score was achieved in a game @game_message_id Identifier of the message with the game, can be an identifier of a deleted message @game_id Identifier of the game; may be different from the games presented in the message with the game @score New score
 messageGameScore game_message_id:int53 game_id:int64 score:int32 = MessageContent;
 
-//@description A bot managed by another bot was created by the user @bot_user_id User identifier of the created bot
-messageManagedBotCreated bot_user_id:int53 = MessageContent;
+//@description A bot managed by another bot was created by the user
+//@bot_user_id User identifier of the created bot
+//@manager_bot_user_id Identifier of the bot which will manage the new bot
+messageManagedBotCreated bot_user_id:int53 manager_bot_user_id:int53 = MessageContent;
 
 //@description A payment has been sent to a bot or a business account
 //@invoice_chat_id Identifier of the chat, containing the corresponding invoice message

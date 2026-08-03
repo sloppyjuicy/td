@@ -12007,8 +12007,16 @@ td_api::object_ptr<td_api::MessageContent> get_message_content_object(
     }
     case MessageContentType::ManagedBotCreated: {
       const auto *m = static_cast<const MessageManagedBotCreated *>(content);
+      UserId manager_bot_user_id;
+      if (dialog_id.get_type() == DialogType::User) {
+        manager_bot_user_id = is_outgoing ? dialog_id.get_user_id() : td->user_manager_->get_my_id();
+      } else {
+        LOG(ERROR) << "Have messageManagedBotCreated in " << dialog_id;
+        manager_bot_user_id = td->user_manager_->get_my_id();
+      }
       return td_api::make_object<td_api::messageManagedBotCreated>(
-          td->user_manager_->get_user_id_object(m->bot_user_id, "messageManagedBotCreated"));
+          td->user_manager_->get_user_id_object(m->bot_user_id, "messageManagedBotCreated"),
+          td->user_manager_->get_user_id_object(manager_bot_user_id, "messageManagedBotCreated 2"));
     }
     case MessageContentType::PollAppendAnswer: {
       const auto *m = static_cast<const MessagePollAppendAnswer *>(content);
