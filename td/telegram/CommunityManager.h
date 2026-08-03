@@ -9,6 +9,7 @@
 #include "td/telegram/CommunityId.h"
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/DialogPhoto.h"
+#include "td/telegram/Photo.h"
 #include "td/telegram/QueryMerger.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
@@ -46,6 +47,8 @@ class CommunityManager final : public Actor {
   void on_get_community(telegram_api::community &community, const char *source);
 
   void on_get_community_forbidden(telegram_api::communityForbidden &community, const char *source);
+
+  void on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community);
 
   int64 get_community_id_object(CommunityId community_id, const char *source) const;
 
@@ -116,6 +119,26 @@ class CommunityManager final : public Actor {
 
   friend bool operator==(const CommunityDialog &lhs, const CommunityDialog &rhs);
 
+  struct CommunityFull {
+    string about;
+    Photo photo;
+    vector<CommunityDialog> dialogs;
+    int32 administrator_count = 0;
+    int32 banned_count = 0;
+    int32 peer_link_requests_pending = 0;
+
+    bool is_update_community_full_sent = false;
+    bool is_being_updated = false;
+    bool need_save_to_database = true;
+    bool is_changed = true;
+
+    template <class StorerT>
+    void store(StorerT &storer) const;
+
+    template <class ParserT>
+    void parse(ParserT &parser);
+  };
+
   class CommunityLogEvent;
 
   void tear_down() final;
@@ -161,6 +184,13 @@ class CommunityManager final : public Actor {
   static void on_update_community_default_permissions(Community *c, CommunityId community_id,
                                                       RestrictedRights default_permissions);
 
+  CommunityFull *add_community_full(CommunityId community_id);
+
+  void on_update_community_full_photo(CommunityFull *community_full, CommunityId community_id, Photo photo);
+
+  void update_community_full(CommunityFull *community_full, CommunityId community_id, const char *source,
+                             bool from_database = false);
+
   td_api::object_ptr<td_api::updateCommunity> get_update_community_object(CommunityId community_id,
                                                                           const Community *c) const;
 
@@ -168,11 +198,18 @@ class CommunityManager final : public Actor {
 
   td_api::object_ptr<td_api::community> get_community_object(CommunityId Community_id, const Community *c) const;
 
+  td_api::object_ptr<td_api::communityFullInfo> get_community_full_info_object(
+      CommunityId community_id, const CommunityFull *community_full) const;
+
+  td_api::object_ptr<td_api::updateCommunityFullInfo> get_update_community_full_info_object(
+      CommunityId community_id, const CommunityFull *community_full, const char *source) const;
+
   Td *td_;
   ActorShared<> parent_;
 
   WaitFreeHashMap<CommunityId, unique_ptr<Community>, CommunityIdHash> communities_;
   mutable FlatHashSet<CommunityId, CommunityIdHash> unknown_communities_;
+  WaitFreeHashMap<CommunityId, unique_ptr<CommunityFull>, CommunityIdHash> communities_full_;
 
   FlatHashMap<CommunityId, vector<Promise<Unit>>, CommunityIdHash> load_community_from_database_queries_;
   FlatHashSet<CommunityId, CommunityIdHash> loaded_from_database_communities_;

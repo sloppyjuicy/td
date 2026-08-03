@@ -2306,6 +2306,14 @@ community id:int53 have_access:Bool name:string photo:chatPhotoInfo date:int32 s
 //@is_hidden True, if the chat is hidden in the list of community chats; for community administrators only
 communityChat chat_id:int53 can_view_history:Bool is_hidden:Bool = CommunityChat;
 
+//@description Contains full information about a community
+//@photo Photo of the community
+//@chats Chats belonging to the community
+//@administrator_count Number of privileged users in the community; 0 if the current user isn't an administrator of the community
+//@banned_count Number of users banned from the community; 0 if the current user isn't an administrator of the community
+//@add_chat_request_count Number of pending requests for addition of chats to the community; 0 if the current user isn't an administrator of the community
+communityFullInfo photo:chatPhoto chats:vector<communityChat> administrator_count:int32 banned_count:int32 add_chat_request_count:int32 = CommunityFullInfo;
+
 
 //@description Contains description of user rating
 //@level The level of the user; may be negative
@@ -10706,6 +10714,9 @@ updateBasicGroupFullInfo basic_group_id:int53 basic_group_full_info:basicGroupFu
 
 //@description Some data in supergroupFullInfo has been changed @supergroup_id Identifier of the supergroup or channel @supergroup_full_info New full information about the supergroup
 updateSupergroupFullInfo supergroup_id:int53 supergroup_full_info:supergroupFullInfo = Update;
+
+//@description Some data in communityFullInfo has been changed @community_id Identifier of the community @community_full_info New full information about the community
+updateCommunityFullInfo community_id:int53 community_full_info:communityFullInfo = Update;
 
 //@description A service notification from the server was received. Upon receiving this the application must show a popup with the content of the notification
 //@type Notification type. If type begins with "AUTH_KEY_DROP_", then two buttons "Cancel" and "Log out" must be shown under notification; if user presses the second, all local data must be destroyed using Destroy method

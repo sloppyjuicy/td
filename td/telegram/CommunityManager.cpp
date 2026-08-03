@@ -25,6 +25,7 @@
 #include "td/db/SqliteKeyValue.h"
 #include "td/db/SqliteKeyValueAsync.h"
 
+#include "td/utils/algorithm.h"
 #include "td/utils/buffer.h"
 #include "td/utils/logging.h"
 #include "td/utils/ScopeGuard.h"
@@ -162,7 +163,8 @@ CommunityManager::CommunityManager(Td *td, ActorShared<> parent) : td_(td), pare
 }
 
 CommunityManager::~CommunityManager() {
-  Scheduler::instance()->destroy_on_scheduler(G()->get_gc_scheduler_id(), communities_, unknown_communities_);
+  Scheduler::instance()->destroy_on_scheduler(G()->get_gc_scheduler_id(), communities_, unknown_communities_,
+                                              communities_full_);
 }
 
 void CommunityManager::tear_down() {
@@ -574,7 +576,7 @@ void CommunityManager::on_get_community_forbidden(telegram_api::communityForbidd
   }
 
   auto access_hash = community.access_hash_;
-  Community *c = add_community(community_id, "on_get_community");
+  Community *c = add_community(community_id, "on_get_community_forbidden");
   if (c->access_hash != access_hash) {
     c->access_hash = access_hash;
     if (access_hash == 0 || c->access_hash == 0) {
@@ -669,6 +671,100 @@ void CommunityManager::on_update_community_default_permissions(Community *c, Com
   }
 }
 
+CommunityManager::CommunityFull *CommunityManager::add_community_full(CommunityId community_id) {
+  CHECK(community_id.is_valid());
+  auto &community_full_ptr = communities_full_[community_id];
+  if (community_full_ptr == nullptr) {
+    community_full_ptr = make_unique<CommunityFull>();
+  }
+  return community_full_ptr.get();
+}
+
+void CommunityManager::on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community) {
+  CommunityId community_id(community->id_);
+  auto c = get_community(community_id);
+  if (c == nullptr) {
+    LOG(ERROR) << "Can't find " << community_id;
+    return;
+  }
+
+  CommunityFull *community_full = add_community_full(community_id);
+  auto community_dialogs =
+      transform(std::move(community->linked_peers_), [](auto &&linked_peer) { return CommunityDialog(linked_peer); });
+  td::remove_if(community_dialogs, [](const CommunityDialog &dialog) {
+    if (!dialog.is_valid()) {
+      LOG(ERROR) << "Receive an invalid community chat";
+      return true;
+    }
+    return false;
+  });
+  auto administrator_count = community->admins_count_;
+  auto banned_count = community->kicked_count_;
+  if (community_full->about != community->about_ || community_full->dialogs != community_dialogs ||
+      community_full->administrator_count != administrator_count || community_full->banned_count != banned_count ||
+      community_full->peer_link_requests_pending != community->peer_link_requests_pending_) {
+    community_full->about = std::move(community->about_);
+    community_full->dialogs = std::move(community_dialogs);
+    community_full->administrator_count = administrator_count;
+    community_full->banned_count = banned_count;
+    community_full->peer_link_requests_pending = community->peer_link_requests_pending_;
+    community_full->is_changed = true;
+  }
+  auto photo = get_photo(td_, std::move(community->chat_photo_), DialogId());
+  on_update_community_photo(
+      c, community_id,
+      as_dialog_photo(td_->file_manager_.get(), community_id.get_fake_dialog_id(), c->access_hash, photo, false),
+      false);
+  on_update_community_full_photo(community_full, community_id, std::move(photo));
+
+  if (c->is_changed) {
+    LOG(ERROR) << "Receive inconsistent chatPhoto and chatPhotoInfo for " << community_id;
+    update_community(c, community_id);
+  }
+
+  community_full->is_update_community_full_sent = true;
+  update_community_full(community_full, community_id, "on_get_community_full");
+}
+
+void CommunityManager::update_community_full(CommunityFull *community_full, CommunityId community_id,
+                                             const char *source, bool from_database) {
+  CHECK(community_full != nullptr);
+
+  if (community_full->is_being_updated) {
+    LOG(ERROR) << "Detected recursive update of full " << community_id << " from " << source;
+  }
+  community_full->is_being_updated = true;
+  SCOPE_EXIT {
+    community_full->is_being_updated = false;
+  };
+
+  community_full->need_save_to_database |= community_full->is_changed;
+  if (community_full->is_changed) {
+    if (!community_full->is_update_community_full_sent) {
+      LOG(ERROR) << "Send partial updateCommunityFullInfo for " << community_id << " from " << source;
+      community_full->is_update_community_full_sent = true;
+    }
+    send_closure(G()->td(), &Td::send_update,
+                 get_update_community_full_info_object(community_id, community_full, source));
+    community_full->is_changed = false;
+  }
+  if (community_full->need_save_to_database) {
+    if (!from_database) {
+      // save_community_full(community_full, community_id);
+    }
+    community_full->need_save_to_database = false;
+  }
+}
+
+void CommunityManager::on_update_community_full_photo(CommunityFull *community_full, CommunityId community_id,
+                                                      Photo photo) {
+  CHECK(community_full != nullptr);
+  if (photo != community_full->photo) {
+    community_full->photo = std::move(photo);
+    community_full->is_changed = true;
+  }
+}
+
 int64 CommunityManager::get_community_id_object(CommunityId community_id, const char *source) const {
   if (community_id.is_valid() && get_community(community_id) == nullptr &&
       unknown_communities_.count(community_id) == 0) {
@@ -707,6 +803,22 @@ td_api::object_ptr<td_api::updateCommunity> CommunityManager::get_update_unknown
   return td_api::make_object<td_api::updateCommunity>(td_api::make_object<td_api::community>(
       community_id.get(), false, string(), nullptr, 0, td_api::make_object<td_api::communityMemberStatusBanned>(),
       RestrictedRights::restrict_all().get_community_permissions_object()));
+}
+
+td_api::object_ptr<td_api::communityFullInfo> CommunityManager::get_community_full_info_object(
+    CommunityId community_id, const CommunityFull *community_full) const {
+  CHECK(community_full != nullptr);
+  auto chats = transform(community_full->dialogs,
+                         [td = td_](const auto &dialog) { return dialog.get_community_chat_object(td); });
+  return td_api::make_object<td_api::communityFullInfo>(
+      get_chat_photo_object(td_->file_manager_.get(), community_full->photo), std::move(chats),
+      community_full->administrator_count, community_full->banned_count, community_full->peer_link_requests_pending);
+}
+
+td_api::object_ptr<td_api::updateCommunityFullInfo> CommunityManager::get_update_community_full_info_object(
+    CommunityId community_id, const CommunityFull *community_full, const char *source) const {
+  return td_api::make_object<td_api::updateCommunityFullInfo>(
+      get_community_id_object(community_id, source), get_community_full_info_object(community_id, community_full));
 }
 
 telegram_api::object_ptr<telegram_api::InputChannel> CommunityManager::get_input_community(
