@@ -3760,7 +3760,10 @@ keyboardButton text:string icon_custom_emoji_id:int64 style:ButtonStyle type:Key
 //@description A button that opens a specified URL @url HTTP or tg:// URL to open. If the link is of the type internalLinkTypeWebApp, then the button must be marked as a Web App button
 inlineKeyboardButtonTypeUrl url:string = InlineKeyboardButtonType;
 
-//@description A button that opens a specified URL and automatically authorize the current user by calling getLoginUrlInfo @url An HTTP URL to pass to getLoginUrlInfo @id Unique button identifier @forward_text If non-empty, new text of the button in forwarded messages
+//@description A button that opens a specified URL and automatically authorize the current user by calling getLoginUrlInfo; not supported in ephemeral messages
+//@url An HTTP URL to pass to getLoginUrlInfo
+//@id Unique button identifier
+//@forward_text If non-empty, new text of the button in forwarded messages
 inlineKeyboardButtonTypeLoginUrl url:string id:int53 forward_text:string = InlineKeyboardButtonType;
 
 //@description A button that opens a Web App by calling openWebApp @url An HTTP URL to pass to openWebApp
