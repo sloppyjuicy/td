@@ -442,6 +442,24 @@ CommunityManager::Community *CommunityManager::get_community(CommunityId communi
   return communities_.get_pointer(community_id);
 }
 
+const CommunityManager::CommunityFull *CommunityManager::get_community_full_const(CommunityId community_id) const {
+  return communities_full_.get_pointer(community_id);
+}
+
+CommunityManager::CommunityFull *CommunityManager::get_community_full(CommunityId community_id, bool only_local,
+                                                                      const char *source) {
+  auto community_full = communities_full_.get_pointer(community_id);
+  if (community_full == nullptr) {
+    return nullptr;
+  }
+
+  if (!only_local && !td_->auth_manager_->is_bot()) {
+    reload_community_full(community_id, Auto(), source);
+  }
+
+  return community_full;
+}
+
 CommunityManager::Community *CommunityManager::add_community(CommunityId community_id, const char *source) {
   CHECK(community_id.is_valid());
   auto &community_ptr = communities_[community_id];

@@ -187,6 +187,10 @@ class CommunityManager final : public Actor {
   static void on_update_community_default_permissions(Community *c, CommunityId community_id,
                                                       RestrictedRights default_permissions);
 
+  const CommunityFull *get_community_full_const(CommunityId community_id) const;
+
+  CommunityFull *get_community_full(CommunityId community_id, bool only_local, const char *source);
+
   CommunityFull *add_community_full(CommunityId community_id);
 
   void on_update_community_full_photo(CommunityFull *community_full, CommunityId community_id, Photo photo);
