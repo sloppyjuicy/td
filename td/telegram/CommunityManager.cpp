@@ -681,20 +681,15 @@ void CommunityManager::on_update_community_photo(Community *c, CommunityId commu
     c->is_changed = true;
 
     if (invalidate_photo_cache) {
-      /*
-      auto community_full = get_community_full(community_id, true, "on_update_community_photo");  // must not load CommunityFull
+      auto community_full =
+          get_community_full(community_id, true, "on_update_community_photo");  // must not load CommunityFull
       if (community_full != nullptr) {
         on_update_community_full_photo(community_full, community_id, Photo());
         if (c->photo.small_file_id.is_valid()) {
-          if (community_full->expires_at > 0.0) {
-            community_full->expires_at = 0.0;
-            community_full->need_save_to_database = true;
-          }
           reload_community_full(community_id, Auto(), "on_update_community_photo");
         }
         update_community_full(community_full, community_id, "on_update_community_photo");
       }
-      */
     }
   } else if (need_update_dialog_photo_minithumbnail(c->photo.minithumbnail, photo.minithumbnail)) {
     c->photo.minithumbnail = std::move(photo.minithumbnail);
