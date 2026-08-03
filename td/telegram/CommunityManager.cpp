@@ -845,6 +845,11 @@ void CommunityManager::get_current_state(vector<td_api::object_ptr<td_api::Updat
   communities_.foreach([&](const CommunityId &community_id, const unique_ptr<Community> &community) {
     updates.push_back(get_update_community_object(community_id, community.get()));
   });
+
+  communities_full_.foreach([&](const CommunityId &community_id, const unique_ptr<CommunityFull> &community_full) {
+    CHECK(community_full->is_update_community_full_sent);
+    updates.push_back(get_update_community_full_info_object(community_id, community_full.get(), "get_current_state"));
+  });
 }
 
 }  // namespace td
