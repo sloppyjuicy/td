@@ -276,7 +276,8 @@ CommunityManager::CommunityManager(Td *td, ActorShared<> parent) : td_(td), pare
 
 CommunityManager::~CommunityManager() {
   Scheduler::instance()->destroy_on_scheduler(G()->get_gc_scheduler_id(), communities_, unknown_communities_,
-                                              communities_full_, community_full_file_source_ids_);
+                                              communities_full_, community_full_file_source_ids_,
+                                              unavailable_community_fulls_);
 }
 
 void CommunityManager::tear_down() {
@@ -816,6 +817,86 @@ void CommunityManager::save_community_full(const CommunityFull *community_full, 
                                       log_event_store(*community_full).as_slice().str(), Auto());
 }
 
+CommunityManager::CommunityFull *CommunityManager::get_community_full_force(CommunityId community_id, bool only_local,
+                                                                            const char *source) {
+  if (!have_community_force(community_id, source)) {
+    return nullptr;
+  }
+
+  CommunityFull *community_full = get_community_full(community_id, only_local, source);
+  if (community_full != nullptr) {
+    return community_full;
+  }
+  if (!G()->use_chat_info_database()) {
+    return nullptr;
+  }
+  if (!unavailable_community_fulls_.insert(community_id).second) {
+    return nullptr;
+  }
+
+  LOG(INFO) << "Trying to load full " << community_id << " from database from " << source;
+  on_load_community_full_from_database(
+      community_id, G()->td_db()->get_sqlite_sync_pmc()->get(get_community_full_database_key(community_id)), source);
+  return get_community_full(community_id, only_local, source);
+}
+
+void CommunityManager::on_load_community_full_from_database(CommunityId community_id, string value,
+                                                            const char *source) {
+  LOG(INFO) << "Successfully loaded full " << community_id << " of size " << value.size() << " from database from "
+            << source;
+  //  G()->td_db()->get_sqlite_pmc()->erase(get_community_full_database_key(community_id), Auto());
+  //  return;
+
+  if (get_community_full_const(community_id) != nullptr || value.empty()) {
+    return;
+  }
+
+  CommunityFull *community_full = add_community_full(community_id);
+  auto status = log_event_parse(*community_full, value);
+  if (status.is_error()) {
+    // can't happen unless database is broken
+    LOG(ERROR) << "Repair broken full " << community_id << ' ' << format::as_hex_dump<4>(Slice(value));
+
+    // just clean all known data about the community and pretend that there was nothing in the database
+    communities_full_.erase(community_id);
+    G()->td_db()->get_sqlite_pmc()->erase(get_community_full_database_key(community_id), Auto());
+    return;
+  }
+
+  Dependencies dependencies;
+  dependencies.add(community_id);
+  for (auto &dialog : community_full->dialogs) {
+    dialog.add_dependencies(dependencies);
+  }
+  if (!dependencies.resolve_force(td_, source)) {
+    communities_full_.erase(community_id);
+    G()->td_db()->get_sqlite_pmc()->erase(get_community_full_database_key(community_id), Auto());
+    return;
+  }
+
+  Community *c = get_community(community_id);
+  CHECK(c != nullptr);
+
+  bool need_reload_community_full = false;
+  if (!is_same_dialog_photo(td_->file_manager_.get(), community_id.get_fake_dialog_id(), community_full->photo,
+                            c->photo, false)) {
+    community_full->photo = Photo();
+    if (c->photo.small_file_id.is_valid()) {
+      need_reload_community_full = true;
+    }
+  }
+  auto photo = std::move(community_full->photo);
+  community_full->photo = Photo();
+  on_update_community_full_photo(community_full, community_id, std::move(photo));
+
+  community_full->is_update_community_full_sent = true;
+  update_community_full(community_full, community_id, "on_load_community_full_from_database", true);
+
+  if (need_reload_community_full) {
+    reload_community_full(community_id, Auto(), "on_load_community_full_from_database");
+  }
+}
+
 void CommunityManager::reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
   auto input_community = get_input_community(community_id);
   if (input_community == nullptr) {
@@ -889,6 +970,8 @@ void CommunityManager::update_community_full(CommunityFull *community_full, Comm
   SCOPE_EXIT {
     community_full->is_being_updated = false;
   };
+
+  unavailable_community_fulls_.erase(community_id);  // don't needed anymore
 
   community_full->need_save_to_database |= community_full->is_changed;
   if (community_full->is_changed) {

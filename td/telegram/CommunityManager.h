@@ -206,6 +206,10 @@ class CommunityManager final : public Actor {
 
   static string get_community_full_database_key(CommunityId community_id);
 
+  CommunityFull *get_community_full_force(CommunityId community_id, bool only_local, const char *source);
+
+  void on_load_community_full_from_database(CommunityId community_id, string value, const char *source);
+
   static void save_community_full(const CommunityFull *community_full, CommunityId community_id);
 
   void on_update_community_full_photo(CommunityFull *community_full, CommunityId community_id, Photo photo);
@@ -236,6 +240,7 @@ class CommunityManager final : public Actor {
 
   FlatHashMap<CommunityId, vector<Promise<Unit>>, CommunityIdHash> load_community_from_database_queries_;
   FlatHashSet<CommunityId, CommunityIdHash> loaded_from_database_communities_;
+  FlatHashSet<CommunityId, CommunityIdHash> unavailable_community_fulls_;
 
   QueryMerger get_community_queries_{"GetCommunityMerger", 10, 1};
 
