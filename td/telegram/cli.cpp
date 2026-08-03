@@ -1019,6 +1019,18 @@ class CliClient final : public Actor {
     arg = to_double(args);
   }
 
+  struct BasicGroupId {
+    int64 basic_group_id = 0;
+
+    operator int64() const {
+      return basic_group_id;
+    }
+  };
+
+  void get_args(string &args, BasicGroupId &arg) const {
+    arg.basic_group_id = as_basic_group_id(args);
+  }
+
   struct SupergroupId {
     int64 supergroup_id = 0;
 
@@ -5016,9 +5028,13 @@ class CliClient final : public Actor {
       get_args(args, user_id);
       send_request(td_api::make_object<td_api::getUserFullInfo>(user_id));
     } else if (op == "gbg") {
-      send_request(td_api::make_object<td_api::getBasicGroup>(as_basic_group_id(args)));
+      BasicGroupId basic_group_id;
+      get_args(args, basic_group_id);
+      send_request(td_api::make_object<td_api::getBasicGroup>(basic_group_id));
     } else if (op == "gbgf") {
-      send_request(td_api::make_object<td_api::getBasicGroupFullInfo>(as_basic_group_id(args)));
+      BasicGroupId basic_group_id;
+      get_args(args, basic_group_id);
+      send_request(td_api::make_object<td_api::getBasicGroupFullInfo>(basic_group_id));
     } else if (op == "gsg" || op == "gch") {
       send_request(td_api::make_object<td_api::getSupergroup>(as_supergroup_id(args)));
     } else if (op == "gsgf" || op == "gchf") {
@@ -7253,10 +7269,10 @@ class CliClient final : public Actor {
       get_args(args, user_id, force);
       send_request(td_api::make_object<td_api::createPrivateChat>(user_id, force));
     } else if (op == "cbgc") {
-      string basic_group_id;
+      BasicGroupId basic_group_id;
       bool force;
       get_args(args, basic_group_id, force);
-      send_request(td_api::make_object<td_api::createBasicGroupChat>(as_basic_group_id(basic_group_id), force));
+      send_request(td_api::make_object<td_api::createBasicGroupChat>(basic_group_id, force));
     } else if (op == "csgc" || op == "cchc") {
       SupergroupId supergroup_id;
       bool force;
