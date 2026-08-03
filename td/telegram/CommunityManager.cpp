@@ -124,6 +124,11 @@ td_api::object_ptr<td_api::communityChat> CommunityManager::CommunityDialog::get
       td->dialog_manager_->get_chat_id_object(dialog_id_, "communityChat"), can_view_history_, !is_visible_);
 }
 
+bool operator==(const CommunityManager::CommunityDialog &lhs, const CommunityManager::CommunityDialog &rhs) {
+  return lhs.dialog_id_ == rhs.dialog_id_ && lhs.can_view_history_ == rhs.can_view_history_ &&
+         lhs.is_visible_ == rhs.is_visible_;
+}
+
 template <class StorerT>
 void CommunityManager::CommunityDialog::store(StorerT &storer) const {
   using td::store;

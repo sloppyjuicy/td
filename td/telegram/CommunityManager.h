@@ -96,6 +96,8 @@ class CommunityManager final : public Actor {
     bool can_view_history_ = false;
     bool is_visible_ = false;
 
+    friend bool operator==(const CommunityDialog &lhs, const CommunityDialog &rhs);
+
    public:
     explicit CommunityDialog(const telegram_api::object_ptr<telegram_api::communityPeer> &peer);
 
@@ -111,6 +113,8 @@ class CommunityManager final : public Actor {
     template <class ParserT>
     void parse(ParserT &parser);
   };
+
+  friend bool operator==(const CommunityDialog &lhs, const CommunityDialog &rhs);
 
   class CommunityLogEvent;
 
