@@ -10,6 +10,7 @@
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/DialogPhoto.h"
 #include "td/telegram/Photo.h"
+#include "td/telegram/QueryCombiner.h"
 #include "td/telegram/QueryMerger.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
@@ -47,6 +48,8 @@ class CommunityManager final : public Actor {
   void on_get_community(telegram_api::community &community, const char *source);
 
   void on_get_community_forbidden(telegram_api::communityForbidden &community, const char *source);
+
+  void reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source);
 
   void on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community);
 
@@ -215,6 +218,8 @@ class CommunityManager final : public Actor {
   FlatHashSet<CommunityId, CommunityIdHash> loaded_from_database_communities_;
 
   QueryMerger get_community_queries_{"GetCommunityMerger", 10, 1};
+
+  QueryCombiner get_community_full_queries_{"GetCommunityFullCombiner", 2.0};
 };
 
 }  // namespace td

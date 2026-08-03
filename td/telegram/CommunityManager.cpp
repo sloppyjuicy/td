@@ -19,6 +19,7 @@
 #include "td/telegram/PhotoSize.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/TdDb.h"
+#include "td/telegram/UserManager.h"
 
 #include "td/db/binlog/BinlogEvent.h"
 #include "td/db/binlog/BinlogHelper.h"
@@ -63,6 +64,43 @@ class GetCommunitiesQuery final : public Td::ResultHandler {
     } else {
       LOG(ERROR) << "Receive " << to_string(chats_ptr);
     }
+    promise_.set_value(Unit());
+  }
+
+  void on_error(Status status) final {
+    promise_.set_error(std::move(status));
+  }
+};
+
+class GetFullCommunityQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+  CommunityId community_id_;
+
+ public:
+  explicit GetFullCommunityQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(CommunityId community_id, telegram_api::object_ptr<telegram_api::InputChannel> &&input_channel) {
+    community_id_ = community_id;
+    send_query(G()->net_query_creator().create(telegram_api::channels_getFullChannel(std::move(input_channel))));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::channels_getFullChannel>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for GetFullCommunityQuery: " << to_string(ptr);
+    td_->user_manager_->on_get_users(std::move(ptr->users_), "GetFullCommunityQuery");
+    td_->chat_manager_->on_get_chats(std::move(ptr->chats_), "GetFullCommunityQuery");
+    if (ptr->full_chat_->get_id() != telegram_api::communityFull::ID) {
+      LOG(ERROR) << "Receive " << to_string(ptr);
+      return on_error(Status::Error(500, "Receive invalid response"));
+    }
+    td_->community_manager_->on_get_community_full(
+        telegram_api::move_object_as<telegram_api::communityFull>(ptr->full_chat_));
     promise_.set_value(Unit());
   }
 
@@ -678,6 +716,22 @@ CommunityManager::CommunityFull *CommunityManager::add_community_full(CommunityI
     community_full_ptr = make_unique<CommunityFull>();
   }
   return community_full_ptr.get();
+}
+
+void CommunityManager::reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
+  auto input_community = get_input_community(community_id);
+  if (input_community == nullptr) {
+    return promise.set_error(400, "Community not found");
+  }
+
+  LOG(INFO) << "Get full " << community_id << " from " << source;
+  auto send_query = PromiseCreator::lambda([td = td_, community_id, input_community = std::move(input_community)](
+                                               Result<Promise<Unit>> &&promise) mutable {
+    if (promise.is_ok() && !G()->close_flag()) {
+      td->create_handler<GetFullCommunityQuery>(promise.move_as_ok())->send(community_id, std::move(input_community));
+    }
+  });
+  get_community_full_queries_.add_query(community_id.get(), std::move(send_query), std::move(promise));
 }
 
 void CommunityManager::on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community) {
