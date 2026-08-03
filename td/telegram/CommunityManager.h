@@ -108,6 +108,8 @@ class CommunityManager final : public Actor {
     friend bool operator==(const CommunityDialog &lhs, const CommunityDialog &rhs);
 
    public:
+    CommunityDialog() = default;
+
     explicit CommunityDialog(const telegram_api::object_ptr<telegram_api::communityPeer> &peer);
 
     bool is_valid() const {
@@ -198,6 +200,10 @@ class CommunityManager final : public Actor {
   CommunityFull *get_community_full(CommunityId community_id, bool only_local, const char *source);
 
   CommunityFull *add_community_full(CommunityId community_id);
+
+  static string get_community_full_database_key(CommunityId community_id);
+
+  static void save_community_full(const CommunityFull *community_full, CommunityId community_id);
 
   void on_update_community_full_photo(CommunityFull *community_full, CommunityId community_id, Photo photo);
 

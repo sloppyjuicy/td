@@ -18,6 +18,7 @@
 #include "td/telegram/Global.h"
 #include "td/telegram/logevent/LogEvent.h"
 #include "td/telegram/Photo.h"
+#include "td/telegram/Photo.hpp"
 #include "td/telegram/PhotoSize.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/TdDb.h"
@@ -188,6 +189,72 @@ void CommunityManager::CommunityDialog::parse(ParserT &parser) {
   PARSE_FLAG(is_visible_);
   END_PARSE_FLAGS();
   parse(dialog_id_, parser);
+}
+
+template <class StorerT>
+void CommunityManager::CommunityFull::store(StorerT &storer) const {
+  using td::store;
+  bool has_about = !about.empty();
+  bool has_photo = !photo.is_empty();
+  bool has_administrator_count = administrator_count != 0;
+  bool has_banned_count = banned_count != 0;
+  bool has_peer_link_requests_pending = peer_link_requests_pending != 0;
+  BEGIN_STORE_FLAGS();
+  STORE_FLAG(has_about);
+  STORE_FLAG(has_photo);
+  STORE_FLAG(has_administrator_count);
+  STORE_FLAG(has_banned_count);
+  STORE_FLAG(has_peer_link_requests_pending);
+  END_STORE_FLAGS();
+  store(dialogs, storer);
+  if (has_about) {
+    store(about, storer);
+  }
+  if (has_photo) {
+    store(photo, storer);
+  }
+  if (has_administrator_count) {
+    store(administrator_count, storer);
+  }
+  if (has_banned_count) {
+    store(banned_count, storer);
+  }
+  if (has_peer_link_requests_pending) {
+    store(peer_link_requests_pending, storer);
+  }
+}
+
+template <class ParserT>
+void CommunityManager::CommunityFull::parse(ParserT &parser) {
+  using td::parse;
+  bool has_about;
+  bool has_photo;
+  bool has_administrator_count;
+  bool has_banned_count;
+  bool has_peer_link_requests_pending;
+  BEGIN_PARSE_FLAGS();
+  PARSE_FLAG(has_about);
+  PARSE_FLAG(has_photo);
+  PARSE_FLAG(has_administrator_count);
+  PARSE_FLAG(has_banned_count);
+  PARSE_FLAG(has_peer_link_requests_pending);
+  END_PARSE_FLAGS();
+  parse(dialogs, parser);
+  if (has_about) {
+    parse(about, parser);
+  }
+  if (has_photo) {
+    parse(photo, parser);
+  }
+  if (has_administrator_count) {
+    parse(administrator_count, parser);
+  }
+  if (has_banned_count) {
+    parse(banned_count, parser);
+  }
+  if (has_peer_link_requests_pending) {
+    parse(peer_link_requests_pending, parser);
+  }
 }
 
 CommunityManager::CommunityManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
@@ -733,6 +800,21 @@ CommunityManager::CommunityFull *CommunityManager::add_community_full(CommunityI
   return community_full_ptr.get();
 }
 
+string CommunityManager::get_community_full_database_key(CommunityId community_id) {
+  return PSTRING() << "communityf" << community_id.get();
+}
+
+void CommunityManager::save_community_full(const CommunityFull *community_full, CommunityId community_id) {
+  if (!G()->use_chat_info_database()) {
+    return;
+  }
+
+  LOG(INFO) << "Trying to save to database full " << community_id;
+  CHECK(community_full != nullptr);
+  G()->td_db()->get_sqlite_pmc()->set(get_community_full_database_key(community_id),
+                                      log_event_store(*community_full).as_slice().str(), Auto());
+}
+
 void CommunityManager::reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
   auto input_community = get_input_community(community_id);
   if (input_community == nullptr) {
@@ -819,7 +901,7 @@ void CommunityManager::update_community_full(CommunityFull *community_full, Comm
   }
   if (community_full->need_save_to_database) {
     if (!from_database) {
-      // save_community_full(community_full, community_id);
+      save_community_full(community_full, community_id);
     }
     community_full->need_save_to_database = false;
   }
