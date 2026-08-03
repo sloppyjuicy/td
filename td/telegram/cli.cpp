@@ -757,6 +757,10 @@ class CliClient final : public Actor {
     return static_cast<int32>(result);
   }
 
+  int64 as_community_id(Slice str) const {
+    return to_integer<int64>(trim(str));
+  }
+
   static int32 as_file_id(Slice str) {
     return to_integer<int32>(trim(str));
   }
@@ -1053,6 +1057,18 @@ class CliClient final : public Actor {
 
   void get_args(string &args, ChatId &arg) const {
     arg.chat_id = as_chat_id(args);
+  }
+
+  struct CommunityId {
+    int64 community_id = 0;
+
+    operator int64() const {
+      return community_id;
+    }
+  };
+
+  void get_args(string &args, CommunityId &arg) const {
+    arg.community_id = as_community_id(args);
   }
 
   struct MessageId {
