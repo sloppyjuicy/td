@@ -51,6 +51,8 @@ class CommunityManager final : public Actor {
 
   void on_get_community_forbidden(telegram_api::communityForbidden &community, const char *source);
 
+  void load_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source);
+
   void reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source);
 
   void on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community);

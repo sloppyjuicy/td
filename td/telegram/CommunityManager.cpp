@@ -897,6 +897,14 @@ void CommunityManager::on_load_community_full_from_database(CommunityId communit
   }
 }
 
+void CommunityManager::load_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
+  auto community_full = get_community_full_force(community_id, true, source);
+  if (community_full != nullptr) {
+    return promise.set_value(Unit());
+  }
+  reload_community_full(community_id, std::move(promise), source);
+}
+
 void CommunityManager::reload_community_full(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
   auto input_community = get_input_community(community_id);
   if (input_community == nullptr) {

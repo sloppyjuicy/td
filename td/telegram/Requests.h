@@ -268,6 +268,8 @@ class Requests {
 
   void on_request(uint64 id, const td_api::getChat &request);
 
+  void on_request(uint64 id, const td_api::loadCommunityFullInfo &request);
+
   void on_request(uint64 id, const td_api::getMessage &request);
 
   void on_request(uint64 id, const td_api::getMessageLocally &request);

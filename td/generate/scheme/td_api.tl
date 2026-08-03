@@ -11484,6 +11484,9 @@ getSecretChat secret_chat_id:int32 = SecretChat;
 //@description Returns information about a chat by its identifier. This is an offline method if the current user is not a bot @chat_id Chat identifier
 getChat chat_id:int53 = Chat;
 
+//@description Returns full information about a community. The data will be sent through update. @community_id Community identifier
+loadCommunityFullInfo community_id:int53 = Ok;
+
 //@description Returns information about a message. Returns a 404 error if the message doesn't exist
 //@chat_id Identifier of the chat the message belongs to
 //@message_id Identifier of the message to get
