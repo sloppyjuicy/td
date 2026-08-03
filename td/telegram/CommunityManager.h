@@ -133,6 +133,7 @@ class CommunityManager final : public Actor {
     int32 banned_count = 0;
     int32 peer_link_requests_pending = 0;
 
+    vector<FileId> registered_photo_file_ids;
     FileSourceId file_source_id;
 
     bool is_update_community_full_sent = false;

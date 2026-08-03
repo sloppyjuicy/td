@@ -14,6 +14,7 @@
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/DialogPhoto.hpp"
 #include "td/telegram/FileReferenceManager.h"
+#include "td/telegram/files/FileManager.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/logevent/LogEvent.h"
 #include "td/telegram/Photo.h"
@@ -831,6 +832,27 @@ void CommunityManager::on_update_community_full_photo(CommunityFull *community_f
     community_full->photo = std::move(photo);
     community_full->is_changed = true;
   }
+
+  auto photo_file_ids = photo_get_file_ids(community_full->photo);
+  if (community_full->registered_photo_file_ids == photo_file_ids) {
+    return;
+  }
+
+  auto &file_source_id = community_full->file_source_id;
+  if (!file_source_id.is_valid()) {
+    file_source_id = community_full_file_source_ids_.get(community_id);
+    if (file_source_id.is_valid()) {
+      VLOG(file_references) << "Move " << file_source_id << " inside of " << community_id;
+      community_full_file_source_ids_.erase(community_id);
+    } else {
+      VLOG(file_references) << "Need to create new file source for full " << community_id;
+      file_source_id = td_->file_reference_manager_->create_community_full_file_source(community_id);
+    }
+  }
+
+  td_->file_manager_->change_files_source(file_source_id, community_full->registered_photo_file_ids, photo_file_ids,
+                                          "on_update_community_full_photo");
+  community_full->registered_photo_file_ids = std::move(photo_file_ids);
 }
 
 FileSourceId CommunityManager::get_community_full_file_source_id(CommunityId community_id) {
