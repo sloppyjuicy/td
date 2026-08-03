@@ -569,7 +569,7 @@ void CommunityManager::on_get_community_forbidden(telegram_api::communityForbidd
 void CommunityManager::on_update_community_photo(Community *c, CommunityId community_id,
                                                  telegram_api::object_ptr<telegram_api::ChatPhoto> &&chat_photo_ptr) {
   on_update_community_photo(c, community_id,
-                            get_dialog_photo(td_->file_manager_.get(), DialogId(ChannelId(community_id.get())),
+                            get_dialog_photo(td_->file_manager_.get(), community_id.get_fake_dialog_id(),
                                              c->access_hash, std::move(chat_photo_ptr)),
                             true);
 }
