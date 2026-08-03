@@ -1019,6 +1019,18 @@ class CliClient final : public Actor {
     arg = to_double(args);
   }
 
+  struct SupergroupId {
+    int64 supergroup_id = 0;
+
+    operator int64() const {
+      return supergroup_id;
+    }
+  };
+
+  void get_args(string &args, SupergroupId &arg) const {
+    arg.supergroup_id = as_supergroup_id(args);
+  }
+
   struct ChatId {
     int64 chat_id = 0;
 
@@ -5032,12 +5044,12 @@ class CliClient final : public Actor {
     } else if (op == "GetSupergroupAdministrators" || op == "GetSupergroupBanned" || op == "GetSupergroupBots" ||
                op == "GetSupergroupContacts" || op == "GetSupergroupMembers" || op == "GetSupergroupRestricted" ||
                op == "SearchSupergroupMembers" || op == "SearchSupergroupMentions") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       int32 offset;
       SearchQuery query;
       get_args(args, supergroup_id, offset, query);
       send_request(td_api::make_object<td_api::getSupergroupMembers>(
-          as_supergroup_id(supergroup_id), as_supergroup_members_filter(op, query.query), offset, query.limit));
+          supergroup_id, as_supergroup_members_filter(op, query.query), offset, query.limit));
     } else if (op == "gd") {
       ChatId chat_id;
       get_args(args, chat_id);
@@ -7246,10 +7258,10 @@ class CliClient final : public Actor {
       get_args(args, basic_group_id, force);
       send_request(td_api::make_object<td_api::createBasicGroupChat>(as_basic_group_id(basic_group_id), force));
     } else if (op == "csgc" || op == "cchc") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool force;
       get_args(args, supergroup_id, force);
-      send_request(td_api::make_object<td_api::createSupergroupChat>(as_supergroup_id(supergroup_id), force));
+      send_request(td_api::make_object<td_api::createSupergroupChat>(supergroup_id, force));
     } else {
       op_not_found_count++;
     }
@@ -7788,114 +7800,108 @@ class CliClient final : public Actor {
       get_args(args, chat_id, username);
       send_request(td_api::make_object<td_api::checkChatUsername>(chat_id, username));
     } else if (op == "ssgun" || op == "schun") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       string username;
       get_args(args, supergroup_id, username);
-      send_request(td_api::make_object<td_api::setSupergroupUsername>(as_supergroup_id(supergroup_id), username));
+      send_request(td_api::make_object<td_api::setSupergroupUsername>(supergroup_id, username));
     } else if (op == "tsgunia" || op == "tchunia") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       string username;
       bool is_active;
       get_args(args, supergroup_id, username, is_active);
-      send_request(td_api::make_object<td_api::toggleSupergroupUsernameIsActive>(as_supergroup_id(supergroup_id),
-                                                                                 username, is_active));
+      send_request(td_api::make_object<td_api::toggleSupergroupUsernameIsActive>(supergroup_id, username, is_active));
     } else if (op == "dasgun" || op == "dachun") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       get_args(args, supergroup_id);
-      send_request(td_api::make_object<td_api::disableAllSupergroupUsernames>(as_supergroup_id(supergroup_id)));
+      send_request(td_api::make_object<td_api::disableAllSupergroupUsernames>(supergroup_id));
     } else if (op == "rsgaun" || op == "rchaun") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       get_args(args, supergroup_id, args);
-      send_request(td_api::make_object<td_api::reorderSupergroupActiveUsernames>(as_supergroup_id(supergroup_id),
-                                                                                 autosplit_str(args)));
+      send_request(td_api::make_object<td_api::reorderSupergroupActiveUsernames>(supergroup_id, autosplit_str(args)));
     } else if (op == "ssgss") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       int64 sticker_set_id;
       get_args(args, supergroup_id, sticker_set_id);
-      send_request(
-          td_api::make_object<td_api::setSupergroupStickerSet>(as_supergroup_id(supergroup_id), sticker_set_id));
+      send_request(td_api::make_object<td_api::setSupergroupStickerSet>(supergroup_id, sticker_set_id));
     } else if (op == "ssgcess") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       int64 sticker_set_id;
       get_args(args, supergroup_id, sticker_set_id);
-      send_request(td_api::make_object<td_api::setSupergroupCustomEmojiStickerSet>(as_supergroup_id(supergroup_id),
-                                                                                   sticker_set_id));
+      send_request(td_api::make_object<td_api::setSupergroupCustomEmojiStickerSet>(supergroup_id, sticker_set_id));
     } else if (op == "ssgubc") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       int32 unrestrict_boost_count;
       get_args(args, supergroup_id, unrestrict_boost_count);
-      send_request(td_api::make_object<td_api::setSupergroupUnrestrictBoostCount>(as_supergroup_id(supergroup_id),
-                                                                                  unrestrict_boost_count));
+      send_request(
+          td_api::make_object<td_api::setSupergroupUnrestrictBoostCount>(supergroup_id, unrestrict_boost_count));
     } else if (op == "tsgp") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool is_all_history_available;
       get_args(args, supergroup_id, is_all_history_available);
-      send_request(td_api::make_object<td_api::toggleSupergroupIsAllHistoryAvailable>(as_supergroup_id(supergroup_id),
-                                                                                      is_all_history_available));
+      send_request(
+          td_api::make_object<td_api::toggleSupergroupIsAllHistoryAvailable>(supergroup_id, is_all_history_available));
     } else if (op == "tsgchsm") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool can_have_sponsored_messages;
       get_args(args, supergroup_id, can_have_sponsored_messages);
-      send_request(td_api::make_object<td_api::toggleSupergroupCanHaveSponsoredMessages>(
-          as_supergroup_id(supergroup_id), can_have_sponsored_messages));
+      send_request(td_api::make_object<td_api::toggleSupergroupCanHaveSponsoredMessages>(supergroup_id,
+                                                                                         can_have_sponsored_messages));
     } else if (op == "tsghat") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool has_automatic_translation;
       get_args(args, supergroup_id, has_automatic_translation);
-      send_request(td_api::make_object<td_api::toggleSupergroupHasAutomaticTranslation>(as_supergroup_id(supergroup_id),
+      send_request(td_api::make_object<td_api::toggleSupergroupHasAutomaticTranslation>(supergroup_id,
                                                                                         has_automatic_translation));
     } else if (op == "tsghhm") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool has_hidden_members;
       get_args(args, supergroup_id, has_hidden_members);
-      send_request(td_api::make_object<td_api::toggleSupergroupHasHiddenMembers>(as_supergroup_id(supergroup_id),
-                                                                                 has_hidden_members));
+      send_request(td_api::make_object<td_api::toggleSupergroupHasHiddenMembers>(supergroup_id, has_hidden_members));
     } else if (op == "tsgas") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool has_aggressive_anti_spam_enabled;
       get_args(args, supergroup_id, has_aggressive_anti_spam_enabled);
       send_request(td_api::make_object<td_api::toggleSupergroupHasAggressiveAntiSpamEnabled>(
-          as_supergroup_id(supergroup_id), has_aggressive_anti_spam_enabled));
+          supergroup_id, has_aggressive_anti_spam_enabled));
     } else if (op == "tsgif") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool is_forum;
       bool has_forum_tabs;
       get_args(args, supergroup_id, is_forum, has_forum_tabs);
-      send_request(td_api::make_object<td_api::toggleSupergroupIsForum>(as_supergroup_id(supergroup_id), is_forum,
-                                                                        has_forum_tabs));
+      send_request(td_api::make_object<td_api::toggleSupergroupIsForum>(supergroup_id, is_forum, has_forum_tabs));
     } else if (op == "tsibg") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       get_args(args, supergroup_id);
-      send_request(td_api::make_object<td_api::toggleSupergroupIsBroadcastGroup>(as_supergroup_id(supergroup_id)));
+      send_request(td_api::make_object<td_api::toggleSupergroupIsBroadcastGroup>(supergroup_id));
     } else if (op == "ssmpt" || op == "ssmptg") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       get_args(args, supergroup_id);
       td_api::object_ptr<td_api::ProfileTab> main_profile_tab = td_api::make_object<td_api::profileTabPosts>();
       if (op == "ssmptg") {
         main_profile_tab = td_api::make_object<td_api::profileTabGifs>();
       }
-      send_request(td_api::make_object<td_api::setSupergroupMainProfileTab>(as_supergroup_id(supergroup_id),
-                                                                            std::move(main_profile_tab)));
+      send_request(
+          td_api::make_object<td_api::setSupergroupMainProfileTab>(supergroup_id, std::move(main_profile_tab)));
     } else if (op == "tsgsm") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool sign_messages;
       bool show_message_sender;
       get_args(args, supergroup_id, sign_messages, show_message_sender);
-      send_request(td_api::make_object<td_api::toggleSupergroupSignMessages>(as_supergroup_id(supergroup_id),
-                                                                             sign_messages, show_message_sender));
+      send_request(
+          td_api::make_object<td_api::toggleSupergroupSignMessages>(supergroup_id, sign_messages, show_message_sender));
     } else if (op == "tsgjtsm") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool join_to_send_message;
       get_args(args, supergroup_id, join_to_send_message);
-      send_request(td_api::make_object<td_api::toggleSupergroupJoinToSendMessages>(as_supergroup_id(supergroup_id),
-                                                                                   join_to_send_message));
+      send_request(
+          td_api::make_object<td_api::toggleSupergroupJoinToSendMessages>(supergroup_id, join_to_send_message));
     } else if (op == "tsgjbr" || op == "tsgjbra") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       bool join_by_request;
       UserId guard_bot_user_id;
       get_args(args, supergroup_id, join_by_request, guard_bot_user_id);
-      send_request(td_api::make_object<td_api::toggleSupergroupJoinByRequest>(
-          as_supergroup_id(supergroup_id), join_by_request, guard_bot_user_id, op == "tsgjbra"));
+      send_request(td_api::make_object<td_api::toggleSupergroupJoinByRequest>(supergroup_id, join_by_request,
+                                                                              guard_bot_user_id, op == "tsgjbra"));
     } else {
       op_not_found_count++;
     }
@@ -8790,17 +8796,15 @@ class CliClient final : public Actor {
       get_args(args, source, button_id, shared_chat_id);
       send_request(td_api::make_object<td_api::shareChatWithBot>(source, button_id, shared_chat_id, op == "scwbc"));
     } else if (op == "rsgs") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       string message_ids;
       get_args(args, supergroup_id, message_ids);
-      send_request(td_api::make_object<td_api::reportSupergroupSpam>(as_supergroup_id(supergroup_id),
-                                                                     as_message_ids(message_ids)));
+      send_request(td_api::make_object<td_api::reportSupergroupSpam>(supergroup_id, as_message_ids(message_ids)));
     } else if (op == "rsgasfp") {
-      string supergroup_id;
+      SupergroupId supergroup_id;
       MessageId message_id;
       get_args(args, supergroup_id, message_id);
-      send_request(td_api::make_object<td_api::reportSupergroupAntiSpamFalsePositive>(as_supergroup_id(supergroup_id),
-                                                                                      message_id));
+      send_request(td_api::make_object<td_api::reportSupergroupAntiSpamFalsePositive>(supergroup_id, message_id));
     } else if (op == "gdiff") {
       send_request(td_api::make_object<td_api::testGetDifference>());
     } else if (op == "dproxy") {
