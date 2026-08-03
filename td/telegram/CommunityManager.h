@@ -27,6 +27,7 @@
 namespace td {
 
 struct BinlogEvent;
+class Dependencies;
 class Td;
 
 class CommunityManager final : public Actor {
@@ -115,6 +116,8 @@ class CommunityManager final : public Actor {
     bool is_valid() const {
       return dialog_id_.is_valid();
     }
+
+    void add_dependencies(Dependencies &dependencies) const;
 
     td_api::object_ptr<td_api::communityChat> get_community_chat_object(const Td *td) const;
 

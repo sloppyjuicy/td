@@ -10,6 +10,7 @@
 #include "td/telegram/ChannelId.h"
 #include "td/telegram/ChannelType.h"
 #include "td/telegram/ChatManager.h"
+#include "td/telegram/Dependencies.h"
 #include "td/telegram/DialogId.h"
 #include "td/telegram/DialogManager.h"
 #include "td/telegram/DialogPhoto.hpp"
@@ -158,6 +159,10 @@ void CommunityManager::Community::parse(ParserT &parser) {
 
 CommunityManager::CommunityDialog::CommunityDialog(const telegram_api::object_ptr<telegram_api::communityPeer> &peer)
     : dialog_id_(peer->peer_), can_view_history_(peer->can_view_history_), is_visible_(peer->visible_) {
+}
+
+void CommunityManager::CommunityDialog::add_dependencies(Dependencies &dependencies) const {
+  dependencies.add_dialog_and_dependencies(dialog_id_);
 }
 
 td_api::object_ptr<td_api::communityChat> CommunityManager::CommunityDialog::get_community_chat_object(
