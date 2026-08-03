@@ -168,9 +168,9 @@ class CommunityManager final : public Actor {
 
   void load_community_from_database(Community *c, CommunityId community_id, Promise<Unit> promise);
 
-  void load_community_from_database_impl(CommunityId community_id, bool is_recursive, Promise<Unit> promise);
+  void load_community_from_database_impl(CommunityId community_id, Promise<Unit> promise);
 
-  void on_load_community_from_database(CommunityId community_id, string value, bool force, bool is_recursive);
+  void on_load_community_from_database(CommunityId community_id, string value, bool force);
 
   void update_community(Community *c, CommunityId community_id, bool from_binlog = false, bool from_database = false);
 
@@ -178,7 +178,7 @@ class CommunityManager final : public Actor {
 
   Community *get_community(CommunityId community_id);
 
-  Community *get_community_force(CommunityId community_id, const char *source, bool is_recursive = false);
+  Community *get_community_force(CommunityId community_id, const char *source);
 
   Community *add_community(CommunityId community_id, const char *source);
 

@@ -374,7 +374,7 @@ void CommunityManager::save_community_to_database(Community *c, CommunityId comm
     return;
   }
 
-  load_community_from_database_impl(community_id, false, Auto());
+  load_community_from_database_impl(community_id, Auto());
 }
 
 void CommunityManager::save_community_to_database_impl(Community *c, CommunityId community_id, string value) {
@@ -426,25 +426,23 @@ void CommunityManager::load_community_from_database(Community *c, CommunityId co
   }
 
   CHECK(c == nullptr || !c->is_being_saved);
-  load_community_from_database_impl(community_id, false, std::move(promise));
+  load_community_from_database_impl(community_id, std::move(promise));
 }
 
-void CommunityManager::load_community_from_database_impl(CommunityId community_id, bool is_recursive,
-                                                         Promise<Unit> promise) {
+void CommunityManager::load_community_from_database_impl(CommunityId community_id, Promise<Unit> promise) {
   LOG(INFO) << "Load " << community_id << " from database";
   auto &load_community_queries = load_community_from_database_queries_[community_id];
   load_community_queries.push_back(std::move(promise));
   if (load_community_queries.size() == 1u) {
     G()->td_db()->get_sqlite_pmc()->get(
-        get_community_database_key(community_id), PromiseCreator::lambda([community_id, is_recursive](string value) {
+        get_community_database_key(community_id), PromiseCreator::lambda([community_id](string value) {
           send_closure(G()->community_manager(), &CommunityManager::on_load_community_from_database, community_id,
-                       std::move(value), false, is_recursive);
+                       std::move(value), false);
         }));
   }
 }
 
-void CommunityManager::on_load_community_from_database(CommunityId community_id, string value, bool force,
-                                                       bool is_recursive) {
+void CommunityManager::on_load_community_from_database(CommunityId community_id, string value, bool force) {
   if (G()->close_flag() && !force) {
     // the community is in Binlog and will be saved after restart
     return;
@@ -553,8 +551,7 @@ bool CommunityManager::have_community_force(CommunityId community_id, const char
   return get_community_force(community_id, source) != nullptr;
 }
 
-CommunityManager::Community *CommunityManager::get_community_force(CommunityId community_id, const char *source,
-                                                                   bool is_recursive) {
+CommunityManager::Community *CommunityManager::get_community_force(CommunityId community_id, const char *source) {
   if (!community_id.is_valid()) {
     return nullptr;
   }
@@ -571,9 +568,8 @@ CommunityManager::Community *CommunityManager::get_community_force(CommunityId c
   }
 
   LOG(INFO) << "Trying to load " << community_id << " from database from " << source;
-  on_load_community_from_database(community_id,
-                                  G()->td_db()->get_sqlite_sync_pmc()->get(get_community_database_key(community_id)),
-                                  true, is_recursive);
+  on_load_community_from_database(
+      community_id, G()->td_db()->get_sqlite_sync_pmc()->get(get_community_database_key(community_id)), true);
   return get_community(community_id);
 }
 
