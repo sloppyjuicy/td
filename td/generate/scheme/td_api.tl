@@ -4249,12 +4249,12 @@ pageBlockPullQuote text:RichText credit:RichText = PageBlock;
 pageBlockAnimation animation:animation caption:pageBlockCaption need_autoplay:Bool has_spoiler:Bool = PageBlock;
 
 //@description An audio file
-//@audio Audio file; may be null
+//@audio Audio file
 //@caption Audio file caption; may be null if none
 pageBlockAudio audio:audio caption:pageBlockCaption = PageBlock;
 
 //@description A general file
-//@document The file; may be null
+//@document The file
 //@caption File caption; may be null if none
 pageBlockDocument document:document caption:pageBlockCaption = PageBlock;
 
@@ -4274,7 +4274,7 @@ pageBlockPhoto photo:photo caption:pageBlockCaption url:string has_spoiler:Bool 
 pageBlockVideo video:video caption:pageBlockCaption need_autoplay:Bool is_looped:Bool has_spoiler:Bool = PageBlock;
 
 //@description A voice note
-//@voice_note Voice note; may be null
+//@voice_note Voice note
 //@caption Voice note caption; may be null if none
 pageBlockVoiceNote voice_note:voiceNote caption:pageBlockCaption = PageBlock;
 

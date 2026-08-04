@@ -3887,7 +3887,11 @@ class WebPageBlockAudio final : public WebPageBlock {
   }
 
   td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
-    return td_api::make_object<td_api::pageBlockAudio>(context->td_->audios_manager_->get_audio_object(audio_file_id),
+    auto audio_object = context->td_->audios_manager_->get_audio_object(audio_file_id);
+    if (audio_object == nullptr) {
+      return td_api::make_object<td_api::pageBlockUnsupported>();
+    }
+    return td_api::make_object<td_api::pageBlockAudio>(std::move(audio_object),
                                                        caption.get_page_block_caption_object(context));
   }
 
@@ -4464,9 +4468,12 @@ class WebPageBlockVoiceNote final : public WebPageBlock {
   }
 
   td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
-    return td_api::make_object<td_api::pageBlockVoiceNote>(
-        context->td_->voice_notes_manager_->get_voice_note_object(voice_note_file_id),
-        caption.get_page_block_caption_object(context));
+    auto voice_note_object = context->td_->voice_notes_manager_->get_voice_note_object(voice_note_file_id);
+    if (voice_note_object == nullptr) {
+      return td_api::make_object<td_api::pageBlockUnsupported>();
+    }
+    return td_api::make_object<td_api::pageBlockVoiceNote>(std::move(voice_note_object),
+                                                           caption.get_page_block_caption_object(context));
   }
 
   friend bool operator==(const WebPageBlockVoiceNote &lhs, const WebPageBlockVoiceNote &rhs) {
@@ -4568,9 +4575,12 @@ class WebPageBlockDocument final : public WebPageBlock {
   }
 
   td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
-    return td_api::make_object<td_api::pageBlockDocument>(
-        context->td_->documents_manager_->get_document_object(document_file_id, PhotoFormat::Jpeg),
-        caption.get_page_block_caption_object(context));
+    auto document_object = context->td_->documents_manager_->get_document_object(document_file_id, PhotoFormat::Jpeg);
+    if (document_object == nullptr) {
+      return td_api::make_object<td_api::pageBlockUnsupported>();
+    }
+    return td_api::make_object<td_api::pageBlockDocument>(std::move(document_object),
+                                                          caption.get_page_block_caption_object(context));
   }
 
   friend bool operator==(const WebPageBlockDocument &lhs, const WebPageBlockDocument &rhs) {
