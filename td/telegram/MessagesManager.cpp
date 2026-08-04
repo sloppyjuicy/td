@@ -27330,9 +27330,9 @@ bool MessagesManager::need_hide_dialog_reactions(const Dialog *d) const {
     case DialogType::User:
       return false;
     case DialogType::Chat:
-      return td_->chat_manager_->get_chat_permissions(d->dialog_id.get_chat_id()).is_banned();
+      return td_->chat_manager_->get_chat_status(d->dialog_id.get_chat_id()).is_banned();
     case DialogType::Channel:
-      return td_->chat_manager_->get_channel_permissions(d->dialog_id.get_channel_id()).is_banned();
+      return td_->chat_manager_->get_channel_status(d->dialog_id.get_channel_id()).is_banned();
     case DialogType::SecretChat:
       return false;
     default:

@@ -3554,7 +3554,7 @@ Status ChatManager::can_hide_chat_participants(ChatId chat_id) const {
   if (c == nullptr) {
     return Status::Error(400, "Basic group not found");
   }
-  if (!get_chat_permissions(c).is_creator()) {
+  if (!get_chat_status(c).is_creator()) {
     return Status::Error(400, "Not enough rights to hide group members");
   }
   if (c->participant_count < td_->option_manager_->get_option_integer("hidden_members_group_size_min")) {
@@ -3597,7 +3597,7 @@ Status ChatManager::can_toggle_chat_aggressive_anti_spam(ChatId chat_id) const {
   if (c == nullptr) {
     return Status::Error(400, "Basic group not found");
   }
-  if (!get_chat_permissions(c).is_creator()) {
+  if (!get_chat_status(c).is_creator()) {
     return Status::Error(400, "Not enough rights to enable aggressive anti-spam checks");
   }
   if (c->participant_count <
