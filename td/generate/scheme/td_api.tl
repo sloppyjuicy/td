@@ -185,7 +185,7 @@ termsOfService text:formattedText min_user_age:int32 show_popup:Bool = TermsOfSe
 //@name Name of the passkey
 //@addition_date Point in time (Unix timestamp) when the passkey was added
 //@last_usage_date Point in time (Unix timestamp) when the passkey was used last time; 0 if never
-//@software_icon_custom_emoji_id Identifier of the custom emoji that is used as the icon of the software, which created the passkey; 0 if unknown
+//@software_icon_custom_emoji_id Identifier of the custom emoji that is used as the icon of the software that created the passkey; 0 if unknown
 passkey id:string name:string addition_date:int32 last_usage_date:int32 software_icon_custom_emoji_id:int64 = Passkey;
 
 //@description Contains a list of passkeys @passkeys List of passkeys
@@ -1378,7 +1378,7 @@ premiumGiftPaymentOptions options:vector<premiumGiftPaymentOption> = PremiumGift
 //@description Describes an option for creating of Telegram Premium giveaway or manual distribution of Telegram Premium among chat members. Use telegramPaymentPurposePremiumGiftCodes or telegramPaymentPurposePremiumGiveaway for out-of-store payments
 //@currency ISO 4217 currency code for Telegram Premium gift code payment
 //@amount The amount to pay, in the smallest units of the currency
-//@winner_count Number of users which will be able to activate the gift codes
+//@winner_count Number of users who will be able to activate the gift codes
 //@month_count Number of months the Telegram Premium subscription will be active
 //@store_product_id Identifier of the store product associated with the option; may be empty if none
 //@store_product_quantity Number of times the store product must be paid
@@ -2522,7 +2522,7 @@ chatMembersFilterAdministrators = ChatMembersFilter;
 //@description Returns all chat members, including restricted chat members
 chatMembersFilterMembers = ChatMembersFilter;
 
-//@description Returns users which can be mentioned in the chat @topic_id Identifier of the topic in which the users will be mentioned; pass null if none
+//@description Returns users who can be mentioned in the chat @topic_id Identifier of the topic in which the users will be mentioned; pass null if none
 chatMembersFilterMention topic_id:MessageTopic = ChatMembersFilter;
 
 //@description Returns users under certain restrictions in the chat; can be used only by administrators in a supergroup
@@ -2540,7 +2540,7 @@ chatMembersFilterBots = ChatMembersFilter;
 //@description Returns recently active users in reverse chronological order
 supergroupMembersFilterRecent = SupergroupMembersFilter;
 
-//@description Returns contacts of the user, which are members of the supergroup or channel @query Query to search for
+//@description Returns contacts of the current user who are members of the supergroup or channel @query Query to search for
 supergroupMembersFilterContacts query:string = SupergroupMembersFilter;
 
 //@description Returns the owner and administrators
@@ -2555,7 +2555,7 @@ supergroupMembersFilterRestricted query:string = SupergroupMembersFilter;
 //@description Returns users banned from the supergroup or channel; can be used only by administrators @query Query to search for
 supergroupMembersFilterBanned query:string = SupergroupMembersFilter;
 
-//@description Returns users which can be mentioned in the supergroup @query Query to search for @topic_id Identifier of the topic in which the users will be mentioned; pass null if none
+//@description Returns users who can be mentioned in the supergroup @query Query to search for @topic_id Identifier of the topic in which the users will be mentioned; pass null if none
 supergroupMembersFilterMention query:string topic_id:MessageTopic = SupergroupMembersFilter;
 
 //@description Returns bot members of the supergroup or channel
@@ -2866,7 +2866,7 @@ messageViewers viewers:vector<messageViewer> = MessageViewers;
 //@description The message was originally sent by a known user @sender_user_id Identifier of the user who originally sent the message
 messageOriginUser sender_user_id:int53 = MessageOrigin;
 
-//@description The message was originally sent by a user, which is hidden by their privacy settings @sender_name Name of the sender
+//@description The message was originally sent by a user who is hidden by their privacy settings @sender_name Name of the sender
 messageOriginHiddenUser sender_name:string = MessageOrigin;
 
 //@description The message was originally sent on behalf of a chat
@@ -5412,7 +5412,7 @@ messageGiveawayCreated star_count:int53 = MessageContent;
 
 //@description A giveaway
 //@parameters Giveaway parameters
-//@winner_count Number of users which will receive Telegram Premium subscription gift codes
+//@winner_count Number of users who will receive Telegram Premium subscription gift codes
 //@prize Prize of the giveaway
 //@sticker A sticker to be shown in the message; may be null if unknown
 messageGiveaway parameters:giveawayParameters winner_count:int32 prize:GiveawayPrize sticker:sticker = MessageContent;
@@ -5580,7 +5580,7 @@ messageSuggestedPostRefunded suggested_post_message_id:int53 reason:SuggestedPos
 //@description A contact has registered with Telegram
 messageContactRegistered = MessageContent;
 
-//@description The current user shared users, which were requested by the bot @users The shared users @button_id Identifier of the keyboard button with the request
+//@description The current user shared users who were requested by the bot @users The shared users @button_id Identifier of the keyboard button with the request
 messageUsersShared users:vector<sharedUser> button_id:int32 = MessageContent;
 
 //@description The current user shared a chat, which was requested by the bot @chat The shared chat @button_id Identifier of the keyboard button with the request
@@ -6821,7 +6821,7 @@ chatBoostSourcePremium user_id:int53 = ChatBoostSource;
 
 //@description Describes a prepaid giveaway
 //@id Unique identifier of the prepaid giveaway
-//@winner_count Number of users which will receive giveaway prize
+//@winner_count Number of users who will receive giveaway prize
 //@prize Prize of the giveaway
 //@boost_count The number of boosts received by the chat from the giveaway; for Telegram Star giveaways only
 //@payment_date Point in time (Unix timestamp) when the giveaway was paid
@@ -8174,7 +8174,7 @@ storePaymentPurposePremiumSubscription is_restore:Bool is_upgrade:Bool = StorePa
 //@description The user gifting Telegram Premium to another user
 //@currency ISO 4217 currency code of the payment currency
 //@amount Paid amount, in the smallest units of the currency
-//@user_id Identifier of the user which will receive Telegram Premium
+//@user_id Identifier of the user who will receive Telegram Premium
 //@text Text to show along with the gift codes; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
 storePaymentPurposePremiumGift currency:string amount:int53 user_id:int53 text:formattedText = StorePaymentPurpose;
 
@@ -8182,7 +8182,7 @@ storePaymentPurposePremiumGift currency:string amount:int53 user_id:int53 text:f
 //@boosted_chat_id Identifier of the supergroup or channel chat, which will be automatically boosted by the users for duration of the Premium subscription and which is administered by the user
 //@currency ISO 4217 currency code of the payment currency
 //@amount Paid amount, in the smallest units of the currency
-//@user_ids Identifiers of the users which can activate the gift codes
+//@user_ids Identifiers of the users who can activate the gift codes
 //@text Text to show along with the gift codes; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
 storePaymentPurposePremiumGiftCodes boosted_chat_id:int53 currency:string amount:int53 user_ids:vector<int53> text:formattedText = StorePaymentPurpose;
 
@@ -8232,7 +8232,7 @@ storeTransactionGooglePlay package_name:string store_product_id:string purchase_
 //@description The user gifting Telegram Premium to another user
 //@currency ISO 4217 currency code of the payment currency, or "XTR" for payments in Telegram Stars
 //@amount Paid amount, in the smallest units of the currency
-//@user_id Identifier of the user which will receive Telegram Premium
+//@user_id Identifier of the user who will receive Telegram Premium
 //@month_count Number of months the Telegram Premium subscription will be active for the user
 //@text Text to show to the user receiving Telegram Premium; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
 telegramPaymentPurposePremiumGift currency:string amount:int53 user_id:int53 month_count:int32 text:formattedText = TelegramPaymentPurpose;
@@ -8241,7 +8241,7 @@ telegramPaymentPurposePremiumGift currency:string amount:int53 user_id:int53 mon
 //@boosted_chat_id Identifier of the supergroup or channel chat, which will be automatically boosted by the users for duration of the Premium subscription and which is administered by the user
 //@currency ISO 4217 currency code of the payment currency
 //@amount Paid amount, in the smallest units of the currency
-//@user_ids Identifiers of the users which can activate the gift codes
+//@user_ids Identifiers of the users who can activate the gift codes
 //@month_count Number of months the Telegram Premium subscription will be active for the users
 //@text Text to show along with the gift codes; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
 telegramPaymentPurposePremiumGiftCodes boosted_chat_id:int53 currency:string amount:int53 user_ids:vector<int53> month_count:int32 text:formattedText = TelegramPaymentPurpose;
@@ -8250,7 +8250,7 @@ telegramPaymentPurposePremiumGiftCodes boosted_chat_id:int53 currency:string amo
 //@parameters Giveaway parameters
 //@currency ISO 4217 currency code of the payment currency
 //@amount Paid amount, in the smallest units of the currency
-//@winner_count Number of users which will be able to activate the gift codes
+//@winner_count Number of users who will be able to activate the gift codes
 //@month_count Number of months the Telegram Premium subscription will be active for the users
 telegramPaymentPurposePremiumGiveaway parameters:giveawayParameters currency:string amount:int53 winner_count:int32 month_count:int32 = TelegramPaymentPurpose;
 
@@ -8586,7 +8586,7 @@ pushMessageContentPoll question:string is_regular:Bool is_pinned:Bool = PushMess
 pushMessageContentPremiumGiftCode month_count:int32 = PushMessageContent;
 
 //@description A message with a giveaway
-//@winner_count Number of users which will receive giveaway prizes; 0 for pinned message
+//@winner_count Number of users who will receive giveaway prizes; 0 for pinned message
 //@prize Prize of the giveaway; may be null for pinned message
 //@is_pinned True, if the message is a pinned message with the specified content
 pushMessageContentGiveaway winner_count:int32 prize:GiveawayPrize is_pinned:Bool = PushMessageContent;
@@ -13392,7 +13392,7 @@ setChatMemberStatus chat_id:int53 member_id:MessageSender status:ChatMemberStatu
 
 //@description Changes the tag or custom title of a chat member; requires can_manage_tags administrator right to change tag of other users; for basic groups and supergroups only
 //@chat_id Chat identifier
-//@user_id Identifier of the user, which tag is changed. Chats can't have member tags
+//@user_id Identifier of the user whose tag is changed. Chats can't have member tags
 //@tag The new tag of the member in the chat; 0-16 characters without emoji
 setChatMemberTag chat_id:int53 user_id:int53 tag:string = Ok;
 
@@ -15829,7 +15829,7 @@ checkPremiumGiftCode code:string = PremiumGiftCodeInfo;
 applyPremiumGiftCode code:string = Ok;
 
 //@description Allows to buy a Telegram Premium subscription for another user with payment in Telegram Stars; for bots only
-//@user_id Identifier of the user which will receive Telegram Premium
+//@user_id Identifier of the user who will receive Telegram Premium
 //@star_count The number of Telegram Stars to pay for subscription
 //@month_count Number of months the Telegram Premium subscription will be active for the user
 //@text Text to show to the user receiving Telegram Premium; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed
