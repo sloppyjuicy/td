@@ -462,8 +462,11 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
         return Status::Error(400, "Inline keyboard button forward text must be encoded in UTF-8");
       }
       current_button.id = button_type->id_;
-      if (current_button.id == std::numeric_limits<int64>::min() ||
-          !UserId(current_button.id >= 0 ? current_button.id : -current_button.id).is_valid()) {
+      if (current_button.id == std::numeric_limits<int64>::min()) {
+        return Status::Error(400, "Invalid bot_user_id specified");
+      }
+      auto bot_user_id = UserId(current_button.id >= 0 ? current_button.id : -current_button.id - 1);
+      if (!bot_user_id.is_valid() && bot_user_id != UserId()) {
         return Status::Error(400, "Invalid bot_user_id specified");
       }
       break;
