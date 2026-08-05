@@ -257,8 +257,8 @@ InlineKeyboardButton get_inline_keyboard_button(
   return button;
 }
 
-unique_ptr<ReplyMarkup> get_reply_markup(tl_object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr, bool is_bot,
-                                         bool only_inline_keyboard, bool message_contains_mention) {
+unique_ptr<ReplyMarkup> get_reply_markup(telegram_api::object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr,
+                                         bool is_bot, bool only_inline_keyboard, bool message_contains_mention) {
   if (reply_markup_ptr == nullptr) {
     return nullptr;
   }
@@ -373,7 +373,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
 
   switch (button->type_->get_id()) {
     case td_api::inlineKeyboardButtonTypeUrl::ID: {
-      auto button_type = move_tl_object_as<td_api::inlineKeyboardButtonTypeUrl>(button->type_);
+      auto button_type = td_api::move_object_as<td_api::inlineKeyboardButtonTypeUrl>(button->type_);
       auto user_id = LinkManager::get_link_user_id(button_type->url_);
       if (user_id.is_valid()) {
         current_button.type = InlineKeyboardButton::Type::User;
@@ -392,7 +392,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
       break;
     }
     case td_api::inlineKeyboardButtonTypeCallback::ID: {
-      auto button_type = move_tl_object_as<td_api::inlineKeyboardButtonTypeCallback>(button->type_);
+      auto button_type = td_api::move_object_as<td_api::inlineKeyboardButtonTypeCallback>(button->type_);
       current_button.type = InlineKeyboardButton::Type::Callback;
       current_button.data = std::move(button_type->data_);
       break;
@@ -403,7 +403,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
     case td_api::inlineKeyboardButtonTypeCallbackWithPassword::ID:
       return Status::Error(400, "Can't use CallbackWithPassword inline button");
     case td_api::inlineKeyboardButtonTypeSwitchInline::ID: {
-      auto button_type = move_tl_object_as<td_api::inlineKeyboardButtonTypeSwitchInline>(button->type_);
+      auto button_type = td_api::move_object_as<td_api::inlineKeyboardButtonTypeSwitchInline>(button->type_);
       if (button_type->target_chat_ == nullptr) {
         return Status::Error(400, "Target chat must be non-empty");
       }
@@ -481,7 +481,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
       break;
     }
     case td_api::inlineKeyboardButtonTypeWebApp::ID: {
-      auto button_type = move_tl_object_as<td_api::inlineKeyboardButtonTypeWebApp>(button->type_);
+      auto button_type = td_api::move_object_as<td_api::inlineKeyboardButtonTypeWebApp>(button->type_);
       auto user_id = LinkManager::get_link_user_id(button_type->url_);
       if (user_id.is_valid()) {
         return Status::Error(400, "Link to a user can't be used in Web App URL buttons");
@@ -498,7 +498,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
       break;
     }
     case td_api::inlineKeyboardButtonTypeCopyText::ID: {
-      auto button_type = move_tl_object_as<td_api::inlineKeyboardButtonTypeCopyText>(button->type_);
+      auto button_type = td_api::move_object_as<td_api::inlineKeyboardButtonTypeCopyText>(button->type_);
       current_button.type = InlineKeyboardButton::Type::Copy;
       current_button.data = std::move(button_type->text_);
       if (!clean_input_string(current_button.data)) {
@@ -535,7 +535,7 @@ static Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_ap
 
   switch (constructor_id) {
     case td_api::replyMarkupShowKeyboard::ID: {
-      auto show_keyboard_markup = move_tl_object_as<td_api::replyMarkupShowKeyboard>(reply_markup_ptr);
+      auto show_keyboard_markup = td_api::move_object_as<td_api::replyMarkupShowKeyboard>(reply_markup_ptr);
       reply_markup->type = ReplyMarkup::Type::ShowKeyboard;
       reply_markup->is_persistent = show_keyboard_markup->is_persistent_;
       reply_markup->need_resize_keyboard = show_keyboard_markup->resize_keyboard_;
@@ -578,7 +578,7 @@ static Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_ap
       break;
     }
     case td_api::replyMarkupInlineKeyboard::ID: {
-      auto inline_keyboard_markup = move_tl_object_as<td_api::replyMarkupInlineKeyboard>(reply_markup_ptr);
+      auto inline_keyboard_markup = td_api::move_object_as<td_api::replyMarkupInlineKeyboard>(reply_markup_ptr);
       reply_markup->type = ReplyMarkup::Type::InlineKeyboard;
 
       reply_markup->inline_keyboard.reserve(inline_keyboard_markup->rows_.size());
@@ -616,13 +616,13 @@ static Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_ap
       break;
     }
     case td_api::replyMarkupRemoveKeyboard::ID: {
-      auto remove_keyboard_markup = move_tl_object_as<td_api::replyMarkupRemoveKeyboard>(reply_markup_ptr);
+      auto remove_keyboard_markup = td_api::move_object_as<td_api::replyMarkupRemoveKeyboard>(reply_markup_ptr);
       reply_markup->type = ReplyMarkup::Type::RemoveKeyboard;
       reply_markup->is_personal = remove_keyboard_markup->is_personal_ && allow_personal;
       break;
     }
     case td_api::replyMarkupForceReply::ID: {
-      auto force_reply_markup = move_tl_object_as<td_api::replyMarkupForceReply>(reply_markup_ptr);
+      auto force_reply_markup = td_api::move_object_as<td_api::replyMarkupForceReply>(reply_markup_ptr);
       reply_markup->type = ReplyMarkup::Type::ForceReply;
       reply_markup->is_personal = force_reply_markup->is_personal_ && allow_personal;
       reply_markup->placeholder = std::move(force_reply_markup->input_field_placeholder_);
@@ -753,10 +753,10 @@ telegram_api::object_ptr<telegram_api::ReplyMarkup> ReplyMarkup::get_input_reply
     UserManager *user_manager) const {
   switch (type) {
     case ReplyMarkup::Type::InlineKeyboard: {
-      vector<tl_object_ptr<telegram_api::keyboardInlineButtonRow>> rows;
+      vector<telegram_api::object_ptr<telegram_api::keyboardInlineButtonRow>> rows;
       rows.reserve(inline_keyboard.size());
       for (auto &row : inline_keyboard) {
-        vector<tl_object_ptr<telegram_api::keyboardInlineButton>> buttons;
+        vector<telegram_api::object_ptr<telegram_api::keyboardInlineButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
           buttons.push_back(get_input_keyboard_inline_button(user_manager, button));
@@ -766,10 +766,10 @@ telegram_api::object_ptr<telegram_api::ReplyMarkup> ReplyMarkup::get_input_reply
       return telegram_api::make_object<telegram_api::replyInlineMarkup>(0, force_reply, std::move(rows));
     }
     case ReplyMarkup::Type::ShowKeyboard: {
-      vector<tl_object_ptr<telegram_api::keyboardButtonRow>> rows;
+      vector<telegram_api::object_ptr<telegram_api::keyboardButtonRow>> rows;
       rows.reserve(keyboard.size());
       for (auto &row : keyboard) {
-        vector<tl_object_ptr<telegram_api::keyboardButton>> buttons;
+        vector<telegram_api::object_ptr<telegram_api::keyboardButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
           buttons.push_back(button.get_input_keyboard_button());
@@ -805,67 +805,67 @@ td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_obje
   td_api::object_ptr<td_api::InlineKeyboardButtonType> type;
   switch (keyboard_button.type) {
     case InlineKeyboardButton::Type::Url:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeUrl>(keyboard_button.data);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeUrl>(keyboard_button.data);
       break;
     case InlineKeyboardButton::Type::Callback:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeCallback>(keyboard_button.data);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeCallback>(keyboard_button.data);
       break;
     case InlineKeyboardButton::Type::CallbackGame:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeCallbackGame>();
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeCallbackGame>();
       break;
     case InlineKeyboardButton::Type::SwitchInline: {
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeSwitchInline>(
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeSwitchInline>(
           keyboard_button.data, td_api::make_object<td_api::targetChatChosen>(
                                     TargetDialogTypes(keyboard_button.id).get_target_chat_types_object()));
       break;
     }
     case InlineKeyboardButton::Type::SwitchInlineCurrentDialog:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeSwitchInline>(
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeSwitchInline>(
           keyboard_button.data, td_api::make_object<td_api::targetChatCurrent>());
       break;
     case InlineKeyboardButton::Type::Buy:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeBuy>();
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeBuy>();
       break;
     case InlineKeyboardButton::Type::UrlAuth:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeLoginUrl>(keyboard_button.data, keyboard_button.id,
-                                                                      keyboard_button.forward_text);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeLoginUrl>(keyboard_button.data, keyboard_button.id,
+                                                                           keyboard_button.forward_text);
       break;
     case InlineKeyboardButton::Type::CallbackWithPassword:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeCallbackWithPassword>(keyboard_button.data);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeCallbackWithPassword>(keyboard_button.data);
       break;
     case InlineKeyboardButton::Type::User: {
       bool need_user = user_manager != nullptr && !user_manager->is_user_bot(user_manager->get_my_id());
       auto user_id =
           need_user ? user_manager->get_user_id_object(keyboard_button.user_id, "get_inline_keyboard_button_object")
                     : keyboard_button.user_id.get();
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeUser>(user_id);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeUser>(user_id);
       break;
     }
     case InlineKeyboardButton::Type::WebView:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeWebApp>(keyboard_button.data);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeWebApp>(keyboard_button.data);
       break;
     case InlineKeyboardButton::Type::Copy:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeCopyText>(keyboard_button.data);
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeCopyText>(keyboard_button.data);
       break;
     case InlineKeyboardButton::Type::Disabled:
-      type = make_tl_object<td_api::inlineKeyboardButtonTypeDisabled>();
+      type = td_api::make_object<td_api::inlineKeyboardButtonTypeDisabled>();
       break;
     default:
       UNREACHABLE();
       return nullptr;
   }
-  return make_tl_object<td_api::inlineKeyboardButton>(keyboard_button.text,
-                                                      keyboard_button.style.get_icon_custom_emoji_id().get(),
-                                                      keyboard_button.style.get_button_style_object(), std::move(type));
+  return td_api::make_object<td_api::inlineKeyboardButton>(
+      keyboard_button.text, keyboard_button.style.get_icon_custom_emoji_id().get(),
+      keyboard_button.style.get_button_style_object(), std::move(type));
 }
 
 td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(UserManager *user_manager) const {
   switch (type) {
     case ReplyMarkup::Type::InlineKeyboard: {
-      vector<vector<tl_object_ptr<td_api::inlineKeyboardButton>>> rows;
+      vector<vector<td_api::object_ptr<td_api::inlineKeyboardButton>>> rows;
       rows.reserve(inline_keyboard.size());
       for (auto &row : inline_keyboard) {
-        vector<tl_object_ptr<td_api::inlineKeyboardButton>> buttons;
+        vector<td_api::object_ptr<td_api::inlineKeyboardButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
           buttons.push_back(get_inline_keyboard_button_object(user_manager, button));
@@ -873,13 +873,13 @@ td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(Use
         rows.push_back(std::move(buttons));
       }
 
-      return make_tl_object<td_api::replyMarkupInlineKeyboard>(std::move(rows), force_reply);
+      return td_api::make_object<td_api::replyMarkupInlineKeyboard>(std::move(rows), force_reply);
     }
     case ReplyMarkup::Type::ShowKeyboard: {
-      vector<vector<tl_object_ptr<td_api::keyboardButton>>> rows;
+      vector<vector<td_api::object_ptr<td_api::keyboardButton>>> rows;
       rows.reserve(keyboard.size());
       for (auto &row : keyboard) {
-        vector<tl_object_ptr<td_api::keyboardButton>> buttons;
+        vector<td_api::object_ptr<td_api::keyboardButton>> buttons;
         buttons.reserve(row.size());
         for (auto &button : row) {
           buttons.push_back(button.get_keyboard_button_object());
@@ -887,14 +887,14 @@ td_api::object_ptr<td_api::ReplyMarkup> ReplyMarkup::get_reply_markup_object(Use
         rows.push_back(std::move(buttons));
       }
 
-      return make_tl_object<td_api::replyMarkupShowKeyboard>(std::move(rows), is_persistent, need_resize_keyboard,
-                                                             is_one_time_keyboard, is_personal, force_reply,
-                                                             placeholder);
+      return td_api::make_object<td_api::replyMarkupShowKeyboard>(std::move(rows), is_persistent, need_resize_keyboard,
+                                                                  is_one_time_keyboard, is_personal, force_reply,
+                                                                  placeholder);
     }
     case ReplyMarkup::Type::RemoveKeyboard:
-      return make_tl_object<td_api::replyMarkupRemoveKeyboard>(is_personal);
+      return td_api::make_object<td_api::replyMarkupRemoveKeyboard>(is_personal);
     case ReplyMarkup::Type::ForceReply:
-      return make_tl_object<td_api::replyMarkupForceReply>(is_personal, placeholder);
+      return td_api::make_object<td_api::replyMarkupForceReply>(is_personal, placeholder);
     default:
       UNREACHABLE();
       return nullptr;
