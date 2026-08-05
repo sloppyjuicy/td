@@ -507,7 +507,7 @@ Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_ap
       break;
     }
     case td_api::inlineKeyboardButtonTypeDisabled::ID:
-      return Status::Error(400, "Invalid button type specified");
+      current_button.type = InlineKeyboardButton::Type::Disabled;
       break;
     default:
       UNREACHABLE();
@@ -734,8 +734,7 @@ telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_
       case InlineKeyboardButton::Type::Copy:
         return telegram_api::make_object<telegram_api::inlineButtonTypeCopy>(keyboard_button.data);
       case InlineKeyboardButton::Type::Disabled:
-        UNREACHABLE();
-        break;
+        return telegram_api::make_object<telegram_api::inlineButtonTypeDisabled>();
       default:
         UNREACHABLE();
         return nullptr;
