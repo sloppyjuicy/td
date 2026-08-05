@@ -1755,6 +1755,30 @@ vector<DialogId> UpdatesManager::get_chat_dialog_ids(const telegram_api::Updates
   return dialog_ids;
 }
 
+CommunityId UpdatesManager::get_community_id(const telegram_api::Updates *updates_ptr) {
+  CommunityId community_id;
+  auto updates = get_updates(updates_ptr);
+  if (updates != nullptr) {
+    for (auto &update : *updates) {
+      if (update->get_id() == telegram_api::updateChannel::ID) {
+        if (community_id.is_valid()) {
+          LOG(ERROR) << "Receive multiple updateChannel";
+          return {};
+        }
+        community_id = CommunityId(static_cast<const telegram_api::updateChannel *>(update.get())->channel_id_);
+        if (!community_id.is_valid()) {
+          LOG(ERROR) << "Receive " << community_id;
+          return {};
+        }
+      }
+    }
+  }
+  if (!community_id.is_valid()) {
+    LOG(ERROR) << "Receive no community";
+  }
+  return community_id;
+}
+
 int32 UpdatesManager::get_update_edit_message_pts(const telegram_api::Updates *updates_ptr,
                                                   MessageFullId message_full_id) {
   int32 pts = 0;
