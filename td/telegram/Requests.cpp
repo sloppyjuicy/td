@@ -3419,6 +3419,13 @@ void Requests::on_request(uint64 id, td_api::createCommunity &request) {
                                             std::move(promise));
 }
 
+void Requests::on_request(uint64 id, td_api::setCommunityName &request) {
+  CHECK_IS_USER();
+  CLEAN_INPUT_STRING(request.name_);
+  CREATE_OK_REQUEST_PROMISE();
+  td_->community_manager_->set_community_name(CommunityId(request.community_id_), request.name_, std::move(promise));
+}
+
 void Requests::on_request(uint64 id, td_api::searchPublicChat &request) {
   CLEAN_INPUT_STRING(request.username_);
   CREATE_REQUEST(SearchPublicChatRequest, request.username_);

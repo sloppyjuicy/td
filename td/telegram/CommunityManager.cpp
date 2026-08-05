@@ -18,6 +18,7 @@
 #include "td/telegram/files/FileManager.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/logevent/LogEvent.h"
+#include "td/telegram/misc.h"
 #include "td/telegram/Photo.h"
 #include "td/telegram/Photo.hpp"
 #include "td/telegram/PhotoSize.h"
@@ -153,6 +154,39 @@ class CreateCommunityQuery final : public Td::ResultHandler {
 
   void on_error(Status status) final {
     td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "CreateCommunityQuery");
+    promise_.set_error(std::move(status));
+  }
+};
+
+class EditCommunityTitleQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+
+ public:
+  explicit EditCommunityTitleQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(CommunityId community_id, const string &title) {
+    auto input_community = td_->community_manager_->get_input_community(community_id);
+    CHECK(input_community != nullptr);
+    send_query(G()->net_query_creator().create(telegram_api::channels_editTitle(std::move(input_community), title)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::channels_editTitle>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for EditCommunityTitleQuery: " << to_string(ptr);
+    td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise_));
+  }
+
+  void on_error(Status status) final {
+    if (status.message() == "CHAT_NOT_MODIFIED" && !td_->auth_manager_->is_bot()) {
+      promise_.set_value(Unit());
+      return;
+    }
     promise_.set_error(std::move(status));
   }
 };
@@ -1112,6 +1146,22 @@ void CommunityManager::finish_create_community(CommunityId community_id,
   TRY_STATUS_PROMISE(promise, G()->close_status());
   promise.set_value(
       td_api::make_object<td_api::communityId>(get_community_id_object(community_id, "finish_create_community")));
+}
+
+void CommunityManager::set_community_name(CommunityId community_id, const string &name, Promise<Unit> &&promise) {
+  auto *c = get_community(community_id);
+  if (c == nullptr) {
+    return promise.set_error(400, "Community not found");
+  }
+  auto status = get_community_status(c);
+  if (!status.is_administrator() || !status.can_change_info_and_settings()) {
+    return promise.set_error(400, "Have no enough rights");
+  }
+  auto title = clean_name(name, MAX_TITLE_LENGTH);
+  if (title.empty()) {
+    return promise.set_error(400, "Name must be non-empty");
+  }
+  td_->create_handler<EditCommunityTitleQuery>(std::move(promise))->send(community_id, title);
 }
 
 FileSourceId CommunityManager::get_community_full_file_source_id(CommunityId community_id) {

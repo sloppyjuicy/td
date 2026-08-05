@@ -62,6 +62,8 @@ class CommunityManager final : public Actor {
 
   void finish_create_community(CommunityId community_id, Promise<td_api::object_ptr<td_api::communityId>> &&promise);
 
+  void set_community_name(CommunityId community_id, const string &name, Promise<Unit> &&promise);
+
   FileSourceId get_community_full_file_source_id(CommunityId community_id);
 
   int64 get_community_id_object(CommunityId community_id, const char *source) const;
@@ -75,6 +77,8 @@ class CommunityManager final : public Actor {
   void get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const;
 
  private:
+  static constexpr size_t MAX_TITLE_LENGTH = 128;  // server-side limit for chat title
+
   struct Community {
     int64 access_hash = 0;
     string title;

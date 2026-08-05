@@ -460,6 +460,8 @@ class Requests {
 
   void on_request(uint64 id, td_api::createCommunity &request);
 
+  void on_request(uint64 id, td_api::setCommunityName &request);
+
   void on_request(uint64 id, td_api::searchPublicChat &request);
 
   void on_request(uint64 id, td_api::searchPublicChats &request);

@@ -3852,6 +3852,11 @@ class CliClient final : public Actor {
       string name;
       get_args(args, chat_id, name);
       send_request(td_api::make_object<td_api::createCommunity>(name, chat_id, op == "cco"));
+    } else if (op == "scn") {
+      CommunityId community_id;
+      string name;
+      get_args(args, community_id, name);
+      send_request(td_api::make_object<td_api::setCommunityName>(community_id, name));
     } else if (op == "gcc") {
       UserId user_id;
       ChatId offset_chat_id;

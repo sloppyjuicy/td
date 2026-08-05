@@ -11777,6 +11777,11 @@ loadCommunityFullInfo community_id:int53 = Ok;
 //@is_chat_hidden Pass True, if the chat will be visible only to administrators of the community
 createCommunity name:string chat_id:int53 is_chat_hidden:Bool = CommunityId;
 
+//@description Changes name of the given community; requires can_change_info administrator right in the community
+//@community_id Identifier of the community
+//@name New name of the community
+setCommunityName community_id:int53 name:string = Ok;
+
 
 //@description Returns a list of common group chats with a given user. Chats are sorted by their type and creation date
 //@user_id User identifier
