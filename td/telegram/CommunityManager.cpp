@@ -599,6 +599,19 @@ DialogParticipantStatus CommunityManager::get_community_status(const Community *
   return c->status;
 }
 
+DialogParticipantStatus CommunityManager::get_community_permissions(CommunityId community_id) const {
+  auto c = get_community(community_id);
+  if (c == nullptr) {
+    return DialogParticipantStatus::Banned(0, string());
+  }
+  return get_community_permissions(c);
+}
+
+DialogParticipantStatus CommunityManager::get_community_permissions(const Community *c) const {
+  c->status.update_restrictions();
+  return c->status.apply_restrictions(c->default_permissions, false, td_->auth_manager_->is_bot());
+}
+
 void CommunityManager::reload_community(CommunityId community_id, Promise<Unit> &&promise, const char *source) {
   TRY_STATUS_PROMISE(promise, G()->close_status());
 
