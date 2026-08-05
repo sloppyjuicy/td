@@ -57,6 +57,11 @@ class CommunityManager final : public Actor {
 
   void on_get_community_full(telegram_api::object_ptr<telegram_api::communityFull> &&community);
 
+  void create_community(const string &name, DialogId dialog_id, bool is_hidden,
+                        Promise<td_api::object_ptr<td_api::communityId>> &&promise);
+
+  void finish_create_community(CommunityId community_id, Promise<td_api::object_ptr<td_api::communityId>> &&promise);
+
   FileSourceId get_community_full_file_source_id(CommunityId community_id);
 
   int64 get_community_id_object(CommunityId community_id, const char *source) const;

@@ -3847,6 +3847,11 @@ class CliClient final : public Actor {
           td_api::make_object<td_api::toggleSavedMessagesTopicIsPinned>(get_saved_messages_topic_id(), is_pinned));
     } else if (op == "spsmt") {
       send_request(td_api::make_object<td_api::setPinnedSavedMessagesTopics>(as_saved_messages_topic_ids(args)));
+    } else if (op == "cco" || op == "ccop") {
+      ChatId chat_id;
+      string name;
+      get_args(args, chat_id, name);
+      send_request(td_api::make_object<td_api::createCommunity>(name, chat_id, op == "cco"));
     } else if (op == "gcc") {
       UserId user_id;
       ChatId offset_chat_id;

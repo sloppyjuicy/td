@@ -23,6 +23,7 @@
 #include "td/telegram/PhotoSize.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/TdDb.h"
+#include "td/telegram/UpdatesManager.h"
 #include "td/telegram/UserManager.h"
 
 #include "td/db/binlog/BinlogEvent.h"
@@ -109,6 +110,49 @@ class GetFullCommunityQuery final : public Td::ResultHandler {
   }
 
   void on_error(Status status) final {
+    promise_.set_error(std::move(status));
+  }
+};
+
+class CreateCommunityQuery final : public Td::ResultHandler {
+  Promise<td_api::object_ptr<td_api::communityId>> promise_;
+  DialogId dialog_id_;
+
+ public:
+  explicit CreateCommunityQuery(Promise<td_api::object_ptr<td_api::communityId>> &&promise)
+      : promise_(std::move(promise)) {
+  }
+
+  void send(const string &title, DialogId dialog_id, bool is_hidden) {
+    dialog_id_ = dialog_id;
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
+    CHECK(input_peer != nullptr);
+
+    send_query(G()->net_query_creator().create(
+        telegram_api::communities_create(0, is_hidden, title, string(), std::move(input_peer))));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::communities_create>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for CreateCommunityQuery: " << to_string(ptr);
+    auto community_id = UpdatesManager::get_community_id(ptr.get());
+    if (!community_id.is_valid()) {
+      return promise_.set_value(nullptr);
+    }
+    auto promise = PromiseCreator::lambda([community_id, promise = std::move(promise_)](Result<Unit> result) mutable {
+      send_closure(G()->community_manager(), &CommunityManager::finish_create_community, community_id,
+                   std::move(promise));
+    });
+    td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise));
+  }
+
+  void on_error(Status status) final {
+    td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "CreateCommunityQuery");
     promise_.set_error(std::move(status));
   }
 };
@@ -1028,6 +1072,20 @@ void CommunityManager::on_update_community_full_photo(CommunityFull *community_f
   td_->file_manager_->change_files_source(file_source_id, community_full->registered_photo_file_ids, photo_file_ids,
                                           "on_update_community_full_photo");
   community_full->registered_photo_file_ids = std::move(photo_file_ids);
+}
+
+void CommunityManager::create_community(const string &name, DialogId dialog_id, bool is_hidden,
+                                        Promise<td_api::object_ptr<td_api::communityId>> &&promise) {
+  TRY_STATUS_PROMISE(
+      promise, td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Read, "create_community"));
+  td_->create_handler<CreateCommunityQuery>(std::move(promise))->send(name, dialog_id, is_hidden);
+}
+
+void CommunityManager::finish_create_community(CommunityId community_id,
+                                               Promise<td_api::object_ptr<td_api::communityId>> &&promise) {
+  TRY_STATUS_PROMISE(promise, G()->close_status());
+  promise.set_value(
+      td_api::make_object<td_api::communityId>(get_community_id_object(community_id, "finish_create_community")));
 }
 
 FileSourceId CommunityManager::get_community_full_file_source_id(CommunityId community_id) {

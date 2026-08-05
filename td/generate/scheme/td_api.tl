@@ -2259,6 +2259,9 @@ profileAccentColors palette_colors:vector<int32> background_colors:vector<int32>
 profileAccentColor id:int32 light_theme_colors:profileAccentColors dark_theme_colors:profileAccentColors min_supergroup_chat_boost_level:int32 min_channel_chat_boost_level:int32 = ProfileAccentColor;
 
 
+//@description Contains identifier of a community @id Community identifier
+communityId id:int53 = CommunityId;
+
 //@description Describes actions that a user is allowed to take in a community
 //@can_edit_chat_list True, if the user can change the chats added to the community
 communityPermissions can_edit_chat_list:Bool = CommunityPermissions;
@@ -11487,9 +11490,6 @@ getSecretChat secret_chat_id:int32 = SecretChat;
 //@description Returns information about a chat by its identifier. This is an offline method if the current user is not a bot @chat_id Chat identifier
 getChat chat_id:int53 = Chat;
 
-//@description Returns full information about a community. The data will be sent through update. @community_id Community identifier
-loadCommunityFullInfo community_id:int53 = Ok;
-
 //@description Returns information about a message. Returns a 404 error if the message doesn't exist
 //@chat_id Identifier of the chat the message belongs to
 //@message_id Identifier of the message to get
@@ -11765,6 +11765,17 @@ toggleSavedMessagesTopicIsPinned saved_messages_topic_id:int53 is_pinned:Bool = 
 
 //@description Changes the order of pinned Saved Messages topics @saved_messages_topic_ids Identifiers of the new pinned Saved Messages topics
 setPinnedSavedMessagesTopics saved_messages_topic_ids:vector<int53> = Ok;
+
+
+//@description Returns full information about a community. The data will be sent through update. @community_id Community identifier
+loadCommunityFullInfo community_id:int53 = Ok;
+
+//@description Creates a new community for the given chat. Returns identifier of the created community
+//@name Name of the new community
+//@chat_id Identifier of the chat in the community; only chats with owned bots and owned basic group, supergroup and channel chats are allowed;
+//-basic group chats will be automatically upgraded to supergroup chats
+//@is_chat_hidden Pass True, if the chat will be visible only to administrators of the community
+createCommunity name:string chat_id:int53 is_chat_hidden:Bool = CommunityId;
 
 
 //@description Returns a list of common group chats with a given user. Chats are sorted by their type and creation date

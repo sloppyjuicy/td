@@ -1761,11 +1761,15 @@ CommunityId UpdatesManager::get_community_id(const telegram_api::Updates *update
   if (updates != nullptr) {
     for (auto &update : *updates) {
       if (update->get_id() == telegram_api::updateChannel::ID) {
+        auto channel_id = static_cast<const telegram_api::updateChannel *>(update.get())->channel_id_;
+        if (ChannelId(channel_id).is_regular_channel()) {
+          continue;
+        }
         if (community_id.is_valid()) {
           LOG(ERROR) << "Receive multiple updateChannel";
           return {};
         }
-        community_id = CommunityId(static_cast<const telegram_api::updateChannel *>(update.get())->channel_id_);
+        community_id = CommunityId(channel_id);
         if (!community_id.is_valid()) {
           LOG(ERROR) << "Receive " << community_id;
           return {};

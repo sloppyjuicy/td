@@ -2622,13 +2622,6 @@ void Requests::on_request(uint64 id, const td_api::getChat &request) {
   CREATE_REQUEST(GetChatRequest, request.chat_id_);
 }
 
-void Requests::on_request(uint64 id, const td_api::loadCommunityFullInfo &request) {
-  CHECK_IS_USER();
-  CREATE_OK_REQUEST_PROMISE();
-  td_->community_manager_->load_community_full(CommunityId(request.community_id_), std::move(promise),
-                                               "loadCommunityFullInfo");
-}
-
 void Requests::on_request(uint64 id, const td_api::getMessage &request) {
   CREATE_REQUEST(GetMessageRequest, request.chat_id_, request.message_id_);
 }
@@ -3409,6 +3402,21 @@ void Requests::on_request(uint64 id, const td_api::setPinnedSavedMessagesTopics 
   CREATE_OK_REQUEST_PROMISE();
   td_->saved_messages_manager_->set_pinned_saved_messages_topics(
       td_->saved_messages_manager_->get_topic_ids(DialogId(), request.saved_messages_topic_ids_), std::move(promise));
+}
+
+void Requests::on_request(uint64 id, const td_api::loadCommunityFullInfo &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->community_manager_->load_community_full(CommunityId(request.community_id_), std::move(promise),
+                                               "loadCommunityFullInfo");
+}
+
+void Requests::on_request(uint64 id, td_api::createCommunity &request) {
+  CHECK_IS_USER();
+  CLEAN_INPUT_STRING(request.name_);
+  CREATE_REQUEST_PROMISE();
+  td_->community_manager_->create_community(request.name_, DialogId(request.chat_id_), request.is_chat_hidden_,
+                                            std::move(promise));
 }
 
 void Requests::on_request(uint64 id, td_api::searchPublicChat &request) {
