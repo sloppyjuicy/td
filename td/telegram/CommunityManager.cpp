@@ -168,7 +168,8 @@ class EditCommunityTitleQuery final : public Td::ResultHandler {
   void send(CommunityId community_id, const string &title) {
     auto input_community = td_->community_manager_->get_input_community(community_id);
     CHECK(input_community != nullptr);
-    send_query(G()->net_query_creator().create(telegram_api::channels_editTitle(std::move(input_community), title)));
+    send_query(G()->net_query_creator().create(telegram_api::channels_editTitle(std::move(input_community), title),
+                                               {{community_id}}));
   }
 
   void on_result(BufferSlice packet) final {
