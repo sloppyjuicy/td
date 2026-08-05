@@ -196,6 +196,10 @@ class CommunityManager final : public Actor {
 
   Community *add_community(CommunityId community_id, const char *source);
 
+  DialogParticipantStatus get_community_status(CommunityId community_id) const;
+
+  static DialogParticipantStatus get_community_status(const Community *c);
+
   void on_update_community_photo(Community *c, CommunityId community_id,
                                  telegram_api::object_ptr<telegram_api::ChatPhoto> &&chat_photo_ptr);
 
