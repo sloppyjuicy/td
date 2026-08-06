@@ -6428,7 +6428,7 @@ bool MessagesManager::update_dialog_silent_send_message(Dialog *d, bool silent_s
   return true;
 }
 
-void MessagesManager::reget_dialog_action_bar(DialogId dialog_id, const char *source, bool is_repair) {
+void MessagesManager::reload_dialog_action_bar(DialogId dialog_id, const char *source, bool is_repair) {
   if (G()->close_flag() || !dialog_id.is_valid() || td_->auth_manager_->is_bot()) {
     return;
   }
@@ -6465,7 +6465,7 @@ void MessagesManager::repair_dialog_action_bar(Dialog *d, const char *source) {
   if (td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read)) {
     create_actor<SleepActor>(
         "RepairChatActionBarActor", 1.0, PromiseCreator::lambda([actor_id = actor_id(this), dialog_id, source](Unit) {
-          send_closure(actor_id, &MessagesManager::reget_dialog_action_bar, dialog_id, source, true);
+          send_closure(actor_id, &MessagesManager::reload_dialog_action_bar, dialog_id, source, true);
         }))
         .release();
   }
@@ -17040,7 +17040,7 @@ void MessagesManager::open_dialog(Dialog *d) {
       break;
     case DialogType::Chat:
       td_->chat_manager_->repair_chat_participants(dialog_id.get_chat_id());
-      reget_dialog_action_bar(dialog_id, "open_dialog", false);
+      reload_dialog_action_bar(dialog_id, "open_dialog", false);
       break;
     case DialogType::Channel: {
       auto channel_id = dialog_id.get_channel_id();
@@ -17054,7 +17054,7 @@ void MessagesManager::open_dialog(Dialog *d) {
         }
       }
       get_channel_difference(dialog_id, d->pts, 0, MessageId(), true, "open_dialog");
-      reget_dialog_action_bar(dialog_id, "open_dialog", false);
+      reload_dialog_action_bar(dialog_id, "open_dialog", false);
 
       if (td_->chat_manager_->get_channel_has_linked_channel(channel_id)) {
         auto linked_channel_id = td_->chat_manager_->get_channel_linked_channel_id(channel_id, "open_dialog");
@@ -33080,7 +33080,7 @@ void MessagesManager::fix_new_dialog(Dialog *d, unique_ptr<DraftMessage> &&draft
       dialog_id != td_->dialog_manager_->get_my_dialog_id() &&
       td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read)) {
     // asynchronously get action bar from the server
-    reget_dialog_action_bar(dialog_id, "fix_new_dialog 21", false);
+    reload_dialog_action_bar(dialog_id, "fix_new_dialog 21", false);
   }
   if (d->has_active_group_call && !d->active_group_call_id.is_valid() && !td_->auth_manager_->is_bot()) {
     repair_dialog_active_group_call_id(dialog_id);

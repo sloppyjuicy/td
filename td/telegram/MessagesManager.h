@@ -905,7 +905,7 @@ class MessagesManager final : public Actor {
 
   void remove_dialog_action_bar(DialogId dialog_id, Promise<Unit> &&promise);
 
-  void reget_dialog_action_bar(DialogId dialog_id, const char *source, bool is_repair = true);
+  void reload_dialog_action_bar(DialogId dialog_id, const char *source, bool is_repair = true);
 
   void hide_all_business_bot_manager_bars();
 

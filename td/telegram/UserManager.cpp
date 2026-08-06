@@ -243,7 +243,7 @@ class AddContactQuery final : public Td::ResultHandler {
   void on_error(Status status) final {
     promise_.set_error(std::move(status));
     td_->user_manager_->reload_contacts(true);
-    td_->messages_manager_->reget_dialog_action_bar(DialogId(user_id_), "AddContactQuery");
+    td_->messages_manager_->reload_dialog_action_bar(DialogId(user_id_), "AddContactQuery");
   }
 };
 
@@ -346,7 +346,7 @@ class AcceptContactQuery final : public Td::ResultHandler {
   void on_error(Status status) final {
     promise_.set_error(std::move(status));
     td_->user_manager_->reload_contacts(true);
-    td_->messages_manager_->reget_dialog_action_bar(DialogId(user_id_), "AcceptContactQuery");
+    td_->messages_manager_->reload_dialog_action_bar(DialogId(user_id_), "AcceptContactQuery");
   }
 };
 
