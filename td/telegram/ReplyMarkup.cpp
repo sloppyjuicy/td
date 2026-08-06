@@ -28,6 +28,30 @@ void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
   dependencies.add(user_id);
 }
 
+InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const MessageContentDupType &dup_type,
+                                                 bool is_via_bot) const {
+  if (dialog_id.get_type() == DialogType::SecretChat) {
+    return InlineKeyboardButton();
+  }
+  if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot || type == Type::Url) {
+    return *this;
+  }
+  if (type == Type::UrlAuth) {
+    auto result = *this;
+    if (!result.forward_text.empty()) {
+      result.text = std::move(result.forward_text);
+      result.forward_text.clear();
+    }
+    return *this;
+  }
+  if (is_via_bot && (type == Type::SwitchInline || type == Type::SwitchInlineCurrentDialog)) {
+    auto result = *this;
+    result.type = Type::SwitchInline;
+    return result;
+  }
+  return InlineKeyboardButton();
+}
+
 bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs) {
   return lhs.type == rhs.type && lhs.id == rhs.id && lhs.user_id == rhs.user_id && lhs.style == rhs.style &&
          lhs.text == rhs.text && lhs.forward_text == rhs.forward_text && lhs.data == rhs.data;

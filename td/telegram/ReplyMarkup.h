@@ -9,6 +9,7 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/KeyboardButton.h"
 #include "td/telegram/KeyboardButtonStyle.h"
+#include "td/telegram/MessageContentDupType.h"
 #include "td/telegram/RequestedDialogType.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
@@ -50,6 +51,8 @@ struct InlineKeyboardButton {
   string data;
 
   void add_dependencies(Dependencies &dependencies) const;
+
+  InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot) const;
 };
 
 bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);
