@@ -11,6 +11,7 @@
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/logevent/LogEvent.h"
+#include "td/telegram/MessageContentDupType.h"
 #include "td/telegram/Photo.h"
 #include "td/telegram/RichMessageMedia.h"
 #include "td/telegram/td_api.h"
@@ -143,7 +144,7 @@ class WebPageBlock {
 
   virtual int32 get_index_mask() const = 0;
 
-  virtual unique_ptr<WebPageBlock> clone() const = 0;
+  virtual unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const = 0;
 
   virtual telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const = 0;
 
@@ -175,7 +176,8 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
 
 int32 get_web_page_blocks_index_mask(const vector<unique_ptr<WebPageBlock>> &page_blocks);
 
-vector<unique_ptr<WebPageBlock>> clone_web_page_blocks(const vector<unique_ptr<WebPageBlock>> &page_blocks);
+vector<unique_ptr<WebPageBlock>> clone_web_page_blocks(const vector<unique_ptr<WebPageBlock>> &page_blocks,
+                                                       DialogId dialog_id, const MessageContentDupType &dup_type);
 
 vector<telegram_api::object_ptr<telegram_api::PageBlock>> get_input_page_blocks(
     const vector<unique_ptr<WebPageBlock>> &page_blocks, GetInputPageBlockContext &context);
