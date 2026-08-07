@@ -42,7 +42,8 @@ class DialogAction {
     WatchingAnimations,
     ClickingAnimatedEmoji,
     TextDraft,
-    RichTextDraft
+    RichTextDraft,
+    StopDraft
   };
   Type type_ = Type::Cancel;
   int32 progress_ = 0;
@@ -67,6 +68,8 @@ class DialogAction {
 
   void init(Type type, int64 random_id, bool can_stop, bool keep_on_stop, RichMessage &&message);
 
+  void init(Type type, int64 random_id);
+
   static bool is_valid_emoji(string &emoji);
 
  public:
@@ -83,6 +86,10 @@ class DialogAction {
 
   DialogAction(int64 random_id, bool can_stop, bool keep_on_stop, RichMessage &&message) {
     init(Type::RichTextDraft, random_id, can_stop, keep_on_stop, std::move(message));
+  }
+
+  explicit DialogAction(int64 random_id) {
+    init(Type::StopDraft, random_id);
   }
 
   DialogAction clone() const;
@@ -130,7 +137,8 @@ class DialogAction {
 
   friend bool operator==(const DialogAction &lhs, const DialogAction &rhs) {
     return lhs.type_ == rhs.type_ && lhs.progress_ == rhs.progress_ && lhs.emoji_ == rhs.emoji_ &&
-           lhs.random_id_ == rhs.random_id_ && lhs.text_ == rhs.text_ && lhs.message_ == rhs.message_;
+           lhs.random_id_ == rhs.random_id_ && lhs.can_stop_ == rhs.can_stop_ &&
+           lhs.keep_on_stop_ == rhs.keep_on_stop_ && lhs.text_ == rhs.text_ && lhs.message_ == rhs.message_;
   }
 
   friend StringBuilder &operator<<(StringBuilder &string_builder, const DialogAction &action);

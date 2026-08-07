@@ -78,6 +78,12 @@ void DialogAction::init(Type type, int64 random_id, bool can_stop, bool keep_on_
   message_ = std::move(message);
 }
 
+void DialogAction::init(Type type, int64 random_id) {
+  CHECK(type == Type::StopDraft);
+  type_ = type;
+  random_id_ = random_id;
+}
+
 DialogAction::DialogAction(Type type, int32 progress) {
   init(type, progress);
 }
@@ -310,6 +316,8 @@ telegram_api::object_ptr<telegram_api::SendMessageAction> DialogAction::get_inpu
       return telegram_api::make_object<telegram_api::inputSendMessageRichMessageDraftAction>(
           0, can_stop_, keep_on_stop_, random_id_, std::move(input_rich_message));
     }
+    case Type::StopDraft:
+      return telegram_api::make_object<telegram_api::sendMessageStopDraftAction>(random_id_);
     case Type::ClickingAnimatedEmoji:
     default:
       UNREACHABLE();
@@ -357,6 +365,8 @@ secret_api::object_ptr<secret_api::SendMessageAction> DialogAction::get_secret_i
       return secret_api::make_object<secret_api::sendMessageTypingAction>();
     case Type::RichTextDraft:
       return secret_api::make_object<secret_api::sendMessageTypingAction>();
+    case Type::StopDraft:
+      return secret_api::make_object<secret_api::sendMessageTypingAction>();
     case Type::ClickingAnimatedEmoji:
     default:
       UNREACHABLE();
@@ -398,6 +408,7 @@ tl_object_ptr<td_api::ChatAction> DialogAction::get_chat_action_object(const Use
       return td_api::make_object<td_api::chatActionWatchingAnimations>(emoji_);
     case Type::TextDraft:
     case Type::RichTextDraft:
+    case Type::StopDraft:
     case Type::ImportingMessages:
     case Type::SpeakingInVoiceChat:
     case Type::ClickingAnimatedEmoji:
@@ -650,6 +661,8 @@ StringBuilder &operator<<(StringBuilder &string_builder, const DialogAction &act
         return "SendingTextDraft";
       case DialogAction::Type::RichTextDraft:
         return "SendingRichMessageDraft";
+      case DialogAction::Type::StopDraft:
+        return "StoppingDraft";
       default:
         UNREACHABLE();
         return "Cancel";
@@ -672,6 +685,9 @@ StringBuilder &operator<<(StringBuilder &string_builder, const DialogAction &act
       string_builder << '(' << action.random_id_ << ": " << action.text_ << ')';
     }
     if (action.type_ == DialogAction::Type::RichTextDraft) {
+      string_builder << '(' << action.random_id_ << ')';
+    }
+    if (action.type_ == DialogAction::Type::StopDraft) {
       string_builder << '(' << action.random_id_ << ')';
     }
   }
