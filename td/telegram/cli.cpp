@@ -6466,6 +6466,11 @@ class CliClient final : public Actor {
       get_args(args, chat_id, action);
       send_request(td_api::make_object<td_api::sendChatAction>(chat_id, get_message_topic_id(), business_connection_id_,
                                                                as_chat_action(action)));
+    } else if (op == "spm") {
+      ChatId chat_id;
+      int64 draft_id;
+      get_args(args, chat_id, draft_id);
+      send_request(td_api::make_object<td_api::stopPendingMessage>(chat_id, get_message_topic_id(), draft_id));
     } else if (op == "smt" || op == "smtp" || op == "smtf" || op == "smtpf") {
       ChatId chat_id;
       get_args(args, chat_id);

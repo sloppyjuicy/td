@@ -13167,6 +13167,12 @@ sendTextMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:
 //@message Draft of the message; file upload isn't supported
 sendRichMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:Bool keep_on_stop:Bool message:inputRichMessage = Ok;
 
+//@description Stops a pending message generation by a bot
+//@chat_id Identifier of the chat with the bot
+//@topic_id Identifier of the topic in which the action is performed; pass null if none
+//@draft_id Unique identifier of the message draft within the message thread
+stopPendingMessage chat_id:int53 topic_id:MessageTopic draft_id:int64 = Ok;
+
 
 //@description Informs TDLib that the chat is opened by the user. Many useful activities depend on the chat being opened or closed (e.g., in supergroups and channels all updates are received only for opened chats) @chat_id Chat identifier
 openChat chat_id:int53 = Ok;

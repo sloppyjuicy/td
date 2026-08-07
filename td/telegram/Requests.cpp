@@ -4967,6 +4967,15 @@ void Requests::on_request(uint64 id, td_api::sendRichMessageDraft &request) {
       std::move(promise));
 }
 
+void Requests::on_request(uint64 id, const td_api::stopPendingMessage &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  DialogId dialog_id(request.chat_id_);
+  TRY_RESULT_PROMISE(promise, message_topic, MessageTopic::get_message_topic(td_, dialog_id, request.topic_id_));
+  td_->dialog_action_manager_->send_dialog_action(dialog_id, message_topic, BusinessConnectionId(),
+                                                  DialogAction(request.draft_id_), std::move(promise));
+}
+
 void Requests::on_request(uint64 id, td_api::forwardMessages &request) {
   auto input_message_ids = MessageId::get_message_ids(request.message_ids_);
   auto message_copy_options =
