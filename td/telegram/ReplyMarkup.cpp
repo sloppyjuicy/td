@@ -674,8 +674,14 @@ Result<unique_ptr<ReplyMarkup>> get_reply_markup(td_api::object_ptr<td_api::Repl
                           switch_inline_buttons_allowed, allow_personal);
 }
 
-unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_markup) {
-  if (reply_markup == nullptr) {
+unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_markup, DialogId dialog_id,
+                                         const MessageContentDupType &dup_type, bool is_via_bot) {
+  if (reply_markup == nullptr || dialog_id.get_type() == DialogType::SecretChat ||
+      dup_type == MessageContentDupType::Copy || dup_type == MessageContentDupType::ServerCopy) {
+    return nullptr;
+  }
+  bool is_send = dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot;
+  if (!is_send && reply_markup->type != ReplyMarkup::Type::InlineKeyboard) {
     return nullptr;
   }
   auto result = make_unique<ReplyMarkup>();
@@ -688,7 +694,13 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
     return transform(row, [](const KeyboardButton &button) { return button.clone(); });
   });
   result->placeholder = reply_markup->placeholder;
-  result->inline_keyboard = reply_markup->inline_keyboard;
+  result->inline_keyboard = transform(reply_markup->inline_keyboard, [&](const vector<InlineKeyboardButton> &row) {
+    return transform(row,
+                     [&](const InlineKeyboardButton &button) { return button.clone(dialog_id, dup_type, is_via_bot); });
+  });
+  if (result->has_disabled_buttons()) {
+    return nullptr;
+  }
   return result;
 }
 

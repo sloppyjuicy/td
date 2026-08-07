@@ -22938,9 +22938,8 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_inline_query_r
   if (!hide_via_bot) {
     m->via_bot_user_id = td_->inline_queries_manager_->get_inline_bot_user_id(query_id);
   }
-  if (!to_secret) {
-    m->reply_markup = dup_reply_markup(content->message_reply_markup);
-  }
+  m->reply_markup = dup_reply_markup(content->message_reply_markup, dialog_id, MessageContentDupType::SendViaBot,
+                                     m->via_bot_user_id.is_valid());
   m->disable_web_page_preview = content->disable_web_page_preview;
   m->clear_draft = !hide_via_bot;
 
@@ -24422,40 +24421,9 @@ void MessagesManager::fix_forwarded_message(Message *m, DialogId to_dialog_id, c
       m->via_bot_user_id = UserId();
     }
   }
-  if (forwarded_message->reply_markup != nullptr &&
-      forwarded_message->reply_markup->type == ReplyMarkup::Type::InlineKeyboard &&
-      to_dialog_id.get_type() != DialogType::SecretChat) {
-    bool need_reply_markup = true;
-    for (auto &row : forwarded_message->reply_markup->inline_keyboard) {
-      for (auto &button : row) {
-        if (button.type == InlineKeyboardButton::Type::Url || button.type == InlineKeyboardButton::Type::UrlAuth) {
-          // ok
-          continue;
-        }
-        if (m->via_bot_user_id.is_valid() && (button.type == InlineKeyboardButton::Type::SwitchInline ||
-                                              button.type == InlineKeyboardButton::Type::SwitchInlineCurrentDialog)) {
-          // ok
-          continue;
-        }
-
-        need_reply_markup = false;
-      }
-    }
-    if (need_reply_markup) {
-      m->reply_markup = dup_reply_markup(forwarded_message->reply_markup);
-      for (auto &row : m->reply_markup->inline_keyboard) {
-        for (auto &button : row) {
-          if (button.type == InlineKeyboardButton::Type::SwitchInlineCurrentDialog) {
-            button.type = InlineKeyboardButton::Type::SwitchInline;
-          }
-          if (!button.forward_text.empty()) {
-            button.text = std::move(button.forward_text);
-            button.forward_text.clear();
-          }
-        }
-      }
-    }
-  }
+  m->reply_markup = dup_reply_markup(forwarded_message->reply_markup, to_dialog_id,
+                                     drop_author ? MessageContentDupType::ServerCopy : MessageContentDupType::Forward,
+                                     m->via_bot_user_id.is_valid());
 }
 
 Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messages(

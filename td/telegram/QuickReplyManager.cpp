@@ -1999,7 +1999,8 @@ Result<td_api::object_ptr<td_api::quickReplyMessage>> QuickReplyManager::send_in
                           MessageContentDupType::SendViaBot, MessageCopyOptions());
   auto *m = add_local_message(s, reply_to_message_id, std::move(content), message_content->invert_media,
                               via_bot_user_id, hide_via_bot, message_content->disable_web_page_preview, string());
-  m->reply_markup = dup_reply_markup(message_content->message_reply_markup);
+  m->reply_markup = dup_reply_markup(message_content->message_reply_markup, td_->dialog_manager_->get_my_dialog_id(),
+                                     MessageContentDupType::SendViaBot, via_bot_user_id.is_valid());
   m->inline_query_id = query_id;
   m->inline_result_id = result_id;
 
@@ -2778,10 +2779,11 @@ Result<vector<QuickReplyManager::QuickReplyMessageContent>> QuickReplyManager::g
     auto disable_web_page_preview = message->disable_web_page_preview &&
                                     content->get_type() == MessageContentType::Text &&
                                     !has_message_content_web_page(content.get());
+    auto via_bot_user_id = message->hide_via_bot ? UserId() : message->via_bot_user_id;
     result.push_back({std::move(content), message->message_id, message->reply_to_message_id,
-                      dup_reply_markup(message->reply_markup),
-                      message->hide_via_bot ? UserId() : message->via_bot_user_id, message->media_album_id,
-                      message->invert_media, disable_web_page_preview});
+                      dup_reply_markup(message->reply_markup, td_->dialog_manager_->get_my_dialog_id(),
+                                       MessageContentDupType::SendViaBot, via_bot_user_id.is_valid()),
+                      via_bot_user_id, message->media_album_id, message->invert_media, disable_web_page_preview});
   }
 
   return std::move(result);
