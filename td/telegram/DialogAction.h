@@ -135,6 +135,11 @@ class DialogAction {
   };
   RichMessageDraftInfo get_rich_message_draft_info() const;
 
+  struct StopDraftInfo {
+    int64 random_id_ = 0;
+  };
+  StopDraftInfo get_stop_draft_info() const;
+
   friend bool operator==(const DialogAction &lhs, const DialogAction &rhs) {
     return lhs.type_ == rhs.type_ && lhs.progress_ == rhs.progress_ && lhs.emoji_ == rhs.emoji_ &&
            lhs.random_id_ == rhs.random_id_ && lhs.can_stop_ == rhs.can_stop_ &&

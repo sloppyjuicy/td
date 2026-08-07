@@ -10696,6 +10696,12 @@ updateChatAction chat_id:int53 topic_id:MessageTopic sender_id:MessageSender act
 //@content Content of the message; always of the type messageText or messageRichMessage
 updatePendingMessage chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:Bool keep_on_stop:Bool content:MessageContent = Update;
 
+//@description A message draft generation was stopped by a user; for bots only
+//@chat_id Chat identifier
+//@forum_topic_id The forum topic identifier of the message draft
+//@draft_id Identifier of the message draft within the message thread
+updateStopMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 = Update;
+
 //@description Some data of a community has changed. This update is guaranteed to come before the community identifier is returned to the application @community New data about the community
 updateCommunity community:community = Update;
 

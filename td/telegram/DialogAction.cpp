@@ -247,9 +247,16 @@ DialogAction::DialogAction(Td *td, telegram_api::object_ptr<telegram_api::SendMe
       LOG(ERROR) << "Receive " << to_string(action_ptr);
       init(Type::Cancel);
       break;
-    case telegram_api::sendMessageStopDraftAction::ID:
-      init(Type::Cancel);
+    case telegram_api::sendMessageStopDraftAction::ID: {
+      auto action = telegram_api::move_object_as<telegram_api::sendMessageStopDraftAction>(action_ptr);
+      if (action->random_id_ == 0) {
+        LOG(ERROR) << "Receive " << to_string(action);
+        init(Type::Cancel);
+      } else {
+        init(Type::StopDraft, action->random_id_);
+      }
       break;
+    }
     default:
       UNREACHABLE();
       break;
@@ -613,6 +620,14 @@ DialogAction::RichMessageDraftInfo DialogAction::get_rich_message_draft_info() c
     result.can_stop_ = can_stop_;
     result.keep_on_stop_ = keep_on_stop_;
     result.message_ = &message_;
+  }
+  return result;
+}
+
+DialogAction::StopDraftInfo DialogAction::get_stop_draft_info() const {
+  StopDraftInfo result;
+  if (type_ == Type::StopDraft) {
+    result.random_id_ = random_id_;
   }
   return result;
 }

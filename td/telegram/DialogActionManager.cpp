@@ -124,6 +124,22 @@ void DialogActionManager::on_active_dialog_action_timeout_callback(void *dialog_
 void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thread_message_id,
                                            DialogId typing_dialog_id, DialogAction action, int32 date,
                                            MessageContentType message_content_type) {
+  {
+    auto info = action.get_stop_draft_info();
+    if (info.random_id_ != 0) {
+      if (!td_->auth_manager_->is_bot() || dialog_id.get_type() != DialogType::User || dialog_id != typing_dialog_id) {
+        LOG(ERROR) << "Ignore " << action << " in " << dialog_id;
+        return;
+      }
+      td_->dialog_manager_->force_create_dialog(dialog_id, "on_dialog_action", true);
+      send_closure(G()->td(), &Td::send_update,
+                   td_api::make_object<td_api::updateStopMessageDraft>(
+                       td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatAction"),
+                       ForumTopicId::from_top_thread_message_id(top_thread_message_id).get(), info.random_id_));
+      return;
+    }
+  }
+
   if (td_->auth_manager_->is_bot() || !typing_dialog_id.is_valid()) {
     return;
   }
