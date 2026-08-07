@@ -10687,7 +10687,7 @@ updateDeleteMessages chat_id:int53 message_ids:vector<int53> is_permanent:Bool f
 updateChatAction chat_id:int53 topic_id:MessageTopic sender_id:MessageSender action:ChatAction = Update;
 
 //@description A new pending text or rich message was received in a chat with a bot. The message must be shown in the chat for at most getOption("pending_text_message_period") seconds,
-//-replace any other pending message with the same draft_id, and be deleted whenever any incoming message from the bot in the message thread is received
+//-replace any other pending message with the same draft_id with animation, and be deleted whenever any incoming message or a pending message with another draft_id is received in the message thread
 //@chat_id Chat identifier
 //@forum_topic_id The forum topic identifier in which the message will be sent; 0 if none
 //@draft_id Unique identifier of the message draft within the message thread
