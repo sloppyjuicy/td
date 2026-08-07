@@ -10691,8 +10691,10 @@ updateChatAction chat_id:int53 topic_id:MessageTopic sender_id:MessageSender act
 //@chat_id Chat identifier
 //@forum_topic_id The forum topic identifier in which the message will be sent; 0 if none
 //@draft_id Unique identifier of the message draft within the message thread
+//@can_stop True, if a button that calls stopPendingMessage to stop further message generation must be shown
+//@keep_on_stop True, if the pending message must not be automatically deleted when the user presses the Stop button
 //@content Content of the message; always of the type messageText or messageRichMessage
-updatePendingMessage chat_id:int53 forum_topic_id:int32 draft_id:int64 content:MessageContent = Update;
+updatePendingMessage chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:Bool keep_on_stop:Bool content:MessageContent = Update;
 
 //@description Some data of a community has changed. This update is guaranteed to come before the community identifier is returned to the application @community New data about the community
 updateCommunity community:community = Update;

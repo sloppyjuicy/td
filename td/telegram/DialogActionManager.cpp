@@ -185,14 +185,14 @@ void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thr
     if (text_draft_info.text_ != nullptr) {
       auto period = td_->option_manager_->get_option_integer("pending_text_message_period", 0);
       if (date > G()->unix_time() - period && dialog_type == DialogType::User && dialog_id == typing_dialog_id) {
-        send_closure(
-            G()->td(), &Td::send_update,
-            td_api::make_object<td_api::updatePendingMessage>(
-                td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatAction"),
-                ForumTopicId::from_top_thread_message_id(top_thread_message_id).get(), text_draft_info.random_id_,
-                td_api::make_object<td_api::messageText>(
-                    get_formatted_text_object(td_->user_manager_.get(), *text_draft_info.text_, false, -1), nullptr,
-                    nullptr)));
+        send_closure(G()->td(), &Td::send_update,
+                     td_api::make_object<td_api::updatePendingMessage>(
+                         td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatAction"),
+                         ForumTopicId::from_top_thread_message_id(top_thread_message_id).get(),
+                         text_draft_info.random_id_, text_draft_info.can_stop_, text_draft_info.keep_on_stop_,
+                         td_api::make_object<td_api::messageText>(
+                             get_formatted_text_object(td_->user_manager_.get(), *text_draft_info.text_, false, -1),
+                             nullptr, nullptr)));
       }
       return;
     }
@@ -207,7 +207,8 @@ void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thr
                      td_api::make_object<td_api::updatePendingMessage>(
                          td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatAction"),
                          ForumTopicId::from_top_thread_message_id(top_thread_message_id).get(),
-                         rich_message_draft_info.random_id_,
+                         rich_message_draft_info.random_id_, rich_message_draft_info.can_stop_,
+                         rich_message_draft_info.keep_on_stop_,
                          td_api::make_object<td_api::messageRichMessage>(
                              rich_message_draft_info.message_->get_rich_message_object(td_, false))));
       }
