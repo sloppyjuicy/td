@@ -4556,8 +4556,9 @@ void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateBotCallbackQuer
 
 void UpdatesManager::on_update(tl_object_ptr<telegram_api::updateEphemeralBotCallbackQuery> update,
                                Promise<Unit> &&promise) {
-  td_->callback_queries_manager_->on_new_ephemeral_callback_query(
-      update->query_id_, UserId(update->user_id_), std::move(update->data_), std::move(update->message_));
+  td_->callback_queries_manager_->on_new_ephemeral_callback_query(update->query_id_, UserId(update->user_id_),
+                                                                  std::move(update->data_), update->chat_instance_,
+                                                                  std::move(update->message_));
   promise.set_value(Unit());
 }
 

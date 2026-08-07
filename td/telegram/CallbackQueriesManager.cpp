@@ -242,7 +242,7 @@ void CallbackQueriesManager::on_new_callback_query(int64 callback_query_id, User
 }
 
 void CallbackQueriesManager::on_new_ephemeral_callback_query(
-    int64 callback_query_id, UserId sender_user_id, BufferSlice &&data,
+    int64 callback_query_id, UserId sender_user_id, BufferSlice &&data, int64 chat_instance,
     telegram_api::object_ptr<telegram_api::ephemeralMessage> &&message) {
   if (!sender_user_id.is_valid()) {
     LOG(ERROR) << "Receive new ephemeral callback query from invalid " << sender_user_id;
@@ -274,7 +274,7 @@ void CallbackQueriesManager::on_new_ephemeral_callback_query(
       td_api::make_object<td_api::updateNewCallbackQuery>(
           callback_query_id, td_->user_manager_->get_user_id_object(sender_user_id, "on_new_ephemeral_callback_query"),
           td_->dialog_manager_->get_chat_id_object(message_full_id.get_dialog_id(), "on_new_ephemeral_callback_query"),
-          message_id.get(), 0, std::move(payload)));
+          message_id.get(), chat_instance, std::move(payload)));
 }
 
 void CallbackQueriesManager::on_new_inline_callback_query(
