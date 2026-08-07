@@ -160,6 +160,10 @@ void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thr
   if (td_->dialog_manager_->is_broadcast_channel(dialog_id)) {
     return;
   }
+  if (!td_->messages_manager_->have_dialog(dialog_id)) {
+    LOG(DEBUG) << "Ignore " << action << " in unknown " << dialog_id;
+    return;
+  }
 
   auto typing_dialog_type = typing_dialog_id.get_type();
   if (typing_dialog_type != DialogType::User && dialog_type != DialogType::Chat && dialog_type != DialogType::Channel) {
@@ -230,11 +234,6 @@ void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thr
       }
       return;
     }
-  }
-
-  if (!td_->messages_manager_->have_dialog(dialog_id)) {
-    LOG(DEBUG) << "Ignore " << action << " in unknown " << dialog_id;
-    return;
   }
 
   if (typing_dialog_type == DialogType::User) {
