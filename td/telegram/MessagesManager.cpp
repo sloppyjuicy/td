@@ -24397,13 +24397,14 @@ unique_ptr<MessageForwardInfo> MessagesManager::create_message_forward_info(Dial
 }
 
 void MessagesManager::fix_forwarded_message(Message *m, DialogId to_dialog_id, const Message *forwarded_message,
-                                            int64 media_album_id, bool drop_author) const {
+                                            int64 media_album_id, const MessageContentDupType &dup_type) const {
   bool is_game = m->content->get_type() == MessageContentType::Game;
-  if (!drop_author || is_game) {
+  if (dup_type == MessageContentDupType::Forward || is_game) {
     m->via_bot_user_id = forwarded_message->via_bot_user_id;
   }
   m->media_album_id = media_album_id;
-  if (!drop_author && forwarded_message->view_count > 0 && m->forward_info != nullptr && m->view_count == 0 &&
+  if (dup_type == MessageContentDupType::Forward && forwarded_message->view_count > 0 && m->forward_info != nullptr &&
+      m->view_count == 0 &&
       !(m->message_id.is_scheduled() && td_->dialog_manager_->is_broadcast_channel(to_dialog_id))) {
     m->view_count = forwarded_message->view_count;
     m->forward_count = forwarded_message->forward_count;
@@ -24421,9 +24422,8 @@ void MessagesManager::fix_forwarded_message(Message *m, DialogId to_dialog_id, c
       m->via_bot_user_id = UserId();
     }
   }
-  m->reply_markup = dup_reply_markup(forwarded_message->reply_markup, to_dialog_id,
-                                     drop_author ? MessageContentDupType::ServerCopy : MessageContentDupType::Forward,
-                                     m->via_bot_user_id.is_valid());
+  m->reply_markup =
+      dup_reply_markup(forwarded_message->reply_markup, to_dialog_id, dup_type, m->via_bot_user_id.is_valid());
 }
 
 Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messages(
@@ -24592,7 +24592,7 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
                                  get_message_disable_web_page_preview(forwarded_message), new_invert_media, i});
     } else {
       forwarded_message_contents.push_back(
-          {std::move(content), new_invert_media, forwarded_message->media_album_id, i});
+          {std::move(content), type, new_invert_media, forwarded_message->media_album_id, i});
     }
   }
   result.message_topic = std::move(message_topic);
@@ -24696,7 +24696,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
                               j + 1 != forwarded_message_contents.size(), std::move(forward_info), from_dialog_id);
     }
     fix_forwarded_message(m, to_dialog_id, forwarded_message, forwarded_message_contents[j].media_album_id,
-                          drop_author);
+                          forwarded_message_contents[j].dup_type);
     m->in_game_share = in_game_share;
     m->new_video_start_timestamp = new_video_start_timestamp;
     m->real_forward_from_message_id = message_id;

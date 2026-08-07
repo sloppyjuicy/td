@@ -30,6 +30,7 @@
 #include "td/telegram/ForumTopicId.h"
 #include "td/telegram/InputGroupCallId.h"
 #include "td/telegram/logevent/LogEventHelper.h"
+#include "td/telegram/MessageContentDupType.h"
 #include "td/telegram/MessageContentType.h"
 #include "td/telegram/MessageCopyOptions.h"
 #include "td/telegram/MessageDb.h"
@@ -1874,7 +1875,7 @@ class MessagesManager final : public Actor {
                                                              const Message *m) const;
 
   void fix_forwarded_message(Message *m, DialogId to_dialog_id, const Message *forwarded_message, int64 media_album_id,
-                             bool drop_author) const;
+                             const MessageContentDupType &dup_type) const;
 
   struct ForwardedMessages {
     struct CopiedMessage {
@@ -1892,6 +1893,7 @@ class MessagesManager final : public Actor {
 
     struct ForwardedMessageContent {
       unique_ptr<MessageContent> content;
+      MessageContentDupType dup_type;
       bool invert_media;
       int64 media_album_id;
       size_t index;
