@@ -4946,8 +4946,9 @@ void Requests::on_request(uint64 id, td_api::sendTextMessageDraft &request) {
   if (request.forum_topic_id_ != 0) {
     message_topic = MessageTopic::forum(dialog_id, ForumTopicId(request.forum_topic_id_));
   }
-  td_->dialog_action_manager_->send_dialog_action(dialog_id, message_topic, BusinessConnectionId(),
-                                                  DialogAction(request.draft_id_, std::move(text)), std::move(promise));
+  td_->dialog_action_manager_->send_dialog_action(
+      dialog_id, message_topic, BusinessConnectionId(),
+      DialogAction(request.draft_id_, request.can_stop_, request.keep_on_stop_, std::move(text)), std::move(promise));
 }
 
 void Requests::on_request(uint64 id, td_api::sendRichMessageDraft &request) {
@@ -4960,9 +4961,10 @@ void Requests::on_request(uint64 id, td_api::sendRichMessageDraft &request) {
   if (request.forum_topic_id_ != 0) {
     message_topic = MessageTopic::forum(dialog_id, ForumTopicId(request.forum_topic_id_));
   }
-  td_->dialog_action_manager_->send_dialog_action(dialog_id, message_topic, BusinessConnectionId(),
-                                                  DialogAction(request.draft_id_, std::move(rich_message)),
-                                                  std::move(promise));
+  td_->dialog_action_manager_->send_dialog_action(
+      dialog_id, message_topic, BusinessConnectionId(),
+      DialogAction(request.draft_id_, request.can_stop_, request.keep_on_stop_, std::move(rich_message)),
+      std::move(promise));
 }
 
 void Requests::on_request(uint64 id, td_api::forwardMessages &request) {

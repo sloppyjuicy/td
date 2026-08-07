@@ -77,12 +77,12 @@ class DialogAction {
   DialogAction(Td *td, telegram_api::object_ptr<telegram_api::SendMessageAction> &&action_ptr,
                DialogId owner_dialog_id);
 
-  DialogAction(int64 random_id, FormattedText &&text) {
-    init(Type::TextDraft, random_id, false, false, std::move(text));
+  DialogAction(int64 random_id, bool can_stop, bool keep_on_stop, FormattedText &&text) {
+    init(Type::TextDraft, random_id, can_stop, keep_on_stop, std::move(text));
   }
 
-  DialogAction(int64 random_id, RichMessage &&message) {
-    init(Type::RichTextDraft, random_id, false, false, std::move(message));
+  DialogAction(int64 random_id, bool can_stop, bool keep_on_stop, RichMessage &&message) {
+    init(Type::RichTextDraft, random_id, can_stop, keep_on_stop, std::move(message));
   }
 
   DialogAction clone() const;

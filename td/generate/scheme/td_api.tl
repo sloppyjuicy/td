@@ -13153,15 +13153,19 @@ sendChatAction chat_id:int53 topic_id:MessageTopic business_connection_id:string
 //@chat_id Chat identifier
 //@forum_topic_id The forum topic identifier in which the message will be sent; pass 0 if none
 //@draft_id Unique identifier of the draft
+//@can_stop Pass true to show the user a button to stop further drafts
+//@keep_on_stop Pass true to keep the current draft when the user stops further generation
 //@text Draft text of the message; pass null to show a "Thinking..." placeholder
-sendTextMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 text:formattedText = Ok;
+sendTextMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:Bool keep_on_stop:Bool text:formattedText = Ok;
 
 //@description Sends a draft for a being generated rich message; for bots only
 //@chat_id Chat identifier
 //@forum_topic_id The forum topic identifier in which the message will be sent; pass 0 if none
 //@draft_id Unique identifier of the draft
+//@can_stop Pass true to show the user a button to stop further drafts
+//@keep_on_stop Pass true to keep the current draft when the user stops further generation
 //@message Draft of the message; file upload isn't supported
-sendRichMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 message:inputRichMessage = Ok;
+sendRichMessageDraft chat_id:int53 forum_topic_id:int32 draft_id:int64 can_stop:Bool keep_on_stop:Bool message:inputRichMessage = Ok;
 
 
 //@description Informs TDLib that the chat is opened by the user. Many useful activities depend on the chat being opened or closed (e.g., in supergroups and channels all updates are received only for opened chats) @chat_id Chat identifier
