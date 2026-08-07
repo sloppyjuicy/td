@@ -937,6 +937,17 @@ const RequestedDialogType *ReplyMarkup::get_requested_dialog_type(int32 button_i
   return nullptr;
 }
 
+bool ReplyMarkup::has_disabled_buttons() const {
+  for (auto &row : inline_keyboard) {
+    for (auto &button : row) {
+      if (button.is_disabled()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 telegram_api::object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(
     UserManager *user_manager, const unique_ptr<ReplyMarkup> &reply_markup) {
   if (reply_markup == nullptr) {

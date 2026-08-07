@@ -53,6 +53,10 @@ struct InlineKeyboardButton {
   void add_dependencies(Dependencies &dependencies) const;
 
   InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot) const;
+
+  bool is_disabled() const {
+    return type == Type::Disabled;
+  }
 };
 
 bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);
@@ -80,6 +84,8 @@ struct ReplyMarkup {
   td_api::object_ptr<td_api::ReplyMarkup> get_reply_markup_object(UserManager *user_manager) const;
 
   const RequestedDialogType *get_requested_dialog_type(int32 button_id) const;
+
+  bool has_disabled_buttons() const;
 };
 
 bool operator==(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
