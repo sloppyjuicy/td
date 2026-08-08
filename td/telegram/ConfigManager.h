@@ -45,9 +45,6 @@ ActorOwn<> get_simple_config_google_dns(Promise<SimpleConfigResult> promise, boo
 ActorOwn<> get_simple_config_mozilla_dns(Promise<SimpleConfigResult> promise, bool prefer_ipv6, Slice domain_name,
                                          bool is_test, int32 scheduler_id);
 
-ActorOwn<> get_simple_config_firebase_remote_config(Promise<SimpleConfigResult> promise, bool prefer_ipv6,
-                                                    Slice domain_name, bool is_test, int32 scheduler_id);
-
 ActorOwn<> get_simple_config_firebase_realtime(Promise<SimpleConfigResult> promise, bool prefer_ipv6, Slice domain_name,
                                                bool is_test, int32 scheduler_id);
 

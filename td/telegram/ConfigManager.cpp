@@ -248,7 +248,7 @@ ActorOwn<> get_simple_config_mozilla_dns(Promise<SimpleConfigResult> promise, bo
   return get_simple_config_dns("mozilla.cloudflare-dns.com/dns-query", "mozilla.cloudflare-dns.com", std::move(promise),
                                prefer_ipv6, domain_name, is_test, scheduler_id);
 }
-
+/*
 static string generate_firebase_remote_config_payload() {
   unsigned char buf[17];
   Random::secure_bytes(buf, sizeof(buf));
@@ -283,7 +283,7 @@ ActorOwn<> get_simple_config_firebase_remote_config(Promise<SimpleConfigResult> 
   return get_simple_config_impl(std::move(promise), scheduler_id, std::move(url), "firebaseremoteconfig.googleapis.com",
                                 {}, prefer_ipv6, std::move(get_config), payload, "application/json");
 }
-
+*/
 ActorOwn<> get_simple_config_firebase_realtime(Promise<SimpleConfigResult> promise, bool prefer_ipv6, Slice domain_name,
                                                bool is_test, int32 scheduler_id) {
   if (is_test) {
@@ -753,22 +753,20 @@ class ConfigRecoverer final : public Actor {
         send_closure(self, &ConfigRecoverer::on_simple_config, std::move(r_simple_config), false);
       });
       auto get_simple_config = [&] {
-        switch (simple_config_turn_ % 10) {
-          case 6:
+        switch (simple_config_turn_ % 9) {
+          case 5:
             return get_simple_config_azure;
           case 2:
-            return get_simple_config_firebase_remote_config;
-          case 4:
             return get_simple_config_firebase_firestore;
-          case 9:
+          case 8:
             return get_simple_config_firebase_realtime;
           case 0:
           case 3:
-          case 8:
+          case 7:
             return get_simple_config_google_dns;
           case 1:
-          case 5:
-          case 7:
+          case 4:
+          case 6:
           default:
             return get_simple_config_mozilla_dns;
         }
