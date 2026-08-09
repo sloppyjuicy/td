@@ -1455,7 +1455,7 @@ bool PollManager::can_get_poll_voters(PollId poll_id, const Poll *poll, DialogId
     auto it = pending_answers_.find(poll_id);
     if (it == pending_answers_.end() || (it->second.is_finished_ && poll->was_saved_)) {
       for (const auto &poll_option : poll->options_) {
-        if (poll_option.is_chosen_) {
+        if (poll_option.is_chosen()) {
           return true;
         }
       }
@@ -2269,9 +2269,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
         continue;
       }
       if (!is_min) {
-        bool is_chosen = poll_result->chosen_;
-        if (is_chosen != option.is_chosen_) {
-          option.is_chosen_ = is_chosen;
+        if (option.set_is_chosen(poll_result->chosen_)) {
           is_changed = true;
         }
       }
@@ -2284,7 +2282,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
                    << source;
         poll_result->voters_ = 0;
       }
-      if (option.is_chosen_ && poll_result->voters_ == 0 && !poll->hide_results_until_close_) {
+      if (option.is_chosen() && poll_result->voters_ == 0 && !poll->hide_results_until_close_) {
         LOG(ERROR) << "Receive 0 voters for the chosen option " << option_index << " in " << poll_id << " from "
                    << source;
         poll_result->voters_ = 1;
@@ -2337,8 +2335,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
     // the user have no access to results, therefore it didn't vote in the poll
     for (size_t option_index = 0; option_index < poll->options_.size(); option_index++) {
       auto &option = poll->options_[option_index];
-      if (option.is_chosen_) {
-        option.is_chosen_ = false;
+      if (option.set_is_chosen(false)) {
         is_changed = true;
       }
       if (option.voter_count_ != 0) {

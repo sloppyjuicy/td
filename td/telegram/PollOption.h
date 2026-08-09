@@ -67,6 +67,18 @@ struct PollOption {
     return added_date_;
   }
 
+  bool is_chosen() const {
+    return is_chosen_;
+  }
+
+  bool set_is_chosen(bool is_chosen) {
+    if (is_chosen_ != is_chosen) {
+      is_chosen_ = is_chosen;
+      return true;
+    }
+    return false;
+  }
+
   WebPageId get_web_page_id() const;
 
   void remove_web_page();
