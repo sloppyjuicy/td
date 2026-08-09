@@ -1511,10 +1511,10 @@ void PollManager::get_poll_voters(MessageFullId message_full_id, int32 option_id
       result.push_back(voters.voters_[i]);
     }
     return promise.set_value(
-        get_poll_voters_object(max(poll->options_[option_id].voter_count_, cur_offset), std::move(result)));
+        get_poll_voters_object(max(poll->options_[option_id].get_voter_count(), cur_offset), std::move(result)));
   }
 
-  if (poll->options_[option_id].voter_count_ == 0 || (voters.next_offset_.empty() && cur_offset > 0)) {
+  if (poll->options_[option_id].get_voter_count() == 0 || (voters.next_offset_.empty() && cur_offset > 0)) {
     return promise.set_value(get_poll_voters_object(0, Auto()));
   }
 
@@ -1573,7 +1573,7 @@ void PollManager::on_get_poll_voters(PollId poll_id, int32 option_id, string off
   td_->chat_manager_->on_get_chats(std::move(vote_list->chats_), "on_get_poll_voters");
 
   voters.next_offset_ = std::move(vote_list->next_offset_);
-  if (poll->options_[option_id].voter_count_ != vote_list->count_) {
+  if (poll->options_[option_id].get_voter_count() != vote_list->count_) {
     ++current_generation_;
     update_poll_timeout_.set_timeout_in(poll_id.get(), 0.0);
   }
@@ -2298,9 +2298,8 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
                    << " from " << source;
         poll_result->voters_ = max_voter_count;
       }
-      if (poll_result->voters_ != option.voter_count_) {
+      if (option.set_voter_count(poll_result->voters_)) {
         invalidate_poll_option_voters(poll, poll_id, option_index);
-        option.voter_count_ = poll_result->voters_;
         is_changed = true;
       }
       // creator sees poll results, while others don't, therefore the recent voters must not be dropped
@@ -2318,10 +2317,10 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
             recent_option_voter_dialog_ids.push_back(dialog_id);
           }
         }
-        if (recent_option_voter_dialog_ids.size() > static_cast<size_t>(option.voter_count_)) {
-          LOG(ERROR) << "Receive option with " << option.voter_count_ << " votes and "
+        if (recent_option_voter_dialog_ids.size() > static_cast<size_t>(option.get_voter_count())) {
+          LOG(ERROR) << "Receive option with " << option.get_voter_count() << " votes and "
                      << recent_option_voter_dialog_ids.size() << " recent voters";
-          recent_option_voter_dialog_ids.resize(static_cast<size_t>(option.voter_count_));
+          recent_option_voter_dialog_ids.resize(static_cast<size_t>(option.get_voter_count()));
         }
         if (recent_option_voter_dialog_ids != option.recent_voter_dialog_ids_) {
           option.recent_voter_dialog_ids_ = std::move(recent_option_voter_dialog_ids);
@@ -2338,9 +2337,8 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
       if (option.set_is_chosen(false)) {
         is_changed = true;
       }
-      if (option.voter_count_ != 0) {
+      if (option.set_voter_count(0)) {
         invalidate_poll_option_voters(poll, poll_id, option_index);
-        option.voter_count_ = 0;
         is_changed = true;
       }
       if (!option.recent_voter_dialog_ids_.empty()) {
@@ -2356,7 +2354,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
   if (!poll_results->results_.empty() && has_total_voters) {
     int32 max_total_voter_count = 0;
     for (const auto &option : poll->options_) {
-      max_total_voter_count += option.voter_count_;
+      max_total_voter_count += option.get_voter_count();
     }
     if (poll->total_voter_count_ > max_total_voter_count && max_total_voter_count != 0) {
       LOG(ERROR) << "Have only " << max_total_voter_count << " total poll voters, but there are "

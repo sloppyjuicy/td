@@ -79,6 +79,18 @@ struct PollOption {
     return false;
   }
 
+  int32 get_voter_count() const {
+    return voter_count_;
+  }
+
+  bool set_voter_count(int32 voter_count) {
+    if (voter_count_ != voter_count) {
+      voter_count_ = voter_count;
+      return true;
+    }
+    return false;
+  }
+
   WebPageId get_web_page_id() const;
 
   void remove_web_page();
