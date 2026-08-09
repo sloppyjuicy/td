@@ -2361,6 +2361,7 @@ void MessagesManager::Message::store(StorerT &storer) const {
   bool has_receiver_user_id = receiver_user_id.is_valid();
   bool has_ephemeral_message_id = ephemeral_message_id.is_valid();
   bool has_send_callback_query_id = send_callback_query_id != 0;
+  bool has_chat_instance = chat_instance != 0;
   BEGIN_STORE_FLAGS();
   STORE_FLAG(is_channel_post);
   STORE_FLAG(is_outgoing);
@@ -2473,6 +2474,7 @@ void MessagesManager::Message::store(StorerT &storer) const {
     STORE_FLAG(has_receiver_user_id);
     STORE_FLAG(has_ephemeral_message_id);
     STORE_FLAG(has_send_callback_query_id);
+    STORE_FLAG(has_chat_instance);
     END_STORE_FLAGS();
   }
   // update MessageDb::get_message_info when flags5 is added
@@ -2639,6 +2641,9 @@ void MessagesManager::Message::store(StorerT &storer) const {
   if (has_send_callback_query_id) {
     store(send_callback_query_id, storer);
   }
+  if (has_chat_instance) {
+    store(chat_instance, storer);
+  }
 }
 
 // do not forget to resolve message dependencies
@@ -2711,6 +2716,7 @@ void MessagesManager::Message::parse(ParserT &parser) {
   bool has_receiver_user_id = false;
   bool has_ephemeral_message_id = false;
   bool has_send_callback_query_id = false;
+  bool has_chat_instance = false;
   BEGIN_PARSE_FLAGS();
   PARSE_FLAG(is_channel_post);
   PARSE_FLAG(is_outgoing);
@@ -2823,6 +2829,7 @@ void MessagesManager::Message::parse(ParserT &parser) {
     PARSE_FLAG(has_receiver_user_id);
     PARSE_FLAG(has_ephemeral_message_id);
     PARSE_FLAG(has_send_callback_query_id);
+    PARSE_FLAG(has_chat_instance);
     END_PARSE_FLAGS();
   }
 
@@ -3059,6 +3066,9 @@ void MessagesManager::Message::parse(ParserT &parser) {
   }
   if (has_send_callback_query_id) {
     parse(send_callback_query_id, parser);
+  }
+  if (has_chat_instance) {
+    parse(chat_instance, parser);
   }
 
   CHECK(content != nullptr);
@@ -11458,6 +11468,7 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   message_info.is_outgoing = message->out_;
   message_info.is_channel_post = td->dialog_manager_->is_broadcast_channel(dialog_id);
   message_info.ttl_period = 7 * 86400;
+  message_info.chat_instance = message->chat_instance_;
   // message_info.noforwards = message->noforwards_;
   message_info.invert_media = message->invert_media_;
   if (message->top_msg_id_ > 0) {
@@ -11727,6 +11738,7 @@ std::pair<DialogId, unique_ptr<MessagesManager::Message>> MessagesManager::creat
   message->author_signature = std::move(message_info.author_signature);
   message->summary_from_language = std::move(message_info.summary_from_language);
   message->sender_boost_count = message_info.sender_boost_count;
+  message->chat_instance = message_info.chat_instance;
   message->sender_rank = std::move(message_info.sender_rank);
   message->paid_message_star_count = message_info.paid_message_star_count;
   message->saved_messages_topic_id = message_info.saved_messages_topic_id;
@@ -20502,7 +20514,7 @@ td_api::object_ptr<td_api::message> MessagesManager::get_dialog_event_log_messag
       std::move(interaction_info), Auto(), nullptr, nullptr, std::move(reply_to), nullptr, nullptr, 0.0, 0.0,
       via_bot_user_id, get_message_guest_sender_object(m), 0, m->sender_boost_count, m->sender_rank,
       m->paid_message_star_count, m->author_signature, 0, 0, get_restriction_info_object(m->restriction_reasons),
-      m->summary_from_language, std::move(content), std::move(reply_markup), 0);
+      m->summary_from_language, std::move(content), std::move(reply_markup), 0, m->chat_instance);
 }
 
 td_api::object_ptr<td_api::businessMessage> MessagesManager::get_business_message_object(
@@ -20576,7 +20588,7 @@ td_api::object_ptr<td_api::message> MessagesManager::get_guest_message_object(
       std::move(self_destruct_type), 0.0, 0.0, via_bot_user_id, get_message_guest_sender_object(m),
       via_business_bot_user_id, m->sender_boost_count, m->sender_rank, m->paid_message_star_count, m->author_signature,
       m->media_album_id, m->effect_id.get(), get_restriction_info_object(m->restriction_reasons), string(),
-      std::move(content), std::move(reply_markup), 0);
+      std::move(content), std::move(reply_markup), 0, m->chat_instance);
 }
 
 td_api::object_ptr<td_api::message> MessagesManager::get_message_object(Dialog *d, MessageId message_id,
@@ -20687,7 +20699,7 @@ td_api::object_ptr<td_api::message> MessagesManager::get_message_object(DialogId
       auto_delete_in, via_bot_user_id, get_message_guest_sender_object(m), via_business_bot_user_id,
       m->sender_boost_count, m->sender_rank, m->paid_message_star_count, m->author_signature, m->media_album_id,
       m->effect_id.get(), get_restriction_info_object(m->restriction_reasons), m->summary_from_language,
-      std::move(content), std::move(reply_markup), ephemeral_message_id);
+      std::move(content), std::move(reply_markup), ephemeral_message_id, m->chat_instance);
 }
 
 td_api::object_ptr<td_api::messages> MessagesManager::get_messages_object(int32 total_count, DialogId dialog_id,
@@ -32101,6 +32113,10 @@ bool MessagesManager::update_message(Dialog *d, Message *old_message, unique_ptr
   if (old_message->sender_rank != new_message->sender_rank) {
     LOG(DEBUG) << "Change sender rank";
     old_message->sender_rank = new_message->sender_rank;
+    need_send_update = true;
+  }
+  if (old_message->chat_instance != new_message->chat_instance) {
+    old_message->chat_instance = new_message->chat_instance;
     need_send_update = true;
   }
   if (old_message->paid_message_star_count != new_message->paid_message_star_count) {

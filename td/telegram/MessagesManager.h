@@ -1083,6 +1083,7 @@ class MessagesManager final : public Actor {
     string sender_rank;
     int32 sender_boost_count = 0;
     int32 edit_date = 0;
+    int64 chat_instance = 0;
     vector<RestrictionReason> restriction_reasons;
     string author_signature;
     string summary_from_language;
@@ -1125,6 +1126,7 @@ class MessagesManager final : public Actor {
     int32 sending_id = 0;  // for yet unsent messages
     int32 sender_boost_count = 0;
     int64 paid_message_star_count = 0;
+    int64 chat_instance = 0;
 
     int64 random_id = 0;
 
