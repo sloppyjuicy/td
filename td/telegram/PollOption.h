@@ -91,6 +91,14 @@ struct PollOption {
     return false;
   }
 
+  bool set_recent_voter_dialog_ids(vector<DialogId> &&recent_voter_dialog_ids) {
+    if (recent_voter_dialog_ids_ != recent_voter_dialog_ids) {
+      recent_voter_dialog_ids_ = std::move(recent_voter_dialog_ids);
+      return true;
+    }
+    return false;
+  }
+
   WebPageId get_web_page_id() const;
 
   void remove_web_page();

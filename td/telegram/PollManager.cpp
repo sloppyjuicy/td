@@ -2322,8 +2322,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
                      << recent_option_voter_dialog_ids.size() << " recent voters";
           recent_option_voter_dialog_ids.resize(static_cast<size_t>(option.get_voter_count()));
         }
-        if (recent_option_voter_dialog_ids != option.recent_voter_dialog_ids_) {
-          option.recent_voter_dialog_ids_ = std::move(recent_option_voter_dialog_ids);
+        if (option.set_recent_voter_dialog_ids(std::move(recent_option_voter_dialog_ids))) {
           is_changed = true;
           need_update_recent_option_voter_min_channels = true;
         }
@@ -2341,8 +2340,7 @@ PollId PollManager::on_get_poll(PollId poll_id, tl_object_ptr<telegram_api::poll
         invalidate_poll_option_voters(poll, poll_id, option_index);
         is_changed = true;
       }
-      if (!option.recent_voter_dialog_ids_.empty()) {
-        option.recent_voter_dialog_ids_.clear();
+      if (option.set_recent_voter_dialog_ids({})) {
         is_changed = true;
         need_update_recent_option_voter_min_channels = true;
       }
