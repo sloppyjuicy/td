@@ -1759,8 +1759,8 @@ class MessagePollAppendAnswer final : public MessageContent {
   string data;
 
   MessagePollAppendAnswer() = default;
-  MessagePollAppendAnswer(MessageId poll_message_id, FormattedText &&text, const string &data)
-      : poll_message_id(poll_message_id), text(std::move(text)), data(data) {
+  MessagePollAppendAnswer(MessageId poll_message_id, const FormattedText &text, const string &data)
+      : poll_message_id(poll_message_id), text(text), data(data) {
   }
 
   MessageContentType get_type() const final {
@@ -1775,8 +1775,8 @@ class MessagePollDeleteAnswer final : public MessageContent {
   string data;
 
   MessagePollDeleteAnswer() = default;
-  MessagePollDeleteAnswer(MessageId poll_message_id, FormattedText &&text, const string &data)
-      : poll_message_id(poll_message_id), text(std::move(text)), data(data) {
+  MessagePollDeleteAnswer(MessageId poll_message_id, const FormattedText &text, const string &data)
+      : poll_message_id(poll_message_id), text(text), data(data) {
   }
 
   MessageContentType get_type() const final {
@@ -11157,7 +11157,7 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       vector<std::pair<ChannelId, MinChannel>> min_channels;
       PollOption option(td, std::move(action->answer_), min_channels);
-      return td::make_unique<MessagePollAppendAnswer>(reply_to_message_id, std::move(option.text_), option.get_data());
+      return td::make_unique<MessagePollAppendAnswer>(reply_to_message_id, option.get_text(), option.get_data());
     }
     case telegram_api::messageActionPollDeleteAnswer::ID: {
       auto action = telegram_api::move_object_as<telegram_api::messageActionPollDeleteAnswer>(action_ptr);
@@ -11168,7 +11168,7 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       vector<std::pair<ChannelId, MinChannel>> min_channels;
       PollOption option(td, std::move(action->answer_), min_channels);
-      return td::make_unique<MessagePollDeleteAnswer>(reply_to_message_id, std::move(option.text_), option.get_data());
+      return td::make_unique<MessagePollDeleteAnswer>(reply_to_message_id, option.get_text(), option.get_data());
     }
     case telegram_api::messageActionManagedBotCreated::ID: {
       auto action = telegram_api::move_object_as<telegram_api::messageActionManagedBotCreated>(action_ptr);
