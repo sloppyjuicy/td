@@ -1123,7 +1123,7 @@ string PollManager::get_poll_search_text(PollId poll_id) const {
   string result = poll->question_.text;
   for (const auto &option : poll->options_) {
     result += ' ';
-    result += option.text_.text;
+    result += option.get_search_text();
   }
   return result;
 }

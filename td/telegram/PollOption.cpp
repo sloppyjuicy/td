@@ -98,6 +98,10 @@ void PollOption::remove_web_page() {
   remove_message_content_web_page(media_.get());
 }
 
+string PollOption::get_search_text() const {
+  return text_.text;
+}
+
 PollOption PollOption::dup_option(Td *td, DialogId dialog_id) const {
   PollOption result;
   result.text_ = text_;

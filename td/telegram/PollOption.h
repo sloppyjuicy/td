@@ -71,6 +71,8 @@ struct PollOption {
 
   void remove_web_page();
 
+  string get_search_text() const;
+
   PollOption dup_option(Td *td, DialogId dialog_id) const;
 
   void append_file_ids(const Td *td, vector<FileId> &file_ids) const;
