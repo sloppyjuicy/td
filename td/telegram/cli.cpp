@@ -3000,7 +3000,7 @@ class CliClient final : public Actor {
     }
     if (ephemeral_message_receiver_id_ != 0) {
       send_request(td_api::make_object<td_api::sendEphemeralMessage>(
-          chat_id, get_message_topic_id(), ephemeral_message_receiver_id_, 0, get_input_message_reply_to(), 123,
+          chat_id, get_message_topic_id(), ephemeral_message_receiver_id_, 0, false, get_input_message_reply_to(), 123,
           only_preview_, nullptr, std::move(input_message_content)));
       return;
     }

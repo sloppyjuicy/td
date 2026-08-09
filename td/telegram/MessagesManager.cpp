@@ -1531,8 +1531,8 @@ class SendMediaQuery final : public Td::ResultHandler {
   void send(vector<FileUploadId> file_upload_ids, vector<FileUploadId> thumbnail_file_upload_ids,
             vector<FileId> cover_file_ids, int32 flags, DialogId dialog_id,
             tl_object_ptr<telegram_api::InputPeer> as_input_peer, UserId receiver_user_id, int64 send_callback_query_id,
-            const MessageInputReplyTo &input_reply_to, const MessageTopic &message_topic, int32 schedule_date,
-            int32 schedule_repeat_period, MessageEffectId effect_id, int64 paid_message_star_count,
+            bool send_anchor, const MessageInputReplyTo &input_reply_to, const MessageTopic &message_topic,
+            int32 schedule_date, int32 schedule_repeat_period, MessageEffectId effect_id, int64 paid_message_star_count,
             const SuggestedPost *suggested_post, const unique_ptr<ReplyMarkup> &reply_markup, const FormattedText *text,
             InputMedia &&input_media, MessageContentType content_type, bool is_copy, int64 random_id,
             NetQueryRef *send_query_ref) {
@@ -1582,7 +1582,7 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
 
       auto query = G()->net_query_creator().create(
-          telegram_api::ephemeral_sendMessage(flags, invert_media, false, false, false, std::move(input_peer),
+          telegram_api::ephemeral_sendMessage(flags, invert_media, false, send_anchor, false, std::move(input_peer),
                                               r_input_user.move_as_ok(), send_callback_query_id,
                                               text == nullptr ? string() : text->text, std::move(entities),
                                               std::move(input_media.media_), std::move(input_reply_markup),
@@ -2475,6 +2475,7 @@ void MessagesManager::Message::store(StorerT &storer) const {
     STORE_FLAG(has_ephemeral_message_id);
     STORE_FLAG(has_send_callback_query_id);
     STORE_FLAG(has_chat_instance);
+    STORE_FLAG(send_anchor);
     END_STORE_FLAGS();
   }
   // update MessageDb::get_message_info when flags5 is added
@@ -2830,6 +2831,7 @@ void MessagesManager::Message::parse(ParserT &parser) {
     PARSE_FLAG(has_ephemeral_message_id);
     PARSE_FLAG(has_send_callback_query_id);
     PARSE_FLAG(has_chat_instance);
+    PARSE_FLAG(send_anchor);
     END_PARSE_FLAGS();
   }
 
@@ -22146,7 +22148,7 @@ void MessagesManager::do_send_message_media(DialogId dialog_id, const Message *m
         td_->create_handler<SendMediaQuery>()->send(
             m->file_upload_ids, m->thumbnail_file_upload_ids,
             get_message_content_cover_any_file_ids(td_, m->content.get()), get_message_flags(m), dialog_id,
-            get_send_message_as_input_peer(m), m->receiver_user_id, m->send_callback_query_id,
+            get_send_message_as_input_peer(m), m->receiver_user_id, m->send_callback_query_id, m->send_anchor,
             *get_message_input_reply_to(m), get_send_message_topic(dialog_id, m), get_message_schedule_date(m),
             get_message_schedule_repeat_period(m), m->effect_id, m->paid_message_star_count, m->suggested_post.get(),
             m->reply_markup, caption, std::move(input_media), m->content->get_type(), m->is_copy, random_id,
@@ -22657,10 +22659,10 @@ void MessagesManager::on_text_message_ready_to_send(DialogId dialog_id, MessageI
     } else {
       td_->create_handler<SendMediaQuery>()->send(
           {}, {}, {}, get_message_flags(m), dialog_id, get_send_message_as_input_peer(m), m->receiver_user_id,
-          m->send_callback_query_id, *get_message_input_reply_to(m), get_send_message_topic(dialog_id, m),
-          get_message_schedule_date(m), get_message_schedule_repeat_period(m), m->effect_id, m->paid_message_star_count,
-          m->suggested_post.get(), m->reply_markup, message_text, std::move(input_media), MessageContentType::Text,
-          m->is_copy, random_id, &m->send_query_ref);
+          m->send_callback_query_id, m->send_anchor, *get_message_input_reply_to(m),
+          get_send_message_topic(dialog_id, m), get_message_schedule_date(m), get_message_schedule_repeat_period(m),
+          m->effect_id, m->paid_message_star_count, m->suggested_post.get(), m->reply_markup, message_text,
+          std::move(input_media), MessageContentType::Text, m->is_copy, random_id, &m->send_query_ref);
     }
   }
 }
@@ -25194,7 +25196,7 @@ void MessagesManager::process_suggested_post(MessageFullId message_full_id, bool
 
 Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_message(
     DialogId dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, UserId receiver_user_id,
-    int64 callback_query_id, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to, int32 sending_id,
+    int64 callback_query_id, bool anchor, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to, int32 sending_id,
     bool only_preview, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
     td_api::object_ptr<td_api::InputMessageContent> &&input_message_content) {
   TRY_RESULT(d, check_dialog_access(dialog_id, false, AccessRights::Write, "send_ephemeral_message"));
@@ -25234,6 +25236,7 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_mess
   }
   m->send_emoji = std::move(message_content.emoji);
   m->send_callback_query_id = callback_query_id;
+  m->send_anchor = anchor;
 
   if (only_preview) {
     return get_message_object(dialog_id, m, "send_ephemeral_message");
