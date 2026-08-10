@@ -2886,8 +2886,7 @@ void MessageQueryManager::on_upload_media(
         LOG(INFO) << "Ask to upload thumbnail " << thumbnail_file_upload_id;
         bool is_inserted =
             being_uploaded_thumbnails_
-                .emplace(thumbnail_file_upload_id,
-                         UploadedThumbnailInfo{upload_id, file_upload_id, std::move(input_file), media_pos})
+                .emplace(thumbnail_file_upload_id, UploadedThumbnailInfo{upload_id, std::move(input_file), media_pos})
                 .second;
         CHECK(is_inserted);
         td_->file_manager_->upload(thumbnail_file_upload_id, upload_thumbnail_callback_, 32, upload_id.get());
@@ -2955,7 +2954,6 @@ void MessageQueryManager::on_upload_thumbnail(FileUploadId thumbnail_file_upload
     return;
   }
   auto upload_id = file_it->second.upload_id_;
-  auto file_upload_id = file_it->second.file_upload_id_;
   auto input_file = std::move(file_it->second.input_file_);
   auto media_pos = file_it->second.media_pos_;
   being_uploaded_thumbnails_.erase(file_it);

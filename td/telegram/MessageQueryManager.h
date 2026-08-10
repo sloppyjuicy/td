@@ -539,7 +539,6 @@ class MessageQueryManager final : public Actor {
 
   struct UploadedThumbnailInfo {
     MessageContentUploadId upload_id_;
-    FileUploadId file_upload_id_;                                   // original file upload identifier
     telegram_api::object_ptr<telegram_api::InputFile> input_file_;  // original file InputFile
     int32 media_pos_;
   };
