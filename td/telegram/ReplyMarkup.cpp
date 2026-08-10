@@ -733,7 +733,7 @@ telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_
         int32 flags = 0;
         bool request_write_access = false;
         int64 bot_user_id = keyboard_button.id;
-        if (bot_user_id > 0) {
+        if (bot_user_id >= 0) {
           request_write_access = true;
         } else {
           bot_user_id = -bot_user_id - 1;
