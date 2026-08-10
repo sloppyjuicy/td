@@ -4327,7 +4327,8 @@ pageBlockChatLink title:string photo:chatPhotoInfo accent_color_id:int32 usernam
 //@cells Table cells
 //@is_bordered True, if the table is bordered
 //@is_striped True, if the table is striped
-pageBlockTable caption:RichText cells:vector<vector<pageBlockTableCell>> is_bordered:Bool is_striped:Bool = PageBlock;
+//@is_compact True, if table cells must have smaller indents
+pageBlockTable caption:RichText cells:vector<vector<pageBlockTableCell>> is_bordered:Bool is_striped:Bool is_compact:Bool = PageBlock;
 
 //@description A collapsible block
 //@header Always visible heading for the block

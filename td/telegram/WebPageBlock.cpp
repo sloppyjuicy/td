@@ -3956,11 +3956,17 @@ class WebPageBlockTable final : public WebPageBlock {
   vector<vector<WebPageBlockTableCell>> cells;
   bool is_bordered = false;
   bool is_striped = false;
+  bool is_compact = false;
 
  public:
   WebPageBlockTable() = default;
-  WebPageBlockTable(RichText &&title, vector<vector<WebPageBlockTableCell>> &&cells, bool is_bordered, bool is_striped)
-      : title(std::move(title)), cells(std::move(cells)), is_bordered(is_bordered), is_striped(is_striped) {
+  WebPageBlockTable(RichText &&title, vector<vector<WebPageBlockTableCell>> &&cells, bool is_bordered, bool is_striped,
+                    bool is_compact)
+      : title(std::move(title))
+      , cells(std::move(cells))
+      , is_bordered(is_bordered)
+      , is_striped(is_striped)
+      , is_compact(is_compact) {
   }
 
   Type get_type() const final {
@@ -4014,7 +4020,7 @@ class WebPageBlockTable final : public WebPageBlock {
       new_cells.push_back(std::move(new_row));
     }
     return td::make_unique<WebPageBlockTable>(title.clone(dialog_id, dup_type), std::move(new_cells), is_bordered,
-                                              is_striped);
+                                              is_striped, is_compact);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4023,7 +4029,7 @@ class WebPageBlockTable final : public WebPageBlock {
           transform(row, [&](const WebPageBlockTableCell &cell) { return cell.get_input_page_table_cell(context); }));
     });
     return telegram_api::make_object<telegram_api::pageBlockTable>(
-        0, is_bordered, is_striped, false, title.get_input_rich_text(context), std::move(cell_objects));
+        0, is_bordered, is_striped, is_compact, title.get_input_rich_text(context), std::move(cell_objects));
   }
 
   td_api::object_ptr<td_api::PageBlock> get_page_block_object(Context *context) const final {
@@ -4033,12 +4039,12 @@ class WebPageBlockTable final : public WebPageBlock {
     });
 
     return td_api::make_object<td_api::pageBlockTable>(title.get_rich_text_object(context, true),
-                                                       std::move(cell_objects), is_bordered, is_striped);
+                                                       std::move(cell_objects), is_bordered, is_striped, is_compact);
   }
 
   friend bool operator==(const WebPageBlockTable &lhs, const WebPageBlockTable &rhs) {
     return lhs.title == rhs.title && lhs.cells == rhs.cells && lhs.is_bordered == rhs.is_bordered &&
-           lhs.is_striped == rhs.is_striped;
+           lhs.is_striped == rhs.is_striped && lhs.is_compact == rhs.is_compact;
   }
 
   template <class StorerT>
@@ -4047,6 +4053,7 @@ class WebPageBlockTable final : public WebPageBlock {
     BEGIN_STORE_FLAGS();
     STORE_FLAG(is_bordered);
     STORE_FLAG(is_striped);
+    STORE_FLAG(is_compact);
     END_STORE_FLAGS();
     store(title, storer);
     store(cells, storer);
@@ -4058,6 +4065,7 @@ class WebPageBlockTable final : public WebPageBlock {
     BEGIN_PARSE_FLAGS();
     PARSE_FLAG(is_bordered);
     PARSE_FLAG(is_striped);
+    PARSE_FLAG(is_compact);
     END_PARSE_FLAGS();
     parse(title, parser);
     parse(cells, parser);
@@ -5159,6 +5167,7 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
       auto page_block = telegram_api::move_object_as<telegram_api::pageBlockTable>(page_block_ptr);
       auto is_bordered = page_block->bordered_;
       auto is_striped = page_block->striped_;
+      auto is_compact = page_block->compact_;
       auto cells = transform(std::move(page_block->rows_), [&](tl_object_ptr<telegram_api::pageTableRow> &&row) {
         return transform(std::move(row->cells_), [&](tl_object_ptr<telegram_api::pageTableCell> &&table_cell) {
           WebPageBlockTableCell cell;
@@ -5186,7 +5195,7 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
         });
       });
       return td::make_unique<WebPageBlockTable>(get_rich_text(std::move(page_block->title_), documents),
-                                                std::move(cells), is_bordered, is_striped);
+                                                std::move(cells), is_bordered, is_striped, is_compact);
     }
     case telegram_api::pageBlockDetails::ID: {
       auto page_block = telegram_api::move_object_as<telegram_api::pageBlockDetails>(page_block_ptr);
@@ -5721,7 +5730,7 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
           cells.push_back(std::move(row));
         }
         result.push_back(td::make_unique<WebPageBlockTable>(std::move(title), std::move(cells), block->is_bordered_,
-                                                            block->is_striped_));
+                                                            block->is_striped_, false));
         break;
       }
       case td_api::inputPageBlockDetails::ID: {
