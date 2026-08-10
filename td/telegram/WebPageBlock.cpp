@@ -5730,7 +5730,7 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
           cells.push_back(std::move(row));
         }
         result.push_back(td::make_unique<WebPageBlockTable>(std::move(title), std::move(cells), block->is_bordered_,
-                                                            block->is_striped_, false));
+                                                            block->is_striped_, block->is_compact_));
         break;
       }
       case td_api::inputPageBlockDetails::ID: {

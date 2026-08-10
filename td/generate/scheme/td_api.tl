@@ -6032,9 +6032,10 @@ inputPageBlockSlideshow blocks:vector<InputPageBlock> caption:pageBlockCaption =
 //@description A table
 //@caption Table caption
 //@cells Table cells
-//@is_bordered True, if the table is bordered
-//@is_striped True, if the table is striped
-inputPageBlockTable caption:RichText cells:vector<vector<pageBlockTableCell>> is_bordered:Bool is_striped:Bool = InputPageBlock;
+//@is_bordered Pass true if the table is bordered
+//@is_striped Pass true if the table is striped
+//@is_compact Pass true if table cells must have smaller indents
+inputPageBlockTable caption:RichText cells:vector<vector<pageBlockTableCell>> is_bordered:Bool is_striped:Bool is_compact:Bool = InputPageBlock;
 
 //@description A collapsible block
 //@header Always visible heading for the block
