@@ -29,22 +29,39 @@ void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
 }
 
 InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const MessageContentDupType &dup_type,
-                                                 bool is_via_bot) const {
+                                                 bool is_via_bot, bool is_rich_message) const {
   if (dialog_id.get_type() == DialogType::SecretChat) {
+    // secret chats has no reply markup support
     return InlineKeyboardButton();
   }
-  if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot || type == Type::Url) {
+  if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot) {
+    // any button can be sent
+    return *this;
+  }
+  bool is_forward = dup_type == MessageContentDupType::Forward;
+  if (!is_forward && !is_rich_message) {
+    // keyboard buttons can't be copied
+    return InlineKeyboardButton();
+  }
+  if (type == Type::Url || type == Type::User || type == Type::Copy) {
     return *this;
   }
   if (type == Type::UrlAuth) {
     auto result = *this;
-    if (!result.forward_text.empty()) {
-      result.text = std::move(result.forward_text);
+    if (is_forward) {
+      if (!result.forward_text.empty()) {
+        result.text = std::move(result.forward_text);
+        result.forward_text.clear();
+      }
+    } else {
+      CHECK(is_rich_message);
+      result.type = Type::Url;
       result.forward_text.clear();
+      result.id = 0;
     }
-    return *this;
+    return result;
   }
-  if (is_via_bot && (type == Type::SwitchInline || type == Type::SwitchInlineCurrentDialog)) {
+  if (is_forward && is_via_bot && (type == Type::SwitchInline || type == Type::SwitchInlineCurrentDialog)) {
     auto result = *this;
     result.type = Type::SwitchInline;
     return result;
@@ -695,8 +712,8 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   });
   result->placeholder = reply_markup->placeholder;
   result->inline_keyboard = transform(reply_markup->inline_keyboard, [&](const vector<InlineKeyboardButton> &row) {
-    return transform(row,
-                     [&](const InlineKeyboardButton &button) { return button.clone(dialog_id, dup_type, is_via_bot); });
+    return transform(
+        row, [&](const InlineKeyboardButton &button) { return button.clone(dialog_id, dup_type, is_via_bot, false); });
   });
   if (result->has_disabled_buttons()) {
     return nullptr;

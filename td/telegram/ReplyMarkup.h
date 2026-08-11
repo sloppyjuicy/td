@@ -52,7 +52,8 @@ struct InlineKeyboardButton {
 
   void add_dependencies(Dependencies &dependencies) const;
 
-  InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot) const;
+  InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot,
+                             bool is_rich_message) const;
 
   bool is_disabled() const {
     return type == Type::Disabled;
