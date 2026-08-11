@@ -2611,7 +2611,8 @@ MessageContentUploadId MessageQueryManager::create_upload_message_content_query(
   auto upload_id = MessageContentUploadId(++current_upload_id_);
   auto &query = upload_message_content_queries_[upload_id];
   query.dialog_id_ = dialog_id;
-  query.content_ = dup_message_content(td_, dialog_id, content, MessageContentDupType::Forward, MessageCopyOptions());
+  query.content_ =
+      dup_message_content(td_, dialog_id, content, MessageContentDupType::Send, false, MessageCopyOptions());
   CHECK(query.content_ != nullptr);
   query.ttl_ = ttl;
   query.send_emoji_ = send_emoji;
@@ -3041,7 +3042,8 @@ void MessageQueryManager::on_upload_message_media_success(
                                               0, is_content_changed, need_update, "on_upload_message_media_success");
   query.callback_->on_uploaded_message_content_updated(
       upload_id,
-      dup_message_content(td_, query.dialog_id_, content.get(), MessageContentDupType::Forward, MessageCopyOptions()),
+      dup_message_content(td_, query.dialog_id_, content.get(), MessageContentDupType::Send, false,
+                          MessageCopyOptions()),
       media_pos == -1, is_content_changed, need_update);
   merge_and_compare_message_contents(td_, message_content.get(), content.get(), false, query.dialog_id_,
                                      media_pos == -1, query.file_upload_ids_, query.ttl_, 0.0, nullptr,

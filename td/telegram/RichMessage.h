@@ -94,7 +94,7 @@ class RichMessage {
 
   td_api::object_ptr<td_api::richMessage> get_rich_message_object(Td *td, bool skip_bot_commands) const;
 
-  RichMessage clone(Td *td, DialogId dialog_id, const MessageContentDupType &type) const;
+  RichMessage clone(Td *td, DialogId dialog_id, const MessageContentDupType &type, bool is_via_bot) const;
 
   vector<unique_ptr<MessageContent>> get_individual_message_contents(Td *td) const;
 

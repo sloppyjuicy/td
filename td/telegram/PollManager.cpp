@@ -1986,7 +1986,7 @@ vector<unique_ptr<MessageContent>> PollManager::get_individual_message_contents(
                      if (content == nullptr) {
                        return create_empty_text_message_content();
                      }
-                     return dup_message_content(td, DialogId(), content, MessageContentDupType::ServerCopy,
+                     return dup_message_content(td, DialogId(), content, MessageContentDupType::Send, false,
                                                 MessageCopyOptions(true, false));
                    });
 }
@@ -2049,7 +2049,7 @@ PollId PollManager::dup_poll(DialogId dialog_id, PollId poll_id) {
   unique_ptr<MessageContent> explanation_media;
   if (poll->explanation_media_ != nullptr) {
     explanation_media = dup_message_content(td_, dialog_id, poll->explanation_media_.get(), MessageContentDupType::Copy,
-                                            MessageCopyOptions(true, false));
+                                            false, MessageCopyOptions(true, false));
   }
   bool is_broadcast = td_->dialog_manager_->is_broadcast_channel(dialog_id);
   return create_poll(std::move(question), std::move(options), poll->is_anonymous_, poll->allow_multiple_answers_,

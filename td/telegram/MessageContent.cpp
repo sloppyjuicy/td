@@ -10080,7 +10080,8 @@ unique_ptr<MessageContent> get_message_content(Td *td, FormattedText message,
 }
 
 unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const MessageContent *content,
-                                               MessageContentDupType type, MessageCopyOptions &&copy_options) {
+                                               MessageContentDupType type, bool is_via_bot,
+                                               MessageCopyOptions &&copy_options) {
   CHECK(content != nullptr);
   if (copy_options.send_copy) {
     CHECK(type == MessageContentDupType::Copy || type == MessageContentDupType::ServerCopy);
@@ -10223,7 +10224,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
       }
       unique_ptr<MessageContent> attached_media;
       if (message_poll->attached_media != nullptr) {
-        attached_media = dup_message_content(td, dialog_id, message_poll->attached_media.get(), type,
+        attached_media = dup_message_content(td, dialog_id, message_poll->attached_media.get(), type, is_via_bot,
                                              MessageCopyOptions(copy_options.send_copy, false));
       }
       return make_unique<MessagePoll>(poll_id, FormattedText(message_poll->caption), std::move(attached_media));
@@ -10231,7 +10232,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
     case MessageContentType::RichText: {
       CHECK(!to_secret);
       const auto *message_rich_text = static_cast<const MessageRichText *>(content);
-      return make_unique<MessageRichText>(message_rich_text->rich_message.clone(td, dialog_id, type));
+      return make_unique<MessageRichText>(message_rich_text->rich_message.clone(td, dialog_id, type, is_via_bot));
     }
     case MessageContentType::Sticker: {
       auto result = make_unique<MessageSticker>(*static_cast<const MessageSticker *>(content));
@@ -12286,7 +12287,8 @@ unique_ptr<MessageContent> get_uploaded_message_content(
         return std::move(content);
       }
       case MessageContentType::Poll: {
-        auto m = dup_message_content(td, DialogId(), old_content, MessageContentDupType::Forward, MessageCopyOptions());
+        auto m =
+            dup_message_content(td, DialogId(), old_content, MessageContentDupType::Send, false, MessageCopyOptions());
         CHECK(m->get_type() == MessageContentType::Poll);
         auto poll = static_cast<MessagePoll *>(m.get());
         auto new_content = get_message_content(td, FormattedText(), nullptr, std::move(media_ptr), owner_dialog_id,
@@ -12304,7 +12306,8 @@ unique_ptr<MessageContent> get_uploaded_message_content(
         return m;
       }
       case MessageContentType::RichText: {
-        auto m = dup_message_content(td, DialogId(), old_content, MessageContentDupType::Copy, MessageCopyOptions());
+        auto m =
+            dup_message_content(td, DialogId(), old_content, MessageContentDupType::Send, false, MessageCopyOptions());
         CHECK(m->get_type() == MessageContentType::RichText);
         auto *rich_text = static_cast<MessageRichText *>(m.get());
         auto new_content = get_message_content(td, FormattedText(), nullptr, std::move(media_ptr), owner_dialog_id,

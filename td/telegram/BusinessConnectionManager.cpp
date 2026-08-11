@@ -1225,7 +1225,7 @@ unique_ptr<BusinessConnectionManager::PendingMessage> BusinessConnectionManager:
     bool disable_notification, bool protect_content, MessageEffectId effect_id, unique_ptr<ReplyMarkup> &&reply_markup,
     InputMessageContent &&input_content, bool is_in_album) const {
   auto content = dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), input_content.content.get(),
-                                     MessageContentDupType::Send, MessageCopyOptions());
+                                     MessageContentDupType::Send, false, MessageCopyOptions());
   auto message = make_unique<PendingMessage>();
   message->business_connection_id_ = business_connection_id;
   message->dialog_id_ = dialog_id;

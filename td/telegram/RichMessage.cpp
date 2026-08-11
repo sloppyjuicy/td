@@ -323,12 +323,13 @@ td_api::object_ptr<td_api::richMessage> RichMessage::get_rich_message_object(Td 
       get_page_blocks_object(blocks_, td, string(), string(), skip_bot_commands), is_rtl_, is_full_);
 }
 
-RichMessage RichMessage::clone(Td *td, DialogId dialog_id, const MessageContentDupType &type) const {
+RichMessage RichMessage::clone(Td *td, DialogId dialog_id, const MessageContentDupType &type, bool is_via_bot) const {
   RichMessage result;
   CloneWebPageBlockContext context;
   context.td_ = td;
   context.dialog_id_ = dialog_id;
   context.dup_type_ = type;
+  context.is_via_bot_ = is_via_bot;
   result.blocks_ = clone_web_page_blocks(blocks_, context);
   result.is_rtl_ = is_rtl_;
   result.is_full_ = is_full_;
@@ -336,8 +337,8 @@ RichMessage RichMessage::clone(Td *td, DialogId dialog_id, const MessageContentD
   result.input_type_ = input_type_;
   if (!media_.empty()) {
     if (td != nullptr) {
-      result.media_ =
-          transform(media_, [&](const RichMessageMedia &media) { return media.clone(td, dialog_id, type); });
+      result.media_ = transform(
+          media_, [&](const RichMessageMedia &media) { return media.clone(td, dialog_id, type, is_via_bot); });
     } else {
       LOG(ERROR) << "Have no Td to clone RichMessage media";
       result.media_ = get_page_blocks_rich_message_media(result.blocks_);

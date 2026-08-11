@@ -266,7 +266,7 @@ unique_ptr<DraftMessage> DraftMessage::clone(Td *td, const unique_ptr<DraftMessa
   result->input_message_text_ = draft_message->input_message_text_;
   if (draft_message->rich_message_content_ != nullptr) {
     result->rich_message_content_ = dup_message_content(td, dialog_id, draft_message->rich_message_content_.get(),
-                                                        MessageContentDupType::Forward, MessageCopyOptions());
+                                                        MessageContentDupType::Send, false, MessageCopyOptions());
   }
   if (draft_message->local_content_ != nullptr) {
     switch (draft_message->local_content_->get_type()) {

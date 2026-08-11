@@ -1961,7 +1961,7 @@ Result<td_api::object_ptr<td_api::quickReplyMessage>> QuickReplyManager::send_me
   reply_to_message_id = get_input_reply_to_message_id(s, reply_to_message_id);
 
   auto content = dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), message_content.content.get(),
-                                     MessageContentDupType::Send, MessageCopyOptions());
+                                     MessageContentDupType::Send, false, MessageCopyOptions());
   auto *m = add_local_message(s, reply_to_message_id, std::move(content), message_content.invert_media,
                               message_content.via_bot_user_id, false, message_content.disable_web_page_preview,
                               std::move(message_content.emoji));
@@ -1994,13 +1994,14 @@ Result<td_api::object_ptr<td_api::quickReplyMessage>> QuickReplyManager::send_in
   if (!hide_via_bot) {
     via_bot_user_id = td_->inline_queries_manager_->get_inline_bot_user_id(query_id);
   }
+  bool is_via_bot = via_bot_user_id.is_valid();
   auto content =
       dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), message_content->message_content.get(),
-                          MessageContentDupType::SendViaBot, MessageCopyOptions());
+                          MessageContentDupType::SendViaBot, is_via_bot, MessageCopyOptions());
   auto *m = add_local_message(s, reply_to_message_id, std::move(content), message_content->invert_media,
                               via_bot_user_id, hide_via_bot, message_content->disable_web_page_preview, string());
   m->reply_markup = dup_reply_markup(message_content->message_reply_markup, td_->dialog_manager_->get_my_dialog_id(),
-                                     MessageContentDupType::SendViaBot, via_bot_user_id.is_valid());
+                                     MessageContentDupType::SendViaBot, is_via_bot);
   m->inline_query_id = query_id;
   m->inline_result_id = result_id;
 
@@ -2038,7 +2039,7 @@ Result<td_api::object_ptr<td_api::quickReplyMessages>> QuickReplyManager::send_m
   vector<td_api::object_ptr<td_api::quickReplyMessage>> messages;
   for (auto &message_content : message_contents) {
     auto content = dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), message_content.content.get(),
-                                       MessageContentDupType::Send, MessageCopyOptions());
+                                       MessageContentDupType::Send, false, MessageCopyOptions());
     auto *m = add_local_message(s, reply_to_message_id, std::move(content), message_content.invert_media,
                                 message_content.via_bot_user_id, false, message_content.disable_web_page_preview,
                                 std::move(message_content.emoji));
@@ -2293,7 +2294,7 @@ Result<td_api::object_ptr<td_api::quickReplyMessages>> QuickReplyManager::resend
     unique_ptr<MessageContent> content =
         dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), m->content.get(),
                             m->inline_query_id != 0 ? MessageContentDupType::SendViaBot : MessageContentDupType::Send,
-                            MessageCopyOptions());
+                            m->via_bot_user_id.is_valid(), MessageCopyOptions());
     if (content == nullptr) {
       LOG(INFO) << "Can't resend " << m->message_id;
       continue;
@@ -2415,8 +2416,9 @@ void QuickReplyManager::edit_quick_reply_message(
   }
 
   auto old_file_ids = get_message_file_ids(m);
-  m->edited_content = dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), message_content.content.get(),
-                                          MessageContentDupType::Send, MessageCopyOptions());
+  m->edited_content =
+      dup_message_content(td_, td_->dialog_manager_->get_my_dialog_id(), message_content.content.get(),
+                          MessageContentDupType::Send, m->via_bot_user_id.is_valid(), MessageCopyOptions());
   CHECK(m->edited_content != nullptr);
   m->edited_invert_media = message_content.invert_media;
   m->edited_disable_web_page_preview = message_content.disable_web_page_preview;
@@ -2766,8 +2768,8 @@ Result<vector<QuickReplyManager::QuickReplyMessageContent>> QuickReplyManager::g
     if (!message->message_id.is_server()) {
       continue;
     }
-    auto content = dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::ServerCopy,
-                                       MessageCopyOptions(true, false));
+    auto content = dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::Send,
+                                       message->via_bot_user_id.is_valid(), MessageCopyOptions(true, false));
 
     auto can_send_status = can_send_message_content(dialog_id, content.get(), false, true, td_);
     if (can_send_status.is_error()) {

@@ -306,7 +306,8 @@ unique_ptr<MessageContent> get_uploaded_message_content(
     bool &is_content_changed, bool &need_update, const char *source);
 
 unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const MessageContent *content,
-                                               MessageContentDupType type, MessageCopyOptions &&copy_options);
+                                               MessageContentDupType type, bool is_via_bot,
+                                               MessageCopyOptions &&copy_options);
 
 unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<telegram_api::MessageAction> &&action_ptr,
                                                       DialogId owner_dialog_id, int32 message_date,

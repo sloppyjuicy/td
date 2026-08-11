@@ -270,7 +270,7 @@ DialogAction DialogAction::clone() const {
   action.emoji_ = emoji_;
   action.random_id_ = random_id_;
   action.text_ = text_;
-  action.message_ = message_.clone(nullptr, DialogId(), MessageContentDupType::ServerCopy);
+  action.message_ = message_.clone(nullptr, DialogId(), MessageContentDupType::Send, false);
   return action;
 }
 
