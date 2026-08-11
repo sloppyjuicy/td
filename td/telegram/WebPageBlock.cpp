@@ -474,12 +474,12 @@ class RichText {
     }
   }
 
-  RichText clone(DialogId dialog_id, const MessageContentDupType &dup_type) const {
+  RichText clone(CloneWebPageBlockContext &context) const {
     RichText result;
     result.type = type;
     result.content = content;
     for (auto &text : texts) {
-      result.texts.push_back(text.clone(dialog_id, dup_type));
+      result.texts.push_back(text.clone(context));
     }
     result.document_file_id = document_file_id;
     result.custom_emoji_id = custom_emoji_id;
@@ -831,10 +831,10 @@ class WebPageBlockCaption {
     return text.get_index_mask() | credit.get_index_mask();
   }
 
-  WebPageBlockCaption clone(DialogId dialog_id, const MessageContentDupType &dup_type) const {
+  WebPageBlockCaption clone(CloneWebPageBlockContext &context) const {
     WebPageBlockCaption result;
-    result.text = text.clone(dialog_id, dup_type);
-    result.credit = credit.clone(dialog_id, dup_type);
+    result.text = text.clone(context);
+    result.credit = credit.clone(context);
     return result;
   }
 
@@ -888,7 +888,7 @@ class WebPageBlockTableCell {
   int32 colspan = 1;
   int32 rowspan = 1;
 
-  WebPageBlockTableCell clone(DialogId dialog_id, const MessageContentDupType &dup_type) const {
+  WebPageBlockTableCell clone(CloneWebPageBlockContext &context) const {
     WebPageBlockTableCell result;
     result.is_header = is_header;
     result.align_left = align_left;
@@ -1213,7 +1213,7 @@ class WebPageBlockUnsupported final : public WebPageBlock {
     return 0;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockUnsupported>();
   }
 
@@ -1279,8 +1279,8 @@ class WebPageBlockTitle final : public WebPageBlock {
     return title.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockTitle>(title.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockTitle>(title.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1337,8 +1337,8 @@ class WebPageBlockSubtitle final : public WebPageBlock {
     return subtitle.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockSubtitle>(subtitle.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockSubtitle>(subtitle.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1396,8 +1396,8 @@ class WebPageBlockAuthorDate final : public WebPageBlock {
     return author.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockAuthorDate>(author.clone(dialog_id, dup_type), date);
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockAuthorDate>(author.clone(context), date);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1456,8 +1456,8 @@ class WebPageBlockHeader final : public WebPageBlock {
     return header.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockHeader>(header.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockHeader>(header.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1514,8 +1514,8 @@ class WebPageBlockSubheader final : public WebPageBlock {
     return subheader.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockSubheader>(subheader.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockSubheader>(subheader.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1573,8 +1573,8 @@ class WebPageBlockHeading final : public WebPageBlock {
     return text.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockHeading>(text.clone(dialog_id, dup_type), size);
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockHeading>(text.clone(context), size);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1654,8 +1654,8 @@ class WebPageBlockKicker final : public WebPageBlock {
     return kicker.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockKicker>(kicker.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockKicker>(kicker.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1712,8 +1712,8 @@ class WebPageBlockParagraph final : public WebPageBlock {
     return text.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockParagraph>(text.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockParagraph>(text.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1770,8 +1770,8 @@ class WebPageBlockPreformatted final : public WebPageBlock {
     return text.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockPreformatted>(text.clone(dialog_id, dup_type), string(language));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockPreformatted>(text.clone(context), string(language));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1829,8 +1829,8 @@ class WebPageBlockFooter final : public WebPageBlock {
     return footer.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockFooter>(footer.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockFooter>(footer.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1886,8 +1886,8 @@ class WebPageBlockThinking final : public WebPageBlock {
     return text.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockThinking>(text.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockThinking>(text.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -1938,7 +1938,7 @@ class WebPageBlockDivider final : public WebPageBlock {
     return 0;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockDivider>();
   }
 
@@ -1988,7 +1988,7 @@ class WebPageBlockMath final : public WebPageBlock {
     return 0;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockMath>(string(source));
   }
 
@@ -2046,7 +2046,7 @@ class WebPageBlockAnchor final : public WebPageBlock {
     return 0;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockAnchor>(string(name));
   }
 
@@ -2232,10 +2232,10 @@ class WebPageBlockList final : public WebPageBlock {
       return get_web_page_blocks_index_mask(page_blocks);
     }
 
-    Item clone(DialogId dialog_id, const MessageContentDupType &dup_type) const {
+    Item clone(CloneContext &context) const {
       Item result;
       result.label = label;
-      result.page_blocks = clone_web_page_blocks(page_blocks, dialog_id, dup_type);
+      result.page_blocks = clone_web_page_blocks(page_blocks, context);
       result.has_checkbox = has_checkbox;
       result.is_checked = is_checked;
       result.value = value;
@@ -2387,8 +2387,8 @@ class WebPageBlockList final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    auto new_items = transform(items, [&](const Item &item) { return item.clone(dialog_id, dup_type); });
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    auto new_items = transform(items, [&](const Item &item) { return item.clone(context); });
     return td::make_unique<WebPageBlockList>(std::move(new_items), start, is_reversed, type);
   }
 
@@ -2516,9 +2516,9 @@ class WebPageBlockButtonRow final : public WebPageBlock {
       return text.get_index_mask();
     }
 
-    Button clone(DialogId dialog_id, const MessageContentDupType &dup_type) const {
+    Button clone(CloneContext &context) const {
       Button result;
-      result.text = text.clone(dialog_id, dup_type);
+      result.text = text.clone(context);
       result.style = style;
       result.button = button;
       return result;
@@ -2616,8 +2616,8 @@ class WebPageBlockButtonRow final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    auto new_buttons = transform(buttons, [&](const Button &button) { return button.clone(dialog_id, dup_type); });
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    auto new_buttons = transform(buttons, [&](const Button &button) { return button.clone(context); });
     return td::make_unique<WebPageBlockButtonRow>(std::move(new_buttons), align_left, align_center, align_right);
   }
 
@@ -2705,8 +2705,8 @@ class WebPageBlockBlockQuote final : public WebPageBlock {
     return text.get_index_mask() | credit.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockBlockQuote>(text.clone(dialog_id, dup_type), credit.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockBlockQuote>(text.clone(context), credit.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -2773,9 +2773,8 @@ class WebPageBlockExpandableBlockQuote final : public WebPageBlock {
     return text.get_index_mask() | credit.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockExpandableBlockQuote>(text.clone(dialog_id, dup_type),
-                                                             credit.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockExpandableBlockQuote>(text.clone(context), credit.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -2843,8 +2842,8 @@ class WebPageBlockPullQuote final : public WebPageBlock {
     return text.get_index_mask() | credit.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockPullQuote>(text.clone(dialog_id, dup_type), credit.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockPullQuote>(text.clone(context), credit.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -2926,8 +2925,8 @@ class WebPageBlockAnimation final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockAnimation>(animation_file_id, caption.clone(dialog_id, dup_type), need_autoplay,
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockAnimation>(animation_file_id, caption.clone(context), need_autoplay,
                                                   has_spoiler);
   }
 
@@ -3051,9 +3050,9 @@ class WebPageBlockPhoto final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockPhoto>(Photo(photo), caption.clone(dialog_id, dup_type), string(url),
-                                              web_page_id, has_spoiler);
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockPhoto>(Photo(photo), caption.clone(context), string(url), web_page_id,
+                                              has_spoiler);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3166,9 +3165,9 @@ class WebPageBlockVideo final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockVideo>(video_file_id, caption.clone(dialog_id, dup_type), need_autoplay,
-                                              is_looped, has_spoiler);
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockVideo>(video_file_id, caption.clone(context), need_autoplay, is_looped,
+                                              has_spoiler);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3280,8 +3279,8 @@ class WebPageBlockCover final : public WebPageBlock {
     return cover->get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockCover>(cover->clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockCover>(cover->clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3357,9 +3356,9 @@ class WebPageBlockEmbedded final : public WebPageBlock {
     return caption.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockEmbedded>(string(url), string(html), Photo(poster_photo), dimensions,
-                                                 caption.clone(dialog_id, dup_type), is_full_width, allow_scrolling);
+                                                 caption.clone(context), is_full_width, allow_scrolling);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3464,10 +3463,10 @@ class WebPageBlockEmbeddedPost final : public WebPageBlock {
     return caption.get_index_mask() | get_web_page_blocks_index_mask(page_blocks);
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockEmbeddedPost>(string(url), string(author), Photo(author_photo), date,
-                                                     clone_web_page_blocks(page_blocks, dialog_id, dup_type),
-                                                     caption.clone(dialog_id, dup_type));
+                                                     clone_web_page_blocks(page_blocks, context),
+                                                     caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3572,9 +3571,8 @@ class WebPageBlockCollage final : public WebPageBlock {
     return get_web_page_blocks_index_mask(page_blocks) | caption.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockCollage>(clone_web_page_blocks(page_blocks, dialog_id, dup_type),
-                                                caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockCollage>(clone_web_page_blocks(page_blocks, context), caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3669,9 +3667,8 @@ class WebPageBlockSlideshow final : public WebPageBlock {
     return get_web_page_blocks_index_mask(page_blocks) | caption.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockSlideshow>(clone_web_page_blocks(page_blocks, dialog_id, dup_type),
-                                                  caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockSlideshow>(clone_web_page_blocks(page_blocks, context), caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -3739,7 +3736,7 @@ class WebPageBlockChatLink final : public WebPageBlock {
     return 0;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     return td::make_unique<WebPageBlockChatLink>(string(title), photo, string(username), accent_color_id, channel_id);
   }
 
@@ -3877,8 +3874,8 @@ class WebPageBlockAudio final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockAudio>(audio_file_id, caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockAudio>(audio_file_id, caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4010,17 +4007,17 @@ class WebPageBlockTable final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
     vector<vector<WebPageBlockTableCell>> new_cells;
     for (auto &row : cells) {
       vector<WebPageBlockTableCell> new_row;
       for (auto &cell : row) {
-        new_row.push_back(cell.clone(dialog_id, dup_type));
+        new_row.push_back(cell.clone(context));
       }
       new_cells.push_back(std::move(new_row));
     }
-    return td::make_unique<WebPageBlockTable>(title.clone(dialog_id, dup_type), std::move(new_cells), is_bordered,
-                                              is_striped, is_compact);
+    return td::make_unique<WebPageBlockTable>(title.clone(context), std::move(new_cells), is_bordered, is_striped,
+                                              is_compact);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4136,9 +4133,9 @@ class WebPageBlockDetails final : public WebPageBlock {
     return header.get_index_mask() | get_web_page_blocks_index_mask(page_blocks);
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockDetails>(header.clone(dialog_id, dup_type),
-                                                clone_web_page_blocks(page_blocks, dialog_id, dup_type), is_open);
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockDetails>(header.clone(context), clone_web_page_blocks(page_blocks, context),
+                                                is_open);
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4239,9 +4236,9 @@ class WebPageBlockBlockQuoteBlocks final : public WebPageBlock {
     return get_web_page_blocks_index_mask(page_blocks) | caption.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockBlockQuoteBlocks>(clone_web_page_blocks(page_blocks, dialog_id, dup_type),
-                                                         caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockBlockQuoteBlocks>(clone_web_page_blocks(page_blocks, context),
+                                                         caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4316,8 +4313,8 @@ class WebPageBlockRelatedArticles final : public WebPageBlock {
     return header.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockRelatedArticles>(header.clone(dialog_id, dup_type),
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockRelatedArticles>(header.clone(context),
                                                         vector<RelatedArticle>(related_articles));
   }
 
@@ -4385,8 +4382,8 @@ class WebPageBlockMap final : public WebPageBlock {
     return caption.get_index_mask();
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockMap>(location, zoom, dimensions, caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockMap>(location, zoom, dimensions, caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4470,8 +4467,8 @@ class WebPageBlockVoiceNote final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockVoiceNote>(voice_note_file_id, caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockVoiceNote>(voice_note_file_id, caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -4577,8 +4574,8 @@ class WebPageBlockDocument final : public WebPageBlock {
     return index_mask;
   }
 
-  unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const final {
-    return td::make_unique<WebPageBlockDocument>(document_file_id, caption.clone(dialog_id, dup_type));
+  unique_ptr<WebPageBlock> clone(CloneContext &context) const final {
+    return td::make_unique<WebPageBlockDocument>(document_file_id, caption.clone(context));
   }
 
   telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const final {
@@ -5805,9 +5802,8 @@ int32 get_web_page_blocks_index_mask(const vector<unique_ptr<WebPageBlock>> &pag
 }
 
 vector<unique_ptr<WebPageBlock>> clone_web_page_blocks(const vector<unique_ptr<WebPageBlock>> &page_blocks,
-                                                       DialogId dialog_id, const MessageContentDupType &dup_type) {
-  return transform(page_blocks,
-                   [&](const unique_ptr<WebPageBlock> &page_block) { return page_block->clone(dialog_id, dup_type); });
+                                                       CloneWebPageBlockContext &context) {
+  return transform(page_blocks, [&](const unique_ptr<WebPageBlock> &page_block) { return page_block->clone(context); });
 }
 
 vector<telegram_api::object_ptr<telegram_api::PageBlock>> get_input_page_blocks(

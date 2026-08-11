@@ -325,7 +325,11 @@ td_api::object_ptr<td_api::richMessage> RichMessage::get_rich_message_object(Td 
 
 RichMessage RichMessage::clone(Td *td, DialogId dialog_id, const MessageContentDupType &type) const {
   RichMessage result;
-  result.blocks_ = clone_web_page_blocks(blocks_, dialog_id, type);
+  CloneWebPageBlockContext context;
+  context.td_ = td;
+  context.dialog_id_ = dialog_id;
+  context.dup_type_ = type;
+  result.blocks_ = clone_web_page_blocks(blocks_, context);
   result.is_rtl_ = is_rtl_;
   result.is_full_ = is_full_;
   result.noautolink_ = noautolink_;

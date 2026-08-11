@@ -40,6 +40,13 @@ struct GetInputPageBlockContext {
   size_t media_pos_ = 0;
 };
 
+struct CloneWebPageBlockContext {
+  Td *td_ = nullptr;
+  DialogId dialog_id_;
+  MessageContentDupType dup_type_ = MessageContentDupType::Send;
+  bool is_via_bot_ = false;
+};
+
 class WebPageBlock {
  protected:
   enum class Type : int32 {
@@ -106,6 +113,8 @@ class WebPageBlock {
 
   using InputContext = GetInputPageBlockContext;
 
+  using CloneContext = CloneWebPageBlockContext;
+
  public:
   WebPageBlock() = default;
   WebPageBlock(const WebPageBlock &) = delete;
@@ -144,7 +153,7 @@ class WebPageBlock {
 
   virtual int32 get_index_mask() const = 0;
 
-  virtual unique_ptr<WebPageBlock> clone(DialogId dialog_id, const MessageContentDupType &dup_type) const = 0;
+  virtual unique_ptr<WebPageBlock> clone(CloneContext &context) const = 0;
 
   virtual telegram_api::object_ptr<telegram_api::PageBlock> get_input_page_block(InputContext &context) const = 0;
 
@@ -177,7 +186,7 @@ Result<vector<unique_ptr<WebPageBlock>>> get_web_page_blocks(
 int32 get_web_page_blocks_index_mask(const vector<unique_ptr<WebPageBlock>> &page_blocks);
 
 vector<unique_ptr<WebPageBlock>> clone_web_page_blocks(const vector<unique_ptr<WebPageBlock>> &page_blocks,
-                                                       DialogId dialog_id, const MessageContentDupType &dup_type);
+                                                       CloneWebPageBlockContext &context);
 
 vector<telegram_api::object_ptr<telegram_api::PageBlock>> get_input_page_blocks(
     const vector<unique_ptr<WebPageBlock>> &page_blocks, GetInputPageBlockContext &context);
