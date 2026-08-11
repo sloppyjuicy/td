@@ -488,7 +488,8 @@ class RichText {
     result.user_id = user_id;
     result.button_style = button_style;
     if (button != nullptr) {
-      result.button = make_unique<InlineKeyboardButton>(*button);
+      result.button = make_unique<InlineKeyboardButton>(
+          button->clone(context.dialog_id_, context.dup_type_, context.is_via_bot_, true));
     }
     return result;
   }
@@ -2520,7 +2521,7 @@ class WebPageBlockButtonRow final : public WebPageBlock {
       Button result;
       result.text = text.clone(context);
       result.style = style;
-      result.button = button;
+      result.button = button.clone(context.dialog_id_, context.dup_type_, context.is_via_bot_, true);
       return result;
     }
 

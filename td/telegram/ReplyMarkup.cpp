@@ -24,6 +24,18 @@
 
 namespace td {
 
+InlineKeyboardButton InlineKeyboardButton::copy() const {
+  InlineKeyboardButton result;
+  result.type = type;
+  result.id = id;
+  result.user_id = user_id;
+  result.style = style;
+  result.text = text;
+  result.forward_text = forward_text;
+  result.data = data;
+  return result;
+}
+
 void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
   dependencies.add(user_id);
 }
@@ -36,7 +48,7 @@ InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const Messa
   }
   if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot) {
     // any button can be sent
-    return *this;
+    return copy();
   }
   bool is_forward = dup_type == MessageContentDupType::Forward;
   if (!is_forward && !is_rich_message) {
@@ -44,10 +56,10 @@ InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const Messa
     return InlineKeyboardButton();
   }
   if (type == Type::Url || type == Type::User || type == Type::Copy) {
-    return *this;
+    return copy();
   }
   if (type == Type::UrlAuth) {
-    auto result = *this;
+    auto result = copy();
     if (is_forward) {
       if (!result.forward_text.empty()) {
         result.text = std::move(result.forward_text);
@@ -62,7 +74,7 @@ InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const Messa
     return result;
   }
   if (is_forward && is_via_bot && (type == Type::SwitchInline || type == Type::SwitchInlineCurrentDialog)) {
-    auto result = *this;
+    auto result = copy();
     result.type = Type::SwitchInline;
     return result;
   }

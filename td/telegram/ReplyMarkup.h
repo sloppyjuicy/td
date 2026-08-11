@@ -50,6 +50,15 @@ struct InlineKeyboardButton {
   string forward_text;  // UrlAuth only
   string data;
 
+  InlineKeyboardButton copy() const;
+
+  InlineKeyboardButton() = default;
+  InlineKeyboardButton(const InlineKeyboardButton &) = delete;
+  InlineKeyboardButton &operator=(const InlineKeyboardButton &) = delete;
+  InlineKeyboardButton(InlineKeyboardButton &&) = default;
+  InlineKeyboardButton &operator=(InlineKeyboardButton &&) = default;
+  ~InlineKeyboardButton() = default;
+
   void add_dependencies(Dependencies &dependencies) const;
 
   InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot,
