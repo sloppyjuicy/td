@@ -1858,8 +1858,8 @@ class MessagesManager final : public Actor {
 
   void send_forward_message_query(int32 flags, DialogId to_dialog_id, MessageTopic messages_topic,
                                   const MessageInputReplyTo input_reply_to, DialogId from_dialog_id,
-                                  telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer,
-                                  vector<MessageId> message_ids, vector<int64> random_ids, int32 schedule_date,
+                                  telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, vector<int32> ids,
+                                  MessageId single_message_id, vector<int64> random_ids, int32 schedule_date,
                                   int32 schedule_repeat_period, MessageEffectId effect_id,
                                   int32 new_video_start_timestamp, int64 paid_message_star_count,
                                   unique_ptr<SuggestedPost> &&suggested_post, Promise<Unit> &&promise);

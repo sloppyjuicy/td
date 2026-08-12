@@ -1961,15 +1961,14 @@ class ForwardMessagesQuery final : public Td::ResultHandler {
 
   void send(int32 flags, DialogId to_dialog_id, const MessageTopic &message_topic,
             const MessageInputReplyTo &message_input_reply_to, DialogId from_dialog_id,
-            telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, const vector<MessageId> &message_ids,
-            vector<int64> &&random_ids, int32 schedule_date, int32 schedule_repeat_period, MessageEffectId effect_id,
-            int32 new_video_start_timestamp, int64 paid_message_star_count, const SuggestedPost *suggested_post) {
+            telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, vector<int32> &&ids,
+            MessageId single_message_id, vector<int64> &&random_ids, int32 schedule_date, int32 schedule_repeat_period,
+            MessageEffectId effect_id, int32 new_video_start_timestamp, int64 paid_message_star_count,
+            const SuggestedPost *suggested_post) {
     random_ids_ = random_ids;
     from_dialog_id_ = from_dialog_id;
     to_dialog_id_ = to_dialog_id;
-    if (message_ids.size() == 1) {
-      message_id_ = message_ids[0];
-    }
+    message_id_ = single_message_id;
 
     auto to_input_peer = td_->dialog_manager_->get_input_peer(to_dialog_id, AccessRights::Write);
     if (to_input_peer == nullptr) {
@@ -2004,10 +2003,10 @@ class ForwardMessagesQuery final : public Td::ResultHandler {
 
     auto query = G()->net_query_creator().create(
         telegram_api::messages_forwardMessages(
-            flags, false, false, false, false, false, false, false, false, std::move(from_input_peer),
-            MessageId::get_server_message_ids(message_ids), std::move(random_ids), std::move(to_input_peer), top_msg_id,
-            std::move(input_reply_to), schedule_date, schedule_repeat_period, std::move(as_input_peer), nullptr,
-            effect_id.get(), new_video_start_timestamp, paid_message_star_count, std::move(post)),
+            flags, false, false, false, false, false, false, false, false, std::move(from_input_peer), std::move(ids),
+            std::move(random_ids), std::move(to_input_peer), top_msg_id, std::move(input_reply_to), schedule_date,
+            schedule_repeat_period, std::move(as_input_peer), nullptr, effect_id.get(), new_video_start_timestamp,
+            paid_message_star_count, std::move(post)),
         {{to_dialog_id, MessageContentType::Text}, {to_dialog_id, MessageContentType::Photo}});
     if (td_->option_manager_->get_option_boolean("use_quick_ack")) {
       query->quick_ack_promise_ = PromiseCreator::lambda([random_ids = random_ids_](Result<Unit> result) {
@@ -24284,12 +24283,14 @@ void MessagesManager::do_forward_messages(DialogId to_dialog_id, DialogId from_d
     flags |= SEND_MESSAGE_FLAG_EFFECT;
   }
 
+  auto single_message_id = message_ids.size() == 1 ? message_ids[0] : MessageId();
   vector<int64> random_ids =
       transform(messages, [this, to_dialog_id](const Message *m) { return begin_send_message(to_dialog_id, m); });
   send_closure_later(actor_id(this), &MessagesManager::send_forward_message_query, flags, to_dialog_id,
                      get_send_message_topic(to_dialog_id, messages[0]), messages[0]->input_reply_to.clone(),
-                     from_dialog_id, std::move(as_input_peer), message_ids, std::move(random_ids), schedule_date,
-                     schedule_repeat_period, messages[0]->effect_id, messages[0]->new_video_start_timestamp,
+                     from_dialog_id, std::move(as_input_peer), MessageId::get_server_message_ids(message_ids),
+                     single_message_id, std::move(random_ids), schedule_date, schedule_repeat_period,
+                     messages[0]->effect_id, messages[0]->new_video_start_timestamp,
                      messages[0]->paid_message_star_count * static_cast<int32>(messages.size()),
                      SuggestedPost::clone(messages[0]->suggested_post), get_erase_log_event_promise(log_event_id));
 }
@@ -24297,15 +24298,15 @@ void MessagesManager::do_forward_messages(DialogId to_dialog_id, DialogId from_d
 void MessagesManager::send_forward_message_query(int32 flags, DialogId to_dialog_id, MessageTopic message_topic,
                                                  const MessageInputReplyTo input_reply_to, DialogId from_dialog_id,
                                                  telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer,
-                                                 vector<MessageId> message_ids, vector<int64> random_ids,
-                                                 int32 schedule_date, int32 schedule_repeat_period,
-                                                 MessageEffectId effect_id, int32 new_video_start_timestamp,
-                                                 int64 paid_message_star_count,
+                                                 vector<int32> ids, MessageId single_message_id,
+                                                 vector<int64> random_ids, int32 schedule_date,
+                                                 int32 schedule_repeat_period, MessageEffectId effect_id,
+                                                 int32 new_video_start_timestamp, int64 paid_message_star_count,
                                                  unique_ptr<SuggestedPost> &&suggested_post, Promise<Unit> &&promise) {
   td_->create_handler<ForwardMessagesQuery>(std::move(promise))
-      ->send(flags, to_dialog_id, message_topic, input_reply_to, from_dialog_id, std::move(as_input_peer), message_ids,
-             std::move(random_ids), schedule_date, schedule_repeat_period, effect_id, new_video_start_timestamp,
-             paid_message_star_count, suggested_post.get());
+      ->send(flags, to_dialog_id, message_topic, input_reply_to, from_dialog_id, std::move(as_input_peer),
+             std::move(ids), single_message_id, std::move(random_ids), schedule_date, schedule_repeat_period, effect_id,
+             new_video_start_timestamp, paid_message_star_count, suggested_post.get());
 }
 
 Result<td_api::object_ptr<td_api::message>> MessagesManager::forward_message(
