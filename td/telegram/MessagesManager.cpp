@@ -11471,7 +11471,7 @@ MessagesManager::MessageInfo MessagesManager::parse_ephemeral_message(
   message_info.is_channel_post = td->dialog_manager_->is_broadcast_channel(dialog_id);
   message_info.ttl_period = 7 * 86400;
   message_info.chat_instance = message->chat_instance_;
-  // message_info.noforwards = message->noforwards_;
+  message_info.noforwards = message->noforwards_;
   message_info.invert_media = message->invert_media_;
   if (message->top_msg_id_ > 0) {
     auto top_thread_message_id = MessageId(ServerMessageId(message->top_msg_id_));
