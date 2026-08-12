@@ -354,7 +354,7 @@ Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
   if (dialog_id.get_type() == DialogType::User) {
     return Status::Error(400, "Chat can't have welcome messages");
   }
-  if (!td_->dialog_manager_->get_dialog_status(dialog_id).can_change_info_and_settings_as_administrator()) {
+  if (!td_->dialog_manager_->get_dialog_status(dialog_id).can_manage_welcome_messages()) {
     return Status::Error(400, "Have no enough rights");
   }
   return Status::OK();

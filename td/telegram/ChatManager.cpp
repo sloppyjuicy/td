@@ -7711,12 +7711,13 @@ void ChatManager::on_update_channel_status(Channel *c, ChannelId channel_id, Dia
   if (c->is_monoforum) {
     if (status.is_member()) {
       // monoforums have no member tags
-      status = c->is_admined_monoforum && !td_->auth_manager_->is_bot()
-                   ? DialogParticipantStatus::Administrator(
-                         AdministratorRights(true, true, false, false, false, false, false, false, false, false, false,
-                                             false, false, false, false, false, false, false, ChannelType::Megagroup),
-                         string(), false)
-                   : DialogParticipantStatus::Member(0, string());
+      status =
+          c->is_admined_monoforum && !td_->auth_manager_->is_bot()
+              ? DialogParticipantStatus::Administrator(
+                    AdministratorRights(true, true, false, false, false, false, false, false, false, false, false,
+                                        false, false, false, false, false, false, false, false, ChannelType::Megagroup),
+                    string(), false)
+              : DialogParticipantStatus::Member(0, string());
     } else {
       status = DialogParticipantStatus::Left();
     }

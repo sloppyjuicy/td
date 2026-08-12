@@ -1087,8 +1087,9 @@ chatPermissions can_send_basic_messages:Bool can_send_audios:Bool can_send_docum
 //@can_delete_stories True, if the administrator can delete stories posted by other users; applicable to supergroups and channels only
 //@can_manage_direct_messages True, if the administrator can answer to channel direct messages; applicable to channels only
 //@can_manage_tags True, if the administrator can change tags of other users; applicable to basic groups and supergroups only
+//@can_send_welcome_messages True, if the administrator can manage and send welcome messages
 //@is_anonymous True, if the administrator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only
-chatAdministratorRights can_manage_chat:Bool can_change_info:Bool can_post_messages:Bool can_edit_messages:Bool can_delete_messages:Bool can_invite_users:Bool can_restrict_members:Bool can_pin_messages:Bool can_manage_topics:Bool can_promote_members:Bool can_manage_video_chats:Bool can_post_stories:Bool can_edit_stories:Bool can_delete_stories:Bool can_manage_direct_messages:Bool can_manage_tags:Bool is_anonymous:Bool = ChatAdministratorRights;
+chatAdministratorRights can_manage_chat:Bool can_change_info:Bool can_post_messages:Bool can_edit_messages:Bool can_delete_messages:Bool can_invite_users:Bool can_restrict_members:Bool can_pin_messages:Bool can_manage_topics:Bool can_promote_members:Bool can_manage_video_chats:Bool can_post_stories:Bool can_edit_stories:Bool can_delete_stories:Bool can_manage_direct_messages:Bool can_manage_tags:Bool can_send_welcome_messages:Bool is_anonymous:Bool = ChatAdministratorRights;
 
 
 //@description Contains parameters of the application theme
@@ -12597,30 +12598,30 @@ readdQuickReplyShortcutMessages shortcut_name:string message_ids:vector<int53> =
 editQuickReplyMessage shortcut_id:int32 message_id:int53 input_message_content:InputMessageContent = Ok;
 
 
-//@description Loads welcome messages of a chat; requires can_change_info administrator right in the chat. The loaded messages will be sent through updateChatWelcomeMessages
+//@description Loads welcome messages of a chat; requires can_send_welcome_messages administrator right in the chat. The loaded messages will be sent through updateChatWelcomeMessages
 //@chat_id The identifier of the chat
 loadChatWelcomeMessages chat_id:int53 = Ok;
 
-//@description Adds a message to the list of welcome messages of a chat; requires can_change_info administrator right in the chat
+//@description Adds a message to the list of welcome messages of a chat; requires can_send_welcome_messages administrator right in the chat
 //@chat_id The identifier of the chat
 //@input_message_content The content of the message to be sent. Must be one of the following types: inputMessageText, inputMessageAnimation,
 //-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote,
 //-inputMessageLocation, inputMessageVenue, inputMessageContact
 addChatWelcomeMessage chat_id:int53 input_message_content:InputMessageContent = Ok;
 
-//@description Edits a welcome message of a chat; requires can_change_info administrator right in the chat
+//@description Edits a welcome message of a chat; requires can_send_welcome_messages administrator right in the chat
 //@chat_id The identifier of the chat
 //@welcome_message_id The identifier of the welcome message
 //@input_message_content New content of the message. Must be one of the following types: inputMessageText, inputMessageAnimation,
 //-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote
 editChatWelcomeMessage chat_id:int53 welcome_message_id:int32 input_message_content:InputMessageContent = Ok;
 
-//@description Deletes a welcome message of a chat; requires can_change_info administrator right in the chat
+//@description Deletes a welcome message of a chat; requires can_send_welcome_messages administrator right in the chat
 //@chat_id The identifier of the chat
 //@welcome_message_id The identifier of the welcome message
 deleteChatWelcomeMessage chat_id:int53 welcome_message_id:int32 = Ok;
 
-//@description Deletes all welcome messages of a chat; requires can_change_info administrator right in the chat @chat_id The identifier of the chat
+//@description Deletes all welcome messages of a chat; requires can_send_welcome_messages administrator right in the chat @chat_id The identifier of the chat
 deleteAllChatWelcomeMessages chat_id:int53 = Ok;
 
 

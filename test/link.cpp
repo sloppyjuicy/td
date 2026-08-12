@@ -172,7 +172,7 @@ static auto chat_administrator_rights(bool can_manage_chat, bool can_change_info
   return td::td_api::make_object<td::td_api::chatAdministratorRights>(
       can_manage_chat, can_change_info, can_post_messages, can_edit_messages, can_delete_messages, can_invite_users,
       can_restrict_members, can_pin_messages, can_manage_topics, can_promote_members, can_manage_video_chats,
-      can_post_stories, can_edit_stories, can_delete_stories, can_manage_direct_messages, can_manage_tags,
+      can_post_stories, can_edit_stories, can_delete_stories, can_manage_direct_messages, can_manage_tags, false,
       is_anonymous);
 }
 
