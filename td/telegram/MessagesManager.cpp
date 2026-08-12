@@ -25203,8 +25203,8 @@ void MessagesManager::process_suggested_post(MessageFullId message_full_id, bool
 
 Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_message(
     DialogId dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, UserId receiver_user_id,
-    int64 callback_query_id, bool anchor, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to, int32 sending_id,
-    bool only_preview, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
+    int64 callback_query_id, bool anchor, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to,
+    bool protect_content, int32 sending_id, bool only_preview, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
     td_api::object_ptr<td_api::InputMessageContent> &&input_message_content) {
   TRY_RESULT(d, check_dialog_access(dialog_id, false, AccessRights::Write, "send_ephemeral_message"));
   TRY_STATUS(td_->user_manager_->get_input_user(receiver_user_id));
@@ -25233,6 +25233,7 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::send_ephemeral_mess
                             message_content.invert_media, &need_update_dialog_pos);
   }
   m->receiver_user_id = receiver_user_id;
+  m->noforwards = protect_content;
   m->sending_id = sending_id;
   m->reply_markup = std::move(message_reply_markup);
   m->disable_web_page_preview = message_content.disable_web_page_preview;

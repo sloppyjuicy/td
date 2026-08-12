@@ -506,7 +506,7 @@ class MessagesManager final : public Actor {
   Result<td_api::object_ptr<td_api::message>> send_ephemeral_message(
       DialogId dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, UserId receiver_user_id,
       int64 callback_query_id, bool anchor, td_api::object_ptr<td_api::InputMessageReplyTo> &&reply_to,
-      int32 sending_id, bool only_preview, tl_object_ptr<td_api::ReplyMarkup> &&reply_markup,
+      bool protect_content, int32 sending_id, bool only_preview, tl_object_ptr<td_api::ReplyMarkup> &&reply_markup,
       tl_object_ptr<td_api::InputMessageContent> &&input_message_content) TD_WARN_UNUSED_RESULT;
 
   Result<MessageId> add_local_message(
