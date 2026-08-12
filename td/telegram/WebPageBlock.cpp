@@ -891,6 +891,7 @@ class WebPageBlockTableCell {
 
   WebPageBlockTableCell clone(CloneWebPageBlockContext &context) const {
     WebPageBlockTableCell result;
+    result.text = text.clone(context);
     result.is_header = is_header;
     result.align_left = align_left;
     result.align_center = align_center;
