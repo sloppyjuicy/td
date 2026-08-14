@@ -3107,6 +3107,13 @@ inputMessageReplyToEphemeralMessage ephemeral_message_id:int32 = InputMessageRep
 //@country_code A two-letter ISO 3166-1 alpha-2 country code of the country for which the fact-check is shown
 factCheck text:formattedText country_code:string = FactCheck;
 
+//@description Describes an ephemeral content of a regular message, which must be shown instead of the regular content
+//@can_be_saved True, if content of the message can be saved locally
+//@has_timestamped_media True, if media timestamp entities refers to a media in this message as opposed to a media in the replied message
+//@content Content of the message
+//@reply_markup Reply markup for the message; may be null if none
+ephemeralMessageContent can_be_saved:Bool has_timestamped_media:Bool content:MessageContent reply_markup:ReplyMarkup = EphemeralMessageContent;
+
 
 //@description Describes a message
 //@id Message identifier; unique for the chat to which the message belongs
@@ -3151,10 +3158,11 @@ factCheck text:formattedText country_code:string = FactCheck;
 //@restriction_info Information about the restrictions that must be applied to the message content; may be null if none
 //@summary_language_code IETF language tag of the message language on which it can be summarized; empty if summary isn't available for the message
 //@content Content of the message
+//@ephemeral_content Content of the message, which is visible only to the current user and must be shown instead of the regular content; may be null if none
 //@reply_markup Reply markup for the message; may be null if none
 //@ephemeral_message_id Unique identifier of the ephemeral message if the message is ephemeral; for bots only
 //@chat_instance Identifier that uniquely corresponds to the chat to which the message was sent; for bots only
-message id:int53 sender_id:MessageSender receiver_id:MessageSender chat_id:int53 sending_state:MessageSendingState scheduling_state:MessageSchedulingState is_outgoing:Bool is_pinned:Bool is_from_offline:Bool can_be_saved:Bool has_timestamped_media:Bool is_channel_post:Bool is_paid_star_suggested_post:Bool is_paid_gram_suggested_post:Bool contains_unread_mention:Bool contains_unread_poll_votes:Bool date:int32 edit_date:int32 forward_info:messageForwardInfo import_info:messageImportInfo interaction_info:messageInteractionInfo unread_reactions:vector<unreadReaction> fact_check:factCheck suggested_post_info:suggestedPostInfo reply_to:MessageReplyTo topic_id:MessageTopic self_destruct_type:MessageSelfDestructType self_destruct_in:double auto_delete_in:double via_bot_user_id:int53 guest_bot_caller_id:MessageSender sender_business_bot_user_id:int53 sender_boost_count:int32 sender_tag:string paid_message_star_count:int53 author_signature:string media_album_id:int64 effect_id:int64 restriction_info:restrictionInfo summary_language_code:string content:MessageContent reply_markup:ReplyMarkup ephemeral_message_id:int32 chat_instance:int64 = Message;
+message id:int53 sender_id:MessageSender receiver_id:MessageSender chat_id:int53 sending_state:MessageSendingState scheduling_state:MessageSchedulingState is_outgoing:Bool is_pinned:Bool is_from_offline:Bool can_be_saved:Bool has_timestamped_media:Bool is_channel_post:Bool is_paid_star_suggested_post:Bool is_paid_gram_suggested_post:Bool contains_unread_mention:Bool contains_unread_poll_votes:Bool date:int32 edit_date:int32 forward_info:messageForwardInfo import_info:messageImportInfo interaction_info:messageInteractionInfo unread_reactions:vector<unreadReaction> fact_check:factCheck suggested_post_info:suggestedPostInfo reply_to:MessageReplyTo topic_id:MessageTopic self_destruct_type:MessageSelfDestructType self_destruct_in:double auto_delete_in:double via_bot_user_id:int53 guest_bot_caller_id:MessageSender sender_business_bot_user_id:int53 sender_boost_count:int32 sender_tag:string paid_message_star_count:int53 author_signature:string media_album_id:int64 effect_id:int64 restriction_info:restrictionInfo summary_language_code:string content:MessageContent ephemeral_content:ephemeralMessageContent reply_markup:ReplyMarkup ephemeral_message_id:int32 chat_instance:int64 = Message;
 
 
 //@description Contains a list of messages @total_count Approximate total number of messages found @messages List of messages; messages may be null
@@ -10406,6 +10414,9 @@ updateMessageSendFailed message:message old_message_id:int53 error:error = Updat
 
 //@description The message content has changed @chat_id Chat identifier @message_id Message identifier @new_content New message content
 updateMessageContent chat_id:int53 message_id:int53 new_content:MessageContent = Update;
+
+//@description The message ephemeral content has changed @chat_id Chat identifier @message_id Message identifier @ephemeral_content New ephemeral content of the message; may be null if none
+updateMessageEphemeralContent chat_id:int53 message_id:int53 ephemeral_content:ephemeralMessageContent = Update;
 
 //@description A message was edited. Changes in the message content will come in a separate updateMessageContent
 //@chat_id Chat identifier

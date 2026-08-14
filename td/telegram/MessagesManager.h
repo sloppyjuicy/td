@@ -1110,6 +1110,7 @@ class MessagesManager final : public Actor {
 
     unique_ptr<MessageContent> content;
     tl_object_ptr<telegram_api::ReplyMarkup> reply_markup;
+    MessageId anchor_message_id;
   };
 
   // Do not forget to update MessagesManager::update_message and all make_unique<Message> when this class is changed
@@ -1232,6 +1233,8 @@ class MessagesManager final : public Actor {
     unique_ptr<MessageContent> content;
 
     unique_ptr<ReplyMarkup> reply_markup;
+
+    unique_ptr<Message> ephemeral_message;
 
     int32 schedule_repeat_period = 0;
 
@@ -2432,6 +2435,8 @@ class MessagesManager final : public Actor {
 
   void send_update_message_content(const Dialog *d, Message *m, bool is_message_in_dialog, const char *source);
 
+  void send_update_message_ephemeral_content(DialogId dialog_id, const Message *m, const char *source);
+
   void send_update_message_content_impl(DialogId dialog_id, const Message *m, const char *source) const;
 
   void send_update_message_edited(DialogId dialog_id, const Message *m);
@@ -2529,6 +2534,9 @@ class MessagesManager final : public Actor {
                                                                                 const Message *m) const;
 
   td_api::object_ptr<td_api::MessageSender> get_message_guest_sender_object(const Message *m) const;
+
+  td_api::object_ptr<td_api::ephemeralMessageContent> get_ephemeral_message_content_object(DialogId dialog_id,
+                                                                                           const Message *m) const;
 
   td_api::object_ptr<td_api::message> get_message_object(Dialog *d, MessageId message_id, const char *source);
 
@@ -3126,6 +3134,10 @@ class MessagesManager final : public Actor {
   void add_sponsored_dialog(const Dialog *d, DialogSource source);
 
   void save_sponsored_dialog();
+
+  void add_anchored_ephemeral_message(MessageInfo &&message_info);
+
+  void set_message_ephemeral_message(const Dialog *d, Message *m, unique_ptr<Message> ephemeral_message);
 
   Dialog *get_service_notifications_dialog();
 
