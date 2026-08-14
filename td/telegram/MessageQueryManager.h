@@ -255,6 +255,11 @@ class MessageQueryManager final : public Actor {
                                       td_api::object_ptr<td_api::formattedText> &&input_caption, bool invert_media,
                                       Promise<Unit> &&promise);
 
+  void edit_callback_query_message(int64 callback_query_id, bool noforwards,
+                                   td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
+                                   td_api::object_ptr<td_api::InputMessageContent> &&input_message_content,
+                                   Promise<Unit> &&promise);
+
   void cancel_edit_ephemeral_message(MessageContentUploadId upload_id, Status status);
 
   void delete_dialog_messages_by_sender(DialogId dialog_id, DialogId sender_dialog_id, Promise<Unit> &&promise);
@@ -563,6 +568,12 @@ class MessageQueryManager final : public Actor {
     unique_ptr<ReplyMarkup> reply_markup_;
     unique_ptr<MessageContent> content_;
     bool invert_media_ = false;
+
+    bool is_send_ = false;
+    bool noforwards_ = false;
+    bool disable_web_page_preview_ = false;
+    int64 callback_query_id_ = 0;
+
     Promise<Unit> promise_;
   };
   FlatHashMap<MessageContentUploadId, EditEphemeralMessageRequest, MessageContentUploadIdHash>

@@ -714,6 +714,8 @@ class Requests {
 
   void on_request(uint64 id, td_api::editEphemeralMessageCaption &request);
 
+  void on_request(uint64 id, td_api::editCallbackQueryMessage &request);
+
   void on_request(uint64 id, td_api::editMessageSchedulingState &request);
 
   void on_request(uint64 id, const td_api::deleteMessageEphemeralContent &request);

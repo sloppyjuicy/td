@@ -1513,6 +1513,56 @@ class EditEphemeralMessageQuery final : public Td::ResultHandler {
   }
 };
 
+class EditCallbackQueryMessageQuery final : public Td::ResultHandler {
+  MessageContentUploadId upload_id_;
+
+ public:
+  void send(int64 callback_query_id, bool noforwards, const FormattedText *text, bool disable_web_page_preview,
+            MessageContentUploadId upload_id, InputMedia &&input_media, bool invert_media,
+            const unique_ptr<ReplyMarkup> &reply_markup) {
+    upload_id_ = upload_id;
+    int32 flags = telegram_api::ephemeral_sendMessage::QUERY_ID_MASK;
+    auto entities = get_input_message_entities(td_->user_manager_.get(), text, "SendMediaQuery");
+    if (!entities.empty()) {
+      flags |= telegram_api::ephemeral_sendMessage::ENTITIES_MASK;
+    }
+    if (input_media.rich_message_ != nullptr) {
+      flags |= telegram_api::ephemeral_sendMessage::RICH_MESSAGE_MASK;
+    }
+    if (input_media.media_ != nullptr) {
+      flags |= telegram_api::ephemeral_sendMessage::MEDIA_MASK;
+    }
+    auto input_reply_markup = get_input_reply_markup(td_->user_manager_.get(), reply_markup);
+    if (input_reply_markup != nullptr) {
+      flags |= telegram_api::ephemeral_sendMessage::REPLY_MARKUP_MASK;
+    }
+    td_->message_query_manager_->on_start_sending_message_content(upload_id_, input_media);
+    send_query(G()->net_query_creator().create(telegram_api::ephemeral_sendMessage(
+        flags, invert_media, false, true, noforwards, nullptr, telegram_api::make_object<telegram_api::inputUserSelf>(),
+        callback_query_id, text == nullptr ? string() : text->text, std::move(entities), std::move(input_media.media_),
+        std::move(input_reply_markup), std::move(input_media.rich_message_), Random::secure_int64(), nullptr)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::ephemeral_sendMessage>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for EditCallbackQueryMessageQuery: " << to_string(ptr);
+    auto promise = PromiseCreator::lambda([actor_id = G()->message_query_manager(), upload_id = upload_id_](Unit) {
+      send_closure(actor_id, &MessageQueryManager::cancel_edit_ephemeral_message, upload_id, Status::OK());
+    });
+    td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise));
+  }
+
+  void on_error(Status status) final {
+    LOG(INFO) << "Receive error for EditCallbackQueryMessageQuery: " << status;
+    td_->message_query_manager_->process_send_message_content_error(upload_id_, std::move(status));
+  }
+};
+
 class DeletePhoneCallHistoryQuery final : public Td::ResultHandler {
   Promise<AffectedHistory> promise_;
 
@@ -2340,10 +2390,17 @@ class MessageQueryManager::UploadEphemeralMessageContentCallback final
   void on_message_content_uploaded(MessageContentUploadId upload_id, InputMedia &&input_media) final {
     auto &query = manager_->edit_ephemeral_message_queries_[upload_id];
     CHECK(!input_media.is_empty());
-    const FormattedText *caption = get_message_content_caption(query.content_.get());
-    manager_->td_->create_handler<EditEphemeralMessageQuery>(Promise<Unit>())
-        ->send(query.dialog_id_, query.receiver_user_id_, query.ephemeral_message_id_, true, caption, false, upload_id,
-               std::move(input_media), query.invert_media_, query.reply_markup_);
+    if (query.is_send_) {
+      const FormattedText *text = get_message_content_text(query.content_.get());
+      manager_->td_->create_handler<EditCallbackQueryMessageQuery>()->send(
+          query.callback_query_id_, query.noforwards_, text, query.disable_web_page_preview_, upload_id,
+          std::move(input_media), query.invert_media_, query.reply_markup_);
+    } else {
+      const FormattedText *caption = get_message_content_caption(query.content_.get());
+      manager_->td_->create_handler<EditEphemeralMessageQuery>(Promise<Unit>())
+          ->send(query.dialog_id_, query.receiver_user_id_, query.ephemeral_message_id_, true, caption, false,
+                 upload_id, std::move(input_media), query.invert_media_, query.reply_markup_);
+    }
   }
 
   void on_message_content_force_uploaded(MessageContentUploadId upload_id, Status status) final {
@@ -4135,6 +4192,39 @@ void MessageQueryManager::edit_ephemeral_message_caption(DialogId dialog_id, Use
   td_->create_handler<EditEphemeralMessageQuery>(std::move(promise))
       ->send(dialog_id, receiver_user_id, ephemeral_message_id, true, &caption, false, MessageContentUploadId(),
              InputMedia(), invert_media, new_reply_markup);
+}
+
+void MessageQueryManager::edit_callback_query_message(
+    int64 callback_query_id, bool noforwards, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
+    td_api::object_ptr<td_api::InputMessageContent> &&input_message_content, Promise<Unit> &&promise) {
+  auto is_bot = td_->auth_manager_->is_bot();
+  CHECK(is_bot);
+
+  TRY_RESULT_PROMISE(promise, new_reply_markup, get_inline_reply_markup(std::move(reply_markup), is_bot, true));
+  TRY_RESULT_PROMISE(promise, content,
+                     get_input_message_content(DialogId(), std::move(input_message_content), td_, true));
+  auto content_type = content.content->get_type();
+  if (!is_editable_media_message_content(content_type) && content_type != MessageContentType::RichText &&
+      content_type != MessageContentType::Text) {
+    return promise.set_error(400, "Unsupported input message content type");
+  }
+  if (!content.ttl.is_empty()) {
+    return promise.set_error(400, "Can't enable self-destruction for media");
+  }
+
+  auto upload_id = create_upload_message_content_query(td_->dialog_manager_->get_my_dialog_id(), content.content.get(),
+                                                       MessageSelfDestructType(), content.emoji, false, false,
+                                                       upload_ephemeral_message_content_callback_);
+  auto &query = edit_ephemeral_message_queries_[upload_id];
+  query.is_send_ = true;
+  query.noforwards_ = noforwards;
+  query.disable_web_page_preview_ = content.disable_web_page_preview;
+  query.callback_query_id_ = callback_query_id;
+  query.reply_markup_ = std::move(new_reply_markup);
+  query.content_ = std::move(content.content);
+  query.invert_media_ = content.invert_media;
+  query.promise_ = std::move(promise);
+  start_upload_message_content(upload_id);
 }
 
 void MessageQueryManager::cancel_edit_ephemeral_message(MessageContentUploadId upload_id, Status status) {

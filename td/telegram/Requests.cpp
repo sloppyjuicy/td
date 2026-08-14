@@ -4398,6 +4398,14 @@ void Requests::on_request(uint64 id, td_api::editEphemeralMessageCaption &reques
       std::move(promise));
 }
 
+void Requests::on_request(uint64 id, td_api::editCallbackQueryMessage &request) {
+  CHECK_IS_BOT();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->message_query_manager_->edit_callback_query_message(
+      request.callback_query_id_, request.protect_content_, std::move(request.reply_markup_),
+      std::move(request.input_message_content_), std::move(promise));
+}
+
 void Requests::on_request(uint64 id, td_api::editMessageSchedulingState &request) {
   CHECK_IS_USER();
   CREATE_OK_REQUEST_PROMISE();
