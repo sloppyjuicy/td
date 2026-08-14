@@ -1559,6 +1559,7 @@ class SendMediaQuery final : public Td::ResultHandler {
         return on_error(r_input_user.move_as_error());
       }
       bool invert_media = (flags & MessagesManager::SEND_MESSAGE_FLAG_INVERT_MEDIA) != 0;
+      bool noforwards = (flags & MessagesManager::SEND_MESSAGE_FLAG_NOFORWARDS) != 0;
       flags = telegram_api::ephemeral_sendMessage::PEER_MASK;
       if (reply_to != nullptr) {
         flags |= telegram_api::ephemeral_sendMessage::REPLY_TO_MASK;
@@ -1582,8 +1583,8 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
 
       auto query = G()->net_query_creator().create(
-          telegram_api::ephemeral_sendMessage(flags, invert_media, false, send_anchor, false, std::move(input_peer),
-                                              r_input_user.move_as_ok(), send_callback_query_id,
+          telegram_api::ephemeral_sendMessage(flags, invert_media, false, send_anchor, noforwards,
+                                              std::move(input_peer), r_input_user.move_as_ok(), send_callback_query_id,
                                               text == nullptr ? string() : text->text, std::move(entities),
                                               std::move(input_media.media_), std::move(input_reply_markup),
                                               std::move(input_media.rich_message_), random_id, std::move(reply_to)),
