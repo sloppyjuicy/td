@@ -4397,7 +4397,11 @@ void MessagesManager::add_anchored_ephemeral_message(MessageInfo &&message_info)
 
 void MessagesManager::set_message_ephemeral_message(const Dialog *d, Message *m,
                                                     unique_ptr<Message> ephemeral_message) {
-  ephemeral_message->reply_info = m->reply_info;
+  CHECK(d != nullptr);
+  CHECK(m != nullptr);
+  if (ephemeral_message != nullptr) {
+    ephemeral_message->reply_info = m->reply_info;
+  }
   auto old_file_ids = get_message_file_ids(m->ephemeral_message.get());
   // TODO reregister content
   m->ephemeral_message = std::move(ephemeral_message);
@@ -23817,6 +23821,17 @@ void MessagesManager::edit_message_scheduling_state(
   }
 }
 
+void MessagesManager::delete_message_ephemeral_message(MessageFullId message_full_id, Promise<Unit> &&promise) {
+  Message *m = get_message_force(message_full_id, "delete_message_ephemeral_message");
+  if (m == nullptr) {
+    return promise.set_error(400, "Message not found");
+  }
+  if (m->ephemeral_message != nullptr) {
+    set_message_ephemeral_message(get_dialog(message_full_id.get_dialog_id()), m, nullptr);
+  }
+  promise.set_value(Unit());
+}
+
 void MessagesManager::set_message_fact_check(MessageFullId message_full_id,
                                              td_api::object_ptr<td_api::formattedText> &&text,
                                              Promise<Unit> &&promise) {
@@ -26912,7 +26927,7 @@ void MessagesManager::send_update_message_ephemeral_content(DialogId dialog_id, 
   send_closure(G()->td(), &Td::send_update,
                td_api::make_object<td_api::updateMessageEphemeralContent>(
                    get_chat_id_object(dialog_id, "updateMessageEphemeralContent"), m->message_id.get(),
-                   get_ephemeral_message_content_object(dialog_id, m)));
+                   get_ephemeral_message_content_object(dialog_id, m->ephemeral_message.get())));
 }
 
 void MessagesManager::send_update_message_edited(DialogId dialog_id, const Message *m) {

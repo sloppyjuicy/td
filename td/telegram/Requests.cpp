@@ -4405,6 +4405,13 @@ void Requests::on_request(uint64 id, td_api::editMessageSchedulingState &request
                                                         std::move(request.scheduling_state_), std::move(promise));
 }
 
+void Requests::on_request(uint64 id, const td_api::deleteMessageEphemeralContent &request) {
+  CHECK_IS_USER();
+  CREATE_OK_REQUEST_PROMISE();
+  td_->messages_manager_->delete_message_ephemeral_message({DialogId(request.chat_id_), MessageId(request.message_id_)},
+                                                           std::move(promise));
+}
+
 void Requests::on_request(uint64 id, td_api::setMessageFactCheck &request) {
   CHECK_IS_USER();
   CREATE_OK_REQUEST_PROMISE();

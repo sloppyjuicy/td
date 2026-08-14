@@ -12393,6 +12393,11 @@ editEphemeralMessageCaption chat_id:int53 receiver_user_id:int53 ephemeral_messa
 //@scheduling_state The new message scheduling state; pass null to send the message immediately. Must be null for messages in the state messageSchedulingStateSendWhenVideoProcessed
 editMessageSchedulingState chat_id:int53 message_id:int53 scheduling_state:MessageSchedulingState = Ok;
 
+//@description Removes message ephemeral content and reverts message state to the original
+//@chat_id The chat the message belongs to
+//@message_id Identifier of the message
+deleteMessageEphemeralContent chat_id:int53 message_id:int53 = Ok;
+
 
 //@description Changes the fact-check of a message. Can be only used if messageProperties.can_set_fact_check == true
 //@chat_id The channel chat the message belongs to

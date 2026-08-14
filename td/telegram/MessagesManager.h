@@ -537,6 +537,8 @@ class MessagesManager final : public Actor {
                                      td_api::object_ptr<td_api::MessageSchedulingState> &&scheduling_state,
                                      Promise<Unit> &&promise);
 
+  void delete_message_ephemeral_message(MessageFullId message_full_id, Promise<Unit> &&promise);
+
   void set_message_fact_check(MessageFullId message_full_id, td_api::object_ptr<td_api::formattedText> &&text,
                               Promise<Unit> &&promise);
 
