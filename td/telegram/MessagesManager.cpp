@@ -4401,7 +4401,8 @@ void MessagesManager::set_message_ephemeral_message(const Dialog *d, Message *m,
   CHECK(d != nullptr);
   CHECK(m != nullptr);
   if (ephemeral_message != nullptr) {
-    ephemeral_message->reply_info = m->reply_info;
+    ephemeral_message->replied_message_info = m->replied_message_info.clone(td_);
+    ephemeral_message->via_bot_user_id = m->via_bot_user_id;
   }
   auto old_file_ids = get_message_file_ids(m->ephemeral_message.get());
   // TODO reregister content
@@ -24643,6 +24644,10 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
     if (forwarded_message == nullptr) {
       LOG(INFO) << "Can't find " << message_id << " to forward";
       continue;
+    }
+    if (forwarded_message->ephemeral_message != nullptr) {
+      forwarded_message = forwarded_message->ephemeral_message.get();
+      message_id = forwarded_message->message_id;
     }
     CHECK(message_id.is_valid());
     CHECK(message_id == forwarded_message->message_id);
