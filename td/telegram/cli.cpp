@@ -3521,12 +3521,14 @@ class CliClient final : public Actor {
       int64 star_count;
       get_args(args, received_gift_id, star_count);
       send_request(td_api::make_object<td_api::dropGiftOriginalDetails>(received_gift_id, star_count));
-    } else if (op == "srg") {
+    } else if (op == "srg" || op == "srgp") {
       string gift_name;
       string owner_id;
       GiftResalePrice price;
-      get_args(args, gift_name, owner_id, price);
-      send_request(td_api::make_object<td_api::sendResoldGift>(gift_name, as_message_sender(owner_id), price));
+      string text;
+      get_args(args, gift_name, owner_id, price, text);
+      send_request(td_api::make_object<td_api::sendResoldGift>(gift_name, as_message_sender(owner_id), price,
+                                                               as_formatted_text(text), op == "srg"));
     } else if (op == "sgpo") {
       string owner_id;
       string gift_name;

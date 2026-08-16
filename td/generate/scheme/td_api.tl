@@ -15398,7 +15398,10 @@ dropGiftOriginalDetails received_gift_id:string star_count:int53 = Ok;
 //@gift_name Name of the upgraded gift to send
 //@owner_id Identifier of the user or the channel chat that will receive the gift
 //@price The price that the user agreed to pay for the gift
-sendResoldGift gift_name:string owner_id:MessageSender price:GiftResalePrice = GiftResaleResult;
+//@text Text to show along with the gift; 0-getOption("gift_text_length_max") characters. Only Bold, Italic, Underline, Strikethrough, Spoiler, CustomEmoji, and DateTime entities are allowed.
+//-Must be empty if the receiver enabled paid messages and the price of the gift is less than the price of a paid message to the user
+//@is_private Pass true to show gift text and sender only to the gift receiver; otherwise, everyone will be able to see them
+sendResoldGift gift_name:string owner_id:MessageSender price:GiftResalePrice text:formattedText is_private:Bool = GiftResaleResult;
 
 //@description Sends an offer to purchase an upgraded gift
 //@owner_id Identifier of the user or the channel chat that currently owns the gift and will receive the offer
