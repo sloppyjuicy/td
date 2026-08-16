@@ -8128,7 +8128,8 @@ string MessagesManager::get_message_search_text(const Message *m) const {
 }
 
 bool MessagesManager::get_message_has_protected_content(DialogId dialog_id, const Message *m) const {
-  return m->noforwards || td_->dialog_manager_->get_dialog_has_protected_content_force(dialog_id);
+  return (m->ephemeral_message == nullptr ? m->noforwards : m->ephemeral_message->noforwards) ||
+         td_->dialog_manager_->get_dialog_has_protected_content_force(dialog_id);
 }
 
 bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m) const {
@@ -8138,7 +8139,7 @@ bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m
   if (!td_->dialog_manager_->is_monoforum_channel(dialog_id)) {
     return false;
   }
-  if (m == nullptr || !m->message_id.is_server() || m->suggested_post != nullptr) {
+  if (m == nullptr || !m->message_id.is_server() || m->suggested_post != nullptr || m->ephemeral_message != nullptr) {
     return false;
   }
   if (!can_forward_message(dialog_id, m, m->forward_info == nullptr)) {
@@ -8148,7 +8149,7 @@ bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m
 }
 
 bool MessagesManager::can_add_message_poll_option(DialogId dialog_id, const Message *m) const {
-  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() ||
+  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr ||
       m->content->get_type() != MessageContentType::Poll || is_message_forward(m) ||
       !td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read)) {
     return false;
@@ -8165,7 +8166,8 @@ bool MessagesManager::can_add_message_tasks(DialogId dialog_id, const Message *m
   if (m == nullptr) {
     return false;
   }
-  if (!m->message_id.is_server() || m->content->get_type() != MessageContentType::ToDoList || is_message_forward(m)) {
+  if (!m->message_id.is_server() || m->ephemeral_message != nullptr ||
+      m->content->get_type() != MessageContentType::ToDoList || is_message_forward(m)) {
     return false;
   }
   if (!m->is_outgoing && dialog_id != td_->dialog_manager_->get_my_dialog_id() &&
@@ -8193,7 +8195,8 @@ bool MessagesManager::can_mark_message_tasks_as_done(DialogId dialog_id, const M
   if (m == nullptr) {
     return false;
   }
-  if (!m->message_id.is_server() || m->content->get_type() != MessageContentType::ToDoList || is_message_forward(m)) {
+  if (!m->message_id.is_server() || m->ephemeral_message != nullptr ||
+      m->content->get_type() != MessageContentType::ToDoList || is_message_forward(m)) {
     return false;
   }
   if (!m->is_outgoing && dialog_id != td_->dialog_manager_->get_my_dialog_id() &&
@@ -8208,7 +8211,7 @@ bool MessagesManager::can_mark_message_tasks_as_done(DialogId dialog_id, const M
 
 bool MessagesManager::can_approve_or_decline_message(DialogId dialog_id, const Message *m) const {
   if (m->suggested_post == nullptr || !m->suggested_post->is_pending() || !m->message_id.is_server() ||
-      m->is_outgoing || !td_->dialog_manager_->is_monoforum_channel(dialog_id)) {
+      m->is_outgoing || !td_->dialog_manager_->is_monoforum_channel(dialog_id) || m->ephemeral_message != nullptr) {
     return false;
   }
   auto is_from_user = m->sender_user_id != UserId();
@@ -8308,10 +8311,11 @@ bool MessagesManager::can_reply_to_message(const Dialog *d, MessageId message_id
          can_send_message(dialog_id).is_ok();
 }
 
-bool MessagesManager::can_reply_to_message_in_another_dialog(DialogId dialog_id, MessageId message_id,
+bool MessagesManager::can_reply_to_message_in_another_dialog(DialogId dialog_id, const Message *m,
                                                              bool can_be_forwarded) const {
-  return can_be_forwarded && message_id.is_server() && !td_->dialog_manager_->is_monoforum_channel(dialog_id) &&
-         !(message_id == MessageId(ServerMessageId(1)) && dialog_id.get_type() == DialogType::Channel);
+  return can_be_forwarded && m->message_id.is_server() && m->ephemeral_message == nullptr &&
+         !td_->dialog_manager_->is_monoforum_channel(dialog_id) &&
+         !(m->message_id == MessageId(ServerMessageId(1)) && dialog_id.get_type() == DialogType::Channel);
 }
 
 bool MessagesManager::can_save_message(DialogId dialog_id, const Message *m) const {
@@ -8330,7 +8334,8 @@ bool MessagesManager::can_share_message_in_story(MessageFullId message_full_id) 
 }
 
 bool MessagesManager::can_share_message_in_story(DialogId dialog_id, const Message *m) const {
-  return dialog_id.get_type() == DialogType::Channel && m != nullptr && m->message_id.is_server();
+  return dialog_id.get_type() == DialogType::Channel && m != nullptr && m->message_id.is_server() &&
+         m->ephemeral_message == nullptr;
 }
 
 bool MessagesManager::can_delete_message_reactions(DialogId dialog_id, const Message *m) const {
@@ -8349,23 +8354,24 @@ bool MessagesManager::can_get_message_statistics(DialogId dialog_id, const Messa
   if (td_->auth_manager_->is_bot() || dialog_id.get_type() != DialogType::Channel) {
     return false;
   }
-  if (m == nullptr || !m->message_id.is_server() || m->view_count == 0 || m->had_forward_info ||
-      (m->forward_info != nullptr && m->forward_info->get_origin().is_channel_post())) {
+  if (m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr || m->view_count == 0 ||
+      m->had_forward_info || (m->forward_info != nullptr && m->forward_info->get_origin().is_channel_post())) {
     return false;
   }
   return td_->chat_manager_->can_get_channel_message_statistics(dialog_id.get_channel_id());
 }
 
 bool MessagesManager::can_get_message_poll_vote_statistics(MessageFullId message_full_id) {
-  return can_get_message_poll_vote_statistics(message_full_id.get_dialog_id(),
-                                              get_message_force(message_full_id, "can_get_message_statistics"));
+  return can_get_message_poll_vote_statistics(
+      message_full_id.get_dialog_id(), get_message_force(message_full_id, "can_get_message_poll_vote_statistics"));
 }
 
 bool MessagesManager::can_get_message_poll_vote_statistics(DialogId dialog_id, const Message *m) const {
   if (td_->auth_manager_->is_bot()) {
     return false;
   }
-  if (m == nullptr || !m->message_id.is_server() || m->content->get_type() != MessageContentType::Poll ||
+  if (m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr ||
+      m->content->get_type() != MessageContentType::Poll ||
       !td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read)) {
     return false;
   }
@@ -10424,6 +10430,9 @@ void MessagesManager::on_message_ttl_expired_impl(Dialog *d, Message *m, bool is
   m->linked_top_thread_message_id = MessageId();
   m->is_content_secret = false;
   m->invert_media = false;
+  if (m->ephemeral_message != nullptr) {
+    set_message_ephemeral_message(d, m, nullptr);
+  }
 }
 
 void MessagesManager::loop() {
@@ -14952,7 +14961,7 @@ Status MessagesManager::can_get_message_read_date(const Dialog *d, const Message
   if (m->message_id.is_yet_unsent()) {
     return Status::Error(400, "Yet unsent messages can't be read");
   }
-  if (m->message_id.is_local()) {
+  if (m->message_id.is_local() || m->ephemeral_message != nullptr || is_ephemeral_message(m)) {
     return Status::Error(400, "Local messages can't be read");
   }
   CHECK(m->message_id.is_server());
@@ -15005,7 +15014,8 @@ bool MessagesManager::can_get_message_video_advertisements(DialogId dialog_id, c
   CHECK(m != nullptr);
   if (!td_->dialog_manager_->is_broadcast_channel(dialog_id) ||
       !td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read) ||
-      m->content->get_type() != MessageContentType::Video || !m->message_id.is_server()) {
+      m->content->get_type() != MessageContentType::Video || !m->message_id.is_server() ||
+      m->ephemeral_message != nullptr) {
     return false;
   }
   return true;
@@ -15075,7 +15085,7 @@ Status MessagesManager::can_get_message_viewers(DialogId dialog_id, const Messag
   if (m->message_id.is_yet_unsent()) {
     return Status::Error(400, "Yet unsent messages can't have viewers");
   }
-  if (m->message_id.is_local()) {
+  if (m->message_id.is_local() || m->ephemeral_message != nullptr || is_ephemeral_message(m)) {
     return Status::Error(400, "Local messages can't have viewers");
   }
   CHECK(m->message_id.is_server());
@@ -15395,7 +15405,7 @@ void MessagesManager::get_message_properties(DialogId dialog_id, MessageId messa
   auto can_be_paid = get_invoice_message_info({dialog_id, message_id}).is_ok();
   auto can_be_pinned = can_pin_message(dialog_id, m).is_ok();
   auto can_be_replied = can_reply_to_message(d, message_id, m);
-  auto can_be_replied_in_another_chat = can_reply_to_message_in_another_dialog(dialog_id, message_id, can_be_forwarded);
+  auto can_be_replied_in_another_chat = can_reply_to_message_in_another_dialog(dialog_id, m, can_be_forwarded);
   auto can_be_shared_in_story = can_share_message_in_story(dialog_id, m);
   auto can_delete_reactions = can_delete_message_reactions(dialog_id, m);
   auto can_edit_media = can_edit_message_media(dialog_id, m, false);
@@ -15452,7 +15462,7 @@ void MessagesManager::get_poll_option_properties(DialogId dialog_id, MessageId m
   auto dialog_type = dialog_id.get_type();
   auto can_be_forwarded = can_forward_message(dialog_id, m, false);
   auto can_be_replied = can_reply_to_message(d, message_id, m);
-  auto can_be_replied_in_another_chat = can_reply_to_message_in_another_dialog(dialog_id, message_id, can_be_forwarded);
+  auto can_be_replied_in_another_chat = can_reply_to_message_in_another_dialog(dialog_id, m, can_be_forwarded);
   auto can_get_media_timestamp_links = can_get_media_timestamp_link(dialog_id, m).is_ok();
   auto can_get_link = can_get_media_timestamp_links && dialog_type == DialogType::Channel;
   get_message_content_poll_option_properties(td_, m->content.get(), option_id, dialog_id, message_id, can_be_replied,
@@ -15512,6 +15522,9 @@ MessagesManager::ReportDialogFromActionBar MessagesManager::report_dialog_from_a
 Status MessagesManager::can_get_media_timestamp_link(DialogId dialog_id, const Message *m) const {
   if (m == nullptr) {
     return Status::Error(400, "Message not found");
+  }
+  if (is_ephemeral_message(m) || m->ephemeral_message != nullptr) {
+    return Status::Error(400, "Message is ephemeral");
   }
 
   if (dialog_id.get_type() != DialogType::Channel) {
@@ -15580,7 +15593,7 @@ bool MessagesManager::can_report_message_reactions(DialogId dialog_id, const Mes
 }
 
 bool MessagesManager::can_recognize_message_speech(DialogId dialog_id, const Message *m) const {
-  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() ||
+  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr ||
       dialog_id.get_type() == DialogType::SecretChat) {
     return false;
   }
@@ -15595,7 +15608,7 @@ bool MessagesManager::can_set_message_fact_check(DialogId dialog_id, const Messa
   if (!td_->option_manager_->get_option_boolean("can_edit_fact_check")) {
     return false;
   }
-  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() ||
+  if (td_->auth_manager_->is_bot() || m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr ||
       !td_->dialog_manager_->is_broadcast_channel(dialog_id)) {
     return false;
   }
@@ -15791,7 +15804,7 @@ Status MessagesManager::can_get_message_embedding_code(DialogId dialog_id, const
   if (m->message_id.is_scheduled()) {
     return Status::Error(400, "Message is scheduled");
   }
-  if (!m->message_id.is_server()) {
+  if (!m->message_id.is_server() || m->ephemeral_message != nullptr) {
     return Status::Error(400, "Message is local");
   }
   return Status::OK();
@@ -21227,8 +21240,7 @@ MessageInputReplyTo MessagesManager::create_message_input_reply_to(
       }
       auto message_id = get_persistent_message_id(reply_d, MessageId(reply_to_message->message_id_));
       const Message *m = get_message_force(reply_d, message_id, "create_message_input_reply_to 2");
-      if (!can_reply_to_message_in_another_dialog(reply_dialog_id, message_id,
-                                                  can_forward_message(reply_dialog_id, m, false))) {
+      if (!can_reply_to_message_in_another_dialog(reply_dialog_id, m, can_forward_message(reply_dialog_id, m, false))) {
         LOG(INFO) << "Can't reply in another chat " << message_id << " in " << reply_d->dialog_id;
         return {};
       }
@@ -23137,7 +23149,8 @@ bool MessagesManager::can_edit_message(DialogId dialog_id, const Message *m, boo
   if (m == nullptr) {
     return false;
   }
-  if (m->message_id.is_yet_unsent() || m->message_id.is_local() || is_message_forward(m) || m->had_reply_markup) {
+  if (m->message_id.is_yet_unsent() || m->message_id.is_local() || is_message_forward(m) || m->had_reply_markup ||
+      m->ephemeral_message != nullptr) {
     return false;
   }
   if (m->reply_markup != nullptr && m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard) {
@@ -23289,7 +23302,7 @@ Status MessagesManager::can_pin_message(DialogId dialog_id, const Message *m) co
   if (m->message_id.is_scheduled()) {
     return Status::Error(400, "Scheduled message can't be pinned");
   }
-  if (!m->message_id.is_server()) {
+  if (!m->message_id.is_server() || m->ephemeral_message != nullptr) {
     return Status::Error(400, "Message can't be pinned");
   }
   if (is_service_message_content(m->content->get_type())) {
@@ -36481,7 +36494,7 @@ Result<MessagesManager::InvoiceMessageInfo> MessagesManager::get_invoice_message
   if (m->message_id.is_scheduled()) {
     return Status::Error(400, "Wrong scheduled message identifier");
   }
-  if (!m->message_id.is_server()) {
+  if (!m->message_id.is_server() || m->ephemeral_message != nullptr) {
     return Status::Error(400, "Wrong message identifier");
   }
   if (m->reply_markup == nullptr || m->reply_markup->inline_keyboard.empty() ||

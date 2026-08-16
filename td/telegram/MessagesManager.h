@@ -2012,7 +2012,7 @@ class MessagesManager final : public Actor {
 
   bool can_reply_to_message(const Dialog *d, MessageId message_id, const Message *m) const;
 
-  bool can_reply_to_message_in_another_dialog(DialogId dialog_id, MessageId message_id, bool can_be_forwarded) const;
+  bool can_reply_to_message_in_another_dialog(DialogId dialog_id, const Message *m, bool can_be_forwarded) const;
 
   bool can_save_message(DialogId dialog_id, const Message *m) const;
 
