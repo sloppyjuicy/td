@@ -5571,6 +5571,7 @@ messageGift gift:gift sender_id:MessageSender receiver_id:MessageSender received
 //@receiver_id Receiver of the gift
 //@origin Origin of the upgraded gift
 //@received_gift_id Unique identifier of the received gift for the current user; only for the receiver of the gift
+//@text Message added to the gift
 //@is_private True, if the sender and gift text are shown only to the gift receiver; otherwise, everyone will be able to see them
 //@is_saved True, if the gift is displayed on the user's or the channel's profile page; only for the receiver of the gift
 //@can_be_transferred True, if the gift can be transferred to another owner; only for the receiver of the gift
@@ -5581,7 +5582,7 @@ messageGift gift:gift sender_id:MessageSender receiver_id:MessageSender received
 //@next_resale_date Point in time (Unix timestamp) when the gift can be resold to another user; can be in the past; 0 if the gift can't be resold; only for the receiver of the gift
 //@export_date Point in time (Unix timestamp) when the gift can be transferred to the TON blockchain as an NFT; can be in the past; 0 if NFT export isn't possible; only for the receiver of the gift
 //@craft_date Point in time (Unix timestamp) when the gift can be used to craft another gift; can be in the past; only for the receiver of the gift
-messageUpgradedGift gift:upgradedGift sender_id:MessageSender receiver_id:MessageSender origin:UpgradedGiftOrigin received_gift_id:string is_private:Bool is_saved:Bool can_be_transferred:Bool was_transferred:Bool transfer_star_count:int53 drop_original_details_star_count:int53 next_transfer_date:int32 next_resale_date:int32 export_date:int32 craft_date:int32 = MessageContent;
+messageUpgradedGift gift:upgradedGift sender_id:MessageSender receiver_id:MessageSender origin:UpgradedGiftOrigin received_gift_id:string text:formattedText is_private:Bool is_saved:Bool can_be_transferred:Bool was_transferred:Bool transfer_star_count:int53 drop_original_details_star_count:int53 next_transfer_date:int32 next_resale_date:int32 export_date:int32 craft_date:int32 = MessageContent;
 
 //@description A gift which purchase, upgrade or transfer were refunded
 //@gift The gift
