@@ -5350,6 +5350,9 @@ messageChatJoinByLink = MessageContent;
 //@description A new member was accepted to the chat by an administrator
 messageChatJoinByRequest = MessageContent;
 
+//@description A new member joined the chat from a community @community_id Identifier of the community from which the user joined the chat
+messageChatJoinFromCommunity community_id:int53 = MessageContent;
+
 //@description A chat member was deleted @user_id User identifier of the deleted chat member
 messageChatDeleteMember user_id:int53 = MessageContent;
 

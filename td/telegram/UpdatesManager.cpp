@@ -1000,7 +1000,6 @@ bool UpdatesManager::is_acceptable_message(const telegram_api::Message *message_
         case telegram_api::messageActionPollAppendAnswer::ID:
         case telegram_api::messageActionPollDeleteAnswer::ID:
         case telegram_api::messageActionManagedBotCreated::ID:
-        case telegram_api::messageActionChatJoinedViaCommunity::ID:
           break;
         case telegram_api::messageActionChatCreate::ID: {
           auto action = static_cast<const telegram_api::messageActionChatCreate *>(action_ptr);
@@ -1120,6 +1119,13 @@ bool UpdatesManager::is_acceptable_message(const telegram_api::Message *message_
         }
         case telegram_api::messageActionChangeCommunity::ID: {
           auto action = static_cast<const telegram_api::messageActionChangeCommunity *>(action_ptr);
+          if (action->community_id_ != 0 && !is_acceptable_community(CommunityId(action->community_id_))) {
+            return false;
+          }
+          break;
+        }
+        case telegram_api::messageActionChatJoinedViaCommunity::ID: {
+          auto action = static_cast<const telegram_api::messageActionChatJoinedViaCommunity *>(action_ptr);
           if (action->community_id_ != 0 && !is_acceptable_community(CommunityId(action->community_id_))) {
             return false;
           }

@@ -551,7 +551,7 @@ class MessageChatSetTtl final : public MessageContent {
 
 class MessageUnsupported final : public MessageContent {
  public:
-  static constexpr int32 CURRENT_VERSION = 61;
+  static constexpr int32 CURRENT_VERSION = 62;
   int32 version = CURRENT_VERSION;
 
   MessageUnsupported() = default;
@@ -1814,6 +1814,19 @@ class MessageChangeCommunity final : public MessageContent {
   }
 };
 
+class MessageChatJoinedViaCommunity final : public MessageContent {
+ public:
+  CommunityId community_id;
+
+  MessageChatJoinedViaCommunity() = default;
+  explicit MessageChatJoinedViaCommunity(CommunityId community_id) : community_id(community_id) {
+  }
+
+  MessageContentType get_type() const final {
+    return MessageContentType::ChatJoinedViaCommunity;
+  }
+};
+
 template <class StorerT>
 static void store(const MessageContent *content, StorerT &storer) {
   CHECK(content != nullptr);
@@ -2990,6 +3003,13 @@ static void store(const MessageContent *content, StorerT &storer) {
       if (has_community_id) {
         store(m->community_id, storer);
       }
+      break;
+    }
+    case MessageContentType::ChatJoinedViaCommunity: {
+      const auto *m = static_cast<const MessageChatJoinedViaCommunity *>(content);
+      BEGIN_STORE_FLAGS();
+      END_STORE_FLAGS();
+      store(m->community_id, storer);
       break;
     }
     default:
@@ -4466,6 +4486,14 @@ static void parse(unique_ptr<MessageContent> &content, ParserT &parser) {
       content = std::move(m);
       break;
     }
+    case MessageContentType::ChatJoinedViaCommunity: {
+      auto m = make_unique<MessageChatJoinedViaCommunity>();
+      BEGIN_PARSE_FLAGS();
+      END_PARSE_FLAGS();
+      parse(m->community_id, parser);
+      content = std::move(m);
+      break;
+    }
 
     default:
       is_bad = true;
@@ -5474,6 +5502,7 @@ bool can_message_content_have_input_media(const Td *td, const MessageContent *co
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       return false;
     case MessageContentType::Animation:
     case MessageContentType::Audio:
@@ -5648,6 +5677,7 @@ SecretInputMedia get_message_content_secret_input_media(
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::RichText:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       break;
     default:
       UNREACHABLE();
@@ -5883,6 +5913,7 @@ static InputMedia get_message_content_input_media_impl(
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       break;
     default:
       UNREACHABLE();
@@ -6166,6 +6197,7 @@ void delete_message_content_thumbnail(Td *td, MessageContent *content, int32 med
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       break;
     default:
       UNREACHABLE();
@@ -6441,6 +6473,7 @@ Status can_send_message_content(DialogId dialog_id, const MessageContent *conten
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       UNREACHABLE();
   }
   return Status::OK();
@@ -6643,6 +6676,7 @@ static int32 get_message_content_media_index_mask(const MessageContent *content,
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       return 0;
     default:
       UNREACHABLE();
@@ -7111,6 +7145,8 @@ vector<UserId> get_message_content_min_user_ids(const Td *td, const MessageConte
       return content->rich_message.get_user_ids();
     }
     case MessageContentType::ChangeCommunity:
+      break;
+    case MessageContentType::ChatJoinedViaCommunity:
       break;
     default:
       UNREACHABLE();
@@ -7728,6 +7764,7 @@ static void merge_message_contents(Td *td, const MessageContent *old_content, Me
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       break;
     default:
       UNREACHABLE();
@@ -7908,6 +7945,7 @@ bool merge_message_content_file_id(Td *td, MessageContent *message_content, File
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::RichText:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       LOG(ERROR) << "Receive new file " << new_file_id << " in a sent message of the type " << content_type;
       break;
     default:
@@ -8745,6 +8783,14 @@ void compare_message_contents(Td *td, const MessageContent *old_content, const M
     case MessageContentType::ChangeCommunity: {
       const auto *lhs = static_cast<const MessageChangeCommunity *>(old_content);
       const auto *rhs = static_cast<const MessageChangeCommunity *>(new_content);
+      if (lhs->community_id != rhs->community_id) {
+        need_update = true;
+      }
+      break;
+    }
+    case MessageContentType::ChatJoinedViaCommunity: {
+      const auto *lhs = static_cast<const MessageChatJoinedViaCommunity *>(old_content);
+      const auto *rhs = static_cast<const MessageChatJoinedViaCommunity *>(new_content);
       if (lhs->community_id != rhs->community_id) {
         need_update = true;
       }
@@ -10384,6 +10430,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       return nullptr;
     default:
       UNREACHABLE();
@@ -11263,8 +11310,15 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       return td::make_unique<MessageChangeCommunity>(community_id);
     }
-    case telegram_api::messageActionChatJoinedViaCommunity::ID:
-      return make_unique<MessageUnsupported>();
+    case telegram_api::messageActionChatJoinedViaCommunity::ID: {
+      auto action = telegram_api::move_object_as<telegram_api::messageActionChatJoinedViaCommunity>(action_ptr);
+      auto community_id = CommunityId(action->community_id_);
+      if (!community_id.is_valid()) {
+        LOG(ERROR) << "Receive " << to_string(action);
+        community_id = {};
+      }
+      return td::make_unique<MessageChatJoinedViaCommunity>(community_id);
+    }
     default:
       UNREACHABLE();
   }
@@ -12056,10 +12110,15 @@ td_api::object_ptr<td_api::MessageContent> get_message_content_object(
       const auto *m = static_cast<const MessageChangeCommunity *>(content);
       if (m->community_id.is_valid()) {
         return td_api::make_object<td_api::messageChatAddedToCommunity>(
-            td->community_manager_->get_community_id_object(m->community_id, "messageChatAddToCommunity"));
+            td->community_manager_->get_community_id_object(m->community_id, "messageChatAddedToCommunity"));
       } else {
         return td_api::make_object<td_api::messageChatRemovedFromCommunity>();
       }
+    }
+    case MessageContentType::ChatJoinedViaCommunity: {
+      const auto *m = static_cast<const MessageChatJoinedViaCommunity *>(content);
+      return td_api::make_object<td_api::messageChatJoinFromCommunity>(
+          td->community_manager_->get_community_id_object(m->community_id, "messageChatJoinFromCommunity"));
     }
     default:
       UNREACHABLE();
@@ -13006,6 +13065,7 @@ string get_message_content_search_text(const Td *td, const MessageContent *conte
     case MessageContentType::PollAppendAnswer:
     case MessageContentType::PollDeleteAnswer:
     case MessageContentType::ChangeCommunity:
+    case MessageContentType::ChatJoinedViaCommunity:
       return string();
     default:
       UNREACHABLE();
@@ -13586,6 +13646,11 @@ void add_message_content_dependencies(Dependencies &dependencies, const MessageC
     }
     case MessageContentType::ChangeCommunity: {
       const auto *content = static_cast<const MessageChangeCommunity *>(message_content);
+      dependencies.add(content->community_id);
+      break;
+    }
+    case MessageContentType::ChatJoinedViaCommunity: {
+      const auto *content = static_cast<const MessageChatJoinedViaCommunity *>(message_content);
       dependencies.add(content->community_id);
       break;
     }
