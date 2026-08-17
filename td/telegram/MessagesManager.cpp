@@ -24774,9 +24774,32 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
   TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(
                                        td_, to_dialog_id, std::move(options), false, message_count == 1,
                                        message_count == 1, message_count == 1, message_count));
-  TRY_RESULT(messages, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(message_ids),
-                                             message_send_options, in_game_share, new_video_start_timestamp,
-                                             std::move(copy_options), false, MessageId()));
+  vector<td_api::object_ptr<td_api::message>> messages;
+  vector<MessageId> part_message_ids;
+  vector<MessageCopyOptions> part_copy_options;
+  bool is_part_ephemeral = false;
+  for (size_t i = 0; i < message_ids.size(); i++) {
+    auto message_id = message_ids[i];
+    auto *m = get_message_force({from_dialog_id, message_id}, "forward_messages");
+    auto is_ephemeral =
+        m == nullptr ? message_id.is_local() : is_ephemeral_message(m) || m->ephemeral_message != nullptr;
+    if (!part_message_ids.empty() && is_part_ephemeral != is_ephemeral) {
+      TRY_RESULT(part_messages,
+                 forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(part_message_ids),
+                                       message_send_options, in_game_share, new_video_start_timestamp,
+                                       std::move(part_copy_options), false, MessageId()));
+      td::append(messages, std::move(part_messages));
+      part_message_ids.clear();
+      part_copy_options.clear();
+    }
+    part_message_ids.push_back(message_id);
+    part_copy_options.push_back(std::move(copy_options[i]));
+    is_part_ephemeral = is_ephemeral;
+  }
+  TRY_RESULT(part_messages, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(part_message_ids),
+                                                  message_send_options, in_game_share, new_video_start_timestamp,
+                                                  std::move(part_copy_options), false, MessageId()));
+  td::append(messages, std::move(part_messages));
   return get_messages_object(-1, std::move(messages), false);
 }
 
