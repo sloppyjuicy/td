@@ -8133,14 +8133,15 @@ bool MessagesManager::get_message_has_protected_content(DialogId dialog_id, cons
          td_->dialog_manager_->get_dialog_has_protected_content_force(dialog_id);
 }
 
-bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m) const {
+bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m, bool only_new, bool only_edit) const {
   if (td_->auth_manager_->is_bot()) {
     return false;
   }
   if (!td_->dialog_manager_->is_monoforum_channel(dialog_id)) {
     return false;
   }
-  if (m == nullptr || !m->message_id.is_server() || m->suggested_post != nullptr || m->ephemeral_message != nullptr) {
+  if (m == nullptr || !m->message_id.is_server() || m->ephemeral_message != nullptr ||
+      (only_new && m->suggested_post != nullptr) || (only_edit && m->suggested_post == nullptr)) {
     return false;
   }
   if (!can_forward_message(dialog_id, m, m->forward_info == nullptr)) {
@@ -15394,7 +15395,7 @@ void MessagesManager::get_message_properties(DialogId dialog_id, MessageId messa
   }
 
   auto is_bot = td_->auth_manager_->is_bot();
-  auto can_add_offer = can_add_message_offer(dialog_id, m);
+  auto can_add_offer = can_add_message_offer(dialog_id, m, true, false);
   auto can_add_tasks = can_add_message_tasks(dialog_id, m, 1);
   auto can_be_approved = can_approve_message(dialog_id, m);
   auto can_be_declined = can_decline_message(dialog_id, m);
@@ -15411,7 +15412,7 @@ void MessagesManager::get_message_properties(DialogId dialog_id, MessageId messa
   auto can_delete_reactions = can_delete_message_reactions(dialog_id, m);
   auto can_edit_media = can_edit_message_media(dialog_id, m, false);
   auto can_edit_scheduling_state = can_edit_message_scheduling_state(m);
-  auto can_edit_suggested_post_info = can_edit_message_suggested_post(m);
+  auto can_edit_suggested_post_info = can_add_message_offer(dialog_id, m, false, true);
   auto can_get_author = can_get_message_author(dialog_id, m);
   auto can_get_statistics = can_get_message_statistics(dialog_id, m);
   auto can_get_message_thread = get_top_thread_message_full_id(d, m, false).is_ok();
@@ -23291,10 +23292,6 @@ bool MessagesManager::can_edit_message_scheduling_state(const Message *m) const 
   return true;
 }
 
-bool MessagesManager::can_edit_message_suggested_post(const Message *m) const {
-  return m->message_id.is_server() && m->suggested_post != nullptr;
-}
-
 Status MessagesManager::can_pin_message(DialogId dialog_id, const Message *m) const {
   if (m == nullptr) {
     return Status::Error(400, "Message not found");
@@ -24443,14 +24440,8 @@ void MessagesManager::add_offer(DialogId dialog_id, MessageId message_id,
     return promise.set_error(400, "Suggested post info must be non-empty");
   }
   TRY_RESULT_PROMISE(promise, d, check_dialog_access(dialog_id, false, AccessRights::Write, "add_offer"));
-  if (!td_->dialog_manager_->is_monoforum_channel(dialog_id)) {
-    return promise.set_error(400, "Chat is not a direct messages chat");
-  }
   const Message *m = get_message_force(d, message_id, "add_offer");
-  if (m == nullptr) {
-    return promise.set_error(400, "Message not found");
-  }
-  if (!m->message_id.is_server()) {
+  if (!can_add_message_offer(dialog_id, m, false, false)) {
     return promise.set_error(400, "Wrong message identifier specified");
   }
   MessageCopyOptions copy_options;

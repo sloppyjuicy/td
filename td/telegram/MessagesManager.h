@@ -1783,8 +1783,6 @@ class MessagesManager final : public Actor {
 
   bool can_edit_message_scheduling_state(const Message *m) const;
 
-  bool can_edit_message_suggested_post(const Message *m) const;
-
   Status can_pin_message(DialogId dialog_id, const Message *m) const TD_WARN_UNUSED_RESULT;
 
   Status can_get_media_timestamp_link(DialogId dialog_id, const Message *m) const;
@@ -1998,7 +1996,7 @@ class MessagesManager final : public Actor {
 
   bool get_message_has_protected_content(DialogId dialog_id, const Message *m) const;
 
-  bool can_add_message_offer(DialogId dialog_id, const Message *m) const;
+  bool can_add_message_offer(DialogId dialog_id, const Message *m, bool only_new, bool only_edit) const;
 
   bool can_add_message_poll_option(DialogId dialog_id, const Message *m) const;
 
