@@ -1849,7 +1849,7 @@ class MessagesManager final : public Actor {
       MessageId suggested_post_reply_to_message_id);
 
   void do_forward_messages(DialogId to_dialog_id, DialogId from_dialog_id, const vector<Message *> &messages,
-                           const vector<MessageId> &message_ids, bool drop_author, bool drop_media_captions,
+                           const vector<int32> &ids, bool is_ephemeral, bool drop_author, bool drop_media_captions,
                            uint64 log_event_id);
 
   uint64 save_send_quick_reply_shortcut_messages_log_event(DialogId dialog_id, QuickReplyShortcutId shortcut_id,
@@ -1867,8 +1867,8 @@ class MessagesManager final : public Actor {
   void send_forward_message_query(int32 flags, DialogId to_dialog_id, MessageTopic messages_topic,
                                   const MessageInputReplyTo input_reply_to, DialogId from_dialog_id,
                                   telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, vector<int32> ids,
-                                  MessageId single_message_id, vector<int64> random_ids, int32 schedule_date,
-                                  int32 schedule_repeat_period, MessageEffectId effect_id,
+                                  bool is_ephemeral, MessageId single_message_id, vector<int64> random_ids,
+                                  int32 schedule_date, int32 schedule_repeat_period, MessageEffectId effect_id,
                                   int32 new_video_start_timestamp, int64 paid_message_star_count,
                                   unique_ptr<SuggestedPost> &&suggested_post, Promise<Unit> &&promise);
 
@@ -3197,8 +3197,8 @@ class MessagesManager final : public Actor {
   static uint64 save_reget_dialog_log_event(DialogId dialog_id);
 
   static uint64 save_forward_messages_log_event(DialogId to_dialog_id, DialogId from_dialog_id,
-                                                const vector<Message *> &messages, const vector<MessageId> &message_ids,
-                                                bool drop_author, bool drop_media_captions);
+                                                const vector<Message *> &messages, const vector<int32> &ids,
+                                                bool is_ephemeral, bool drop_author, bool drop_media_captions);
 
   void suffix_load_loop(const Dialog *d, SuffixLoadQueries *queries);
   void suffix_load_update_first_message_id(const Dialog *d, SuffixLoadQueries *queries);

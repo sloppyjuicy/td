@@ -1962,7 +1962,7 @@ class ForwardMessagesQuery final : public Td::ResultHandler {
 
   void send(int32 flags, DialogId to_dialog_id, const MessageTopic &message_topic,
             const MessageInputReplyTo &message_input_reply_to, DialogId from_dialog_id,
-            telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, vector<int32> &&ids,
+            telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer, vector<int32> &&ids, bool is_ephemeral,
             MessageId single_message_id, vector<int64> &&random_ids, int32 schedule_date, int32 schedule_repeat_period,
             MessageEffectId effect_id, int32 new_video_start_timestamp, int64 paid_message_star_count,
             const SuggestedPost *suggested_post) {
@@ -2004,10 +2004,10 @@ class ForwardMessagesQuery final : public Td::ResultHandler {
 
     auto query = G()->net_query_creator().create(
         telegram_api::messages_forwardMessages(
-            flags, false, false, false, false, false, false, false, false, std::move(from_input_peer), std::move(ids),
-            std::move(random_ids), std::move(to_input_peer), top_msg_id, std::move(input_reply_to), schedule_date,
-            schedule_repeat_period, std::move(as_input_peer), nullptr, effect_id.get(), new_video_start_timestamp,
-            paid_message_star_count, std::move(post)),
+            flags, false, false, false, false, false, false, false, is_ephemeral, std::move(from_input_peer),
+            std::move(ids), std::move(random_ids), std::move(to_input_peer), top_msg_id, std::move(input_reply_to),
+            schedule_date, schedule_repeat_period, std::move(as_input_peer), nullptr, effect_id.get(),
+            new_video_start_timestamp, paid_message_star_count, std::move(post)),
         {{to_dialog_id, MessageContentType::Text}, {to_dialog_id, MessageContentType::Photo}});
     if (td_->option_manager_->get_option_boolean("use_quick_ack")) {
       query->quick_ack_promise_ = PromiseCreator::lambda([random_ids = random_ids_](Result<Unit> result) {
@@ -4401,8 +4401,16 @@ void MessagesManager::set_message_ephemeral_message(const Dialog *d, Message *m,
   CHECK(d != nullptr);
   CHECK(m != nullptr);
   if (ephemeral_message != nullptr) {
+    ephemeral_message->message_id = m->message_id;
+    ephemeral_message->sender_user_id = m->sender_user_id;
+    ephemeral_message->sender_dialog_id = m->sender_dialog_id;
+    ephemeral_message->author_signature = m->author_signature;
+    ephemeral_message->date = m->date;
     ephemeral_message->replied_message_info = m->replied_message_info.clone(td_);
     ephemeral_message->via_bot_user_id = m->via_bot_user_id;
+    ephemeral_message->is_channel_post = m->is_channel_post;
+    ephemeral_message->view_count = m->view_count;
+    ephemeral_message->forward_count = m->forward_count;
   }
   auto old_file_ids = get_message_file_ids(m->ephemeral_message.get());
   // TODO reregister content
@@ -8269,7 +8277,7 @@ bool MessagesManager::can_forward_message(DialogId from_dialog_id, const Message
   if (m->message_id.is_scheduled()) {
     return false;
   }
-  if (!is_copy && !m->message_id.is_server()) {
+  if (!is_copy && !m->message_id.is_server() && !is_ephemeral_message(m)) {
     return false;
   }
   switch (from_dialog_id.get_type()) {
@@ -8285,10 +8293,10 @@ bool MessagesManager::can_forward_message(DialogId from_dialog_id, const Message
       UNREACHABLE();
       return false;
   }
-  if (!can_forward_message_content(td_, m->content.get(), is_copy)) {
+  if (!can_forward_message_content(
+          td_, m->ephemeral_message == nullptr ? m->content.get() : m->ephemeral_message->content.get(), is_copy)) {
     return false;
   }
-
   if (!(is_copy && td_->auth_manager_->is_bot()) && get_message_has_protected_content(from_dialog_id, m)) {
     return false;
   }
@@ -24282,8 +24290,9 @@ class MessagesManager::ForwardMessagesLogEvent {
  public:
   DialogId to_dialog_id;
   DialogId from_dialog_id;
-  vector<MessageId> message_ids;
+  vector<int32> ids;
   vector<Message *> messages_in;
+  bool is_ephemeral;
   bool drop_author;
   bool drop_media_captions;
   vector<unique_ptr<Message>> messages_out;
@@ -24293,10 +24302,16 @@ class MessagesManager::ForwardMessagesLogEvent {
     BEGIN_STORE_FLAGS();
     STORE_FLAG(drop_author);
     STORE_FLAG(drop_media_captions);
+    STORE_FLAG(is_ephemeral);
     END_STORE_FLAGS();
     td::store(to_dialog_id, storer);
     td::store(from_dialog_id, storer);
-    td::store(message_ids, storer);
+    if (is_ephemeral) {
+      td::store(ids, storer);
+    } else {
+      auto message_ids = transform(ids, [](int32 id) { return MessageId(ServerMessageId(id)); });
+      td::store(message_ids, storer);
+    }
     td::store(messages_in, storer);
   }
 
@@ -24306,43 +24321,51 @@ class MessagesManager::ForwardMessagesLogEvent {
       BEGIN_PARSE_FLAGS();
       PARSE_FLAG(drop_author);
       PARSE_FLAG(drop_media_captions);
+      PARSE_FLAG(is_ephemeral);
       END_PARSE_FLAGS();
     } else {
       drop_author = false;
       drop_media_captions = false;
+      is_ephemeral = false;
     }
     td::parse(to_dialog_id, parser);
     td::parse(from_dialog_id, parser);
-    td::parse(message_ids, parser);
+    if (is_ephemeral) {
+      td::parse(ids, parser);
+    } else {
+      vector<MessageId> message_ids;
+      td::parse(message_ids, parser);
+      ids = MessageId::get_server_message_ids(message_ids);
+    }
     td::parse(messages_out, parser);
   }
 };
 
 uint64 MessagesManager::save_forward_messages_log_event(DialogId to_dialog_id, DialogId from_dialog_id,
-                                                        const vector<Message *> &messages,
-                                                        const vector<MessageId> &message_ids, bool drop_author,
-                                                        bool drop_media_captions) {
-  ForwardMessagesLogEvent log_event{to_dialog_id, from_dialog_id,      message_ids, messages,
+                                                        const vector<Message *> &messages, const vector<int32> &ids,
+                                                        bool is_ephemeral, bool drop_author, bool drop_media_captions) {
+  ForwardMessagesLogEvent log_event{to_dialog_id, from_dialog_id,      ids,   messages, is_ephemeral,
                                     drop_author,  drop_media_captions, Auto()};
   return binlog_add(G()->td_db()->get_binlog(), LogEvent::HandlerType::ForwardMessages,
                     get_log_event_storer(log_event));
 }
 
 void MessagesManager::do_forward_messages(DialogId to_dialog_id, DialogId from_dialog_id,
-                                          const vector<Message *> &messages, const vector<MessageId> &message_ids,
-                                          bool drop_author, bool drop_media_captions, uint64 log_event_id) {
+                                          const vector<Message *> &messages, const vector<int32> &ids,
+                                          bool is_ephemeral, bool drop_author, bool drop_media_captions,
+                                          uint64 log_event_id) {
   if (G()->close_flag()) {
     return;
   }
 
-  CHECK(messages.size() == message_ids.size());
+  CHECK(messages.size() == ids.size());
   if (messages.empty()) {
     return;
   }
 
   if (log_event_id == 0 && G()->use_message_database()) {
-    log_event_id = save_forward_messages_log_event(to_dialog_id, from_dialog_id, messages, message_ids, drop_author,
-                                                   drop_media_captions);
+    log_event_id = save_forward_messages_log_event(to_dialog_id, from_dialog_id, messages, ids, is_ephemeral,
+                                                   drop_author, drop_media_captions);
   }
 
   auto schedule_date = get_message_schedule_date(messages[0]);
@@ -24387,14 +24410,14 @@ void MessagesManager::do_forward_messages(DialogId to_dialog_id, DialogId from_d
     flags |= SEND_MESSAGE_FLAG_EFFECT;
   }
 
-  auto single_message_id = message_ids.size() == 1 ? message_ids[0] : MessageId();
+  auto single_message_id = ids.size() == 1 && !is_ephemeral ? MessageId(ServerMessageId(ids[0])) : MessageId();
   vector<int64> random_ids =
       transform(messages, [this, to_dialog_id](const Message *m) { return begin_send_message(to_dialog_id, m); });
   send_closure_later(actor_id(this), &MessagesManager::send_forward_message_query, flags, to_dialog_id,
                      get_send_message_topic(to_dialog_id, messages[0]), messages[0]->input_reply_to.clone(),
-                     from_dialog_id, std::move(as_input_peer), MessageId::get_server_message_ids(message_ids),
-                     single_message_id, std::move(random_ids), schedule_date, schedule_repeat_period,
-                     messages[0]->effect_id, messages[0]->new_video_start_timestamp,
+                     from_dialog_id, std::move(as_input_peer), ids, is_ephemeral, single_message_id,
+                     std::move(random_ids), schedule_date, schedule_repeat_period, messages[0]->effect_id,
+                     messages[0]->new_video_start_timestamp,
                      messages[0]->paid_message_star_count * static_cast<int32>(messages.size()),
                      SuggestedPost::clone(messages[0]->suggested_post), get_erase_log_event_promise(log_event_id));
 }
@@ -24402,15 +24425,16 @@ void MessagesManager::do_forward_messages(DialogId to_dialog_id, DialogId from_d
 void MessagesManager::send_forward_message_query(int32 flags, DialogId to_dialog_id, MessageTopic message_topic,
                                                  const MessageInputReplyTo input_reply_to, DialogId from_dialog_id,
                                                  telegram_api::object_ptr<telegram_api::InputPeer> as_input_peer,
-                                                 vector<int32> ids, MessageId single_message_id,
+                                                 vector<int32> ids, bool is_ephemeral, MessageId single_message_id,
                                                  vector<int64> random_ids, int32 schedule_date,
                                                  int32 schedule_repeat_period, MessageEffectId effect_id,
                                                  int32 new_video_start_timestamp, int64 paid_message_star_count,
                                                  unique_ptr<SuggestedPost> &&suggested_post, Promise<Unit> &&promise) {
   td_->create_handler<ForwardMessagesQuery>(std::move(promise))
       ->send(flags, to_dialog_id, message_topic, input_reply_to, from_dialog_id, std::move(as_input_peer),
-             std::move(ids), single_message_id, std::move(random_ids), schedule_date, schedule_repeat_period, effect_id,
-             new_video_start_timestamp, paid_message_star_count, suggested_post.get());
+             std::move(ids), is_ephemeral, single_message_id, std::move(random_ids), schedule_date,
+             schedule_repeat_period, effect_id, new_video_start_timestamp, paid_message_star_count,
+             suggested_post.get());
 }
 
 Result<td_api::object_ptr<td_api::message>> MessagesManager::forward_message(
@@ -24629,12 +24653,12 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
     }
     if (forwarded_message->ephemeral_message != nullptr) {
       forwarded_message = forwarded_message->ephemeral_message.get();
-      message_id = forwarded_message->message_id;
     }
     CHECK(message_id.is_valid());
     CHECK(message_id == forwarded_message->message_id);
 
-    bool need_copy = !message_id.is_server() || to_secret || copy_options[i].send_copy;
+    bool can_use_forward = message_id.is_server() || is_ephemeral_message(forwarded_message);
+    bool need_copy = !can_use_forward || to_secret || copy_options[i].send_copy;
     if (!can_forward_message(from_dialog_id, forwarded_message, need_copy)) {
       LOG(INFO) << "Can't forward " << message_id;
       continue;
@@ -24649,7 +24673,7 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
       }
     }();
 
-    bool is_local_copy = need_copy && !(message_id.is_server() && can_use_server_forward && !is_broken_server_copy);
+    bool is_local_copy = need_copy && !(can_use_forward && can_use_server_forward && !is_broken_server_copy);
     auto type = need_copy ? (is_local_copy ? MessageContentDupType::Copy : MessageContentDupType::ServerCopy)
                           : MessageContentDupType::Forward;
     auto input_reply_to = std::move(copy_options[i].input_reply_to);
@@ -24813,24 +24837,32 @@ Result<vector<td_api::object_ptr<td_api::message>>> MessagesManager::forward_mes
   FlatHashMap<MessageId, MessageId, MessageIdHash> forwarded_message_id_to_new_message_id;
   vector<td_api::object_ptr<td_api::message>> result(message_ids.size());
   vector<Message *> forwarded_messages;
-  vector<MessageId> forwarded_message_ids;
+  vector<int32> forwarded_ids;
+  bool is_forward_ephemeral = false;
   bool need_update_dialog_pos = false;
-  for (size_t j = 0; j < forwarded_message_contents.size(); j++) {
-    MessageId message_id = get_persistent_message_id(from_dialog, message_ids[forwarded_message_contents[j].index]);
+  for (size_t i = 0; i < forwarded_message_contents.size(); i++) {
+    MessageId message_id = get_persistent_message_id(from_dialog, message_ids[forwarded_message_contents[i].index]);
     const Message *forwarded_message = get_message(from_dialog, message_id);
     CHECK(forwarded_message != nullptr);
+    if (forwarded_message->ephemeral_message != nullptr) {
+      forwarded_message = forwarded_message->ephemeral_message.get();
+    }
 
-    auto content = std::move(forwarded_message_contents[j].content);
+    auto content = std::move(forwarded_message_contents[i].content);
+    auto is_ephemeral = is_ephemeral_message(forwarded_message);
     auto forward_info =
         drop_author ? nullptr : create_message_forward_info(from_dialog_id, to_dialog_id, forwarded_message);
     MessageInputReplyTo input_reply_to;
-    auto original_reply_to_message_id = forwarded_message->replied_message_info.get_same_chat_reply_to_message_id(true);
-    if (original_reply_to_message_id.is_valid()) {
-      auto it = forwarded_message_id_to_new_message_id.find(original_reply_to_message_id);
-      if (it != forwarded_message_id_to_new_message_id.end()) {
-        // keep replies in forwarded messages
-        input_reply_to = forwarded_message->replied_message_info.get_message_input_reply_to();
-        input_reply_to.set_message_id(it->second, "forward_messages_impl");
+    if (!is_ephemeral) {
+      auto original_reply_to_message_id =
+          forwarded_message->replied_message_info.get_same_chat_reply_to_message_id(true);
+      if (original_reply_to_message_id.is_valid()) {
+        auto it = forwarded_message_id_to_new_message_id.find(original_reply_to_message_id);
+        if (it != forwarded_message_id_to_new_message_id.end()) {
+          // keep replies in forwarded messages
+          input_reply_to = forwarded_message->replied_message_info.get_message_input_reply_to();
+          input_reply_to.set_message_id(it->second, "forward_messages_impl");
+        }
       }
     }
     if (add_offer) {
@@ -24842,28 +24874,30 @@ Result<vector<td_api::object_ptr<td_api::message>>> MessagesManager::forward_mes
     Message *m;
     if (message_send_options.only_preview) {
       message = create_message_to_send(to_dialog, message_topic, std::move(input_reply_to), message_send_options,
-                                       std::move(content), forwarded_message_contents[j].invert_media,
-                                       j + 1 != forwarded_message_contents.size(), std::move(forward_info),
+                                       std::move(content), forwarded_message_contents[i].invert_media,
+                                       i + 1 != forwarded_message_contents.size(), std::move(forward_info),
                                        from_dialog_id, false, DialogId(), false);
       m = message.get();
     } else {
       m = get_message_to_send(to_dialog, message_topic, std::move(input_reply_to), message_send_options,
-                              std::move(content), forwarded_message_contents[j].invert_media, &need_update_dialog_pos,
-                              j + 1 != forwarded_message_contents.size(), std::move(forward_info), from_dialog_id);
+                              std::move(content), forwarded_message_contents[i].invert_media, &need_update_dialog_pos,
+                              i + 1 != forwarded_message_contents.size(), std::move(forward_info), from_dialog_id);
     }
-    fix_forwarded_message(m, to_dialog_id, forwarded_message, forwarded_message_contents[j].media_album_id,
-                          forwarded_message_contents[j].dup_type);
+    fix_forwarded_message(m, to_dialog_id, forwarded_message, forwarded_message_contents[i].media_album_id,
+                          forwarded_message_contents[i].dup_type);
     m->in_game_share = in_game_share;
     m->new_video_start_timestamp = new_video_start_timestamp;
-    m->real_forward_from_message_id = message_id;
-    forwarded_message_id_to_new_message_id.emplace(message_id, m->message_id);
-    if (forwarded_message->replied_message_info.is_external()) {
-      if (!message_send_options.only_preview) {
-        unregister_message_reply(to_dialog_id, m);
-      }
-      m->replied_message_info = forwarded_message->replied_message_info.clone(td_);
-      if (!message_send_options.only_preview) {
-        register_message_reply(to_dialog_id, m);
+    if (!is_ephemeral) {
+      m->real_forward_from_message_id = message_id;
+      forwarded_message_id_to_new_message_id.emplace(message_id, m->message_id);
+      if (forwarded_message->replied_message_info.is_external()) {
+        if (!message_send_options.only_preview) {
+          unregister_message_reply(to_dialog_id, m);
+        }
+        m->replied_message_info = forwarded_message->replied_message_info.clone(td_);
+        if (!message_send_options.only_preview) {
+          register_message_reply(to_dialog_id, m);
+        }
       }
     }
 
@@ -24871,17 +24905,23 @@ Result<vector<td_api::object_ptr<td_api::message>>> MessagesManager::forward_mes
       if (!td_->auth_manager_->is_bot()) {
         send_update_new_message(to_dialog, m);
       }
+      if (forwarded_messages.empty()) {
+        is_forward_ephemeral = is_ephemeral;
+      } else {
+        CHECK(is_forward_ephemeral == is_ephemeral);
+      }
       forwarded_messages.push_back(m);
-      forwarded_message_ids.push_back(message_id);
+      forwarded_ids.push_back(is_ephemeral ? forwarded_message->ephemeral_message_id.get()
+                                           : message_id.get_server_message_id().get());
     }
 
-    result[forwarded_message_contents[j].index] = get_message_object(to_dialog_id, m, "forward_messages_impl");
+    result[forwarded_message_contents[i].index] = get_message_object(to_dialog_id, m, "forward_messages_impl");
   }
 
   if (!forwarded_messages.empty()) {
     CHECK(!message_send_options.only_preview);
-    do_forward_messages(to_dialog_id, from_dialog_id, forwarded_messages, forwarded_message_ids, drop_author,
-                        drop_media_captions, 0);
+    do_forward_messages(to_dialog_id, from_dialog_id, forwarded_messages, forwarded_ids, is_forward_ephemeral,
+                        drop_author, drop_media_captions, 0);
   }
 
   bool is_secret = to_dialog_id.get_type() == DialogType::SecretChat;
@@ -36095,7 +36135,7 @@ void MessagesManager::on_binlog_events(vector<BinlogEvent> &&events) {
           send_update_chat_last_message(to_dialog, "on_reforward_message");
         }
 
-        do_forward_messages(to_dialog_id, from_dialog_id, forwarded_messages, log_event.message_ids,
+        do_forward_messages(to_dialog_id, from_dialog_id, forwarded_messages, log_event.ids, log_event.is_ephemeral,
                             log_event.drop_author, log_event.drop_media_captions, event.id_);
         break;
       }
