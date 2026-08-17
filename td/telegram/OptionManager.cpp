@@ -221,6 +221,7 @@ OptionManager::OptionManager(Td *td)
   set_default_integer_option("rich_message_depth_max", 16);
   set_default_integer_option("rich_message_media_count_max", 50);
   set_default_integer_option("rich_message_table_column_count_max", 20);
+  set_default_integer_option("welcome_message_count_max", is_test_dc ? 5 : 3);
 
   if (options.isset("my_phone_number") || !options.isset("my_id")) {
     update_premium_options();

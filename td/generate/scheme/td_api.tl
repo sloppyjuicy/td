@@ -12631,7 +12631,7 @@ editQuickReplyMessage shortcut_id:int32 message_id:int53 input_message_content:I
 //@chat_id The identifier of the chat
 loadChatWelcomeMessages chat_id:int53 = Ok;
 
-//@description Adds a message to the list of welcome messages of a chat; requires can_send_welcome_messages administrator right in the chat
+//@description Adds a message to the list of welcome messages of a chat; requires can_send_welcome_messages administrator right in the chat. There can be up to getOption("welcome_message_count_max") welcome messages in a chat
 //@chat_id The identifier of the chat
 //@input_message_content The content of the message to be sent. Must be one of the following types: inputMessageText, inputMessageAnimation,
 //-inputMessageAudio, inputMessageDocument, inputMessagePhoto, inputMessageRichMessage, inputMessageSticker, inputMessageVideo, inputMessageVideoNote, inputMessageVoiceNote,
