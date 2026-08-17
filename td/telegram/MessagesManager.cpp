@@ -31321,6 +31321,10 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
       ttl_period_register_message(dialog_id, message.get(), server_time);
     }
   }
+  if (message->ephemeral_message != nullptr &&
+      message->ephemeral_message->date + message->ephemeral_message->ttl_period <= G()->server_time()) {
+    message->ephemeral_message = nullptr;
+  }
 
   if (!message->are_media_timestamp_entities_found) {
     message->are_media_timestamp_entities_found = true;
