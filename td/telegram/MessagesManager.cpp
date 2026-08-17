@@ -24428,12 +24428,12 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::forward_message(
   TRY_RESULT(result, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, {message_id}, message_send_options,
                                            in_game_share, new_video_start_timestamp, std::move(all_copy_options),
                                            add_offer, reply_to_message_id));
-  CHECK(result->messages_.size() == 1);
-  if (result->messages_[0] == nullptr) {
+  CHECK(result.size() == 1);
+  if (result[0] == nullptr) {
     return Status::Error(400,
                          need_copy ? Slice("The message can't be copied") : Slice("The message can't be forwarded"));
   }
-  return std::move(result->messages_[0]);
+  return std::move(result[0]);
 }
 
 void MessagesManager::add_offer(DialogId dialog_id, MessageId message_id,
@@ -24774,11 +24774,13 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
   TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(
                                        td_, to_dialog_id, std::move(options), false, message_count == 1,
                                        message_count == 1, message_count == 1, message_count));
-  return forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(message_ids), message_send_options,
-                               in_game_share, new_video_start_timestamp, std::move(copy_options), false, MessageId());
+  TRY_RESULT(messages, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(message_ids),
+                                             message_send_options, in_game_share, new_video_start_timestamp,
+                                             std::move(copy_options), false, MessageId()));
+  return get_messages_object(-1, std::move(messages), false);
 }
 
-Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages_impl(
+Result<vector<td_api::object_ptr<td_api::message>>> MessagesManager::forward_messages_impl(
     DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
     vector<MessageId> message_ids, const MessageSendOptions &message_send_options, bool in_game_share,
     int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer,
@@ -24936,7 +24938,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages_i
     td_->account_manager_->invalidate_authentication_codes(std::move(authentication_codes));
   }
 
-  return get_messages_object(-1, std::move(result), false);
+  return std::move(result);
 }
 
 Result<td_api::object_ptr<td_api::messages>> MessagesManager::send_quick_reply_shortcut_messages(

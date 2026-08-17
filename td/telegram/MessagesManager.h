@@ -1844,7 +1844,7 @@ class MessagesManager final : public Actor {
 
   FileUploadId get_message_send_thumbnail_file_upload_id(DialogId dialog_id, const Message *m, int32 media_pos) const;
 
-  Result<td_api::object_ptr<td_api::messages>> forward_messages_impl(
+  Result<vector<td_api::object_ptr<td_api::message>>> forward_messages_impl(
       DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
       vector<MessageId> message_ids, const MessageSendOptions &message_send_options, bool in_game_share,
       int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer,
