@@ -483,8 +483,7 @@ class MessagesManager final : public Actor {
   Result<td_api::object_ptr<td_api::messages>> forward_messages(
       DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
       vector<MessageId> message_ids, tl_object_ptr<td_api::messageSendOptions> &&options, bool in_game_share,
-      int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer = false,
-      MessageId suggested_post_reply_to_message_id = MessageId()) TD_WARN_UNUSED_RESULT;
+      int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options) TD_WARN_UNUSED_RESULT;
 
   void add_offer(DialogId dialog_id, MessageId message_id, td_api::object_ptr<td_api::messageSendOptions> &&options,
                  Promise<td_api::object_ptr<td_api::message>> &&promise);
@@ -1845,6 +1844,12 @@ class MessagesManager final : public Actor {
 
   FileUploadId get_message_send_thumbnail_file_upload_id(DialogId dialog_id, const Message *m, int32 media_pos) const;
 
+  Result<td_api::object_ptr<td_api::messages>> forward_messages_impl(
+      DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
+      vector<MessageId> message_ids, const MessageSendOptions &message_send_options, bool in_game_share,
+      int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer,
+      MessageId suggested_post_reply_to_message_id);
+
   void do_forward_messages(DialogId to_dialog_id, DialogId from_dialog_id, const vector<Message *> &messages,
                            const vector<MessageId> &message_ids, bool drop_author, bool drop_media_captions,
                            uint64 log_event_id);
@@ -1914,13 +1919,12 @@ class MessagesManager final : public Actor {
     Dialog *from_dialog = nullptr;
     MessageTopic message_topic;
     Dialog *to_dialog = nullptr;
-    MessageSendOptions message_send_options;
   };
 
   Result<ForwardedMessages> get_forwarded_messages(DialogId to_dialog_id,
                                                    const td_api::object_ptr<td_api::MessageTopic> &topic_id,
                                                    DialogId from_dialog_id, const vector<MessageId> &message_ids,
-                                                   td_api::object_ptr<td_api::messageSendOptions> &&options,
+                                                   const MessageSendOptions &message_send_options,
                                                    int32 new_video_start_timestamp,
                                                    vector<MessageCopyOptions> &&copy_options, bool add_offer);
 

@@ -24423,9 +24423,11 @@ Result<td_api::object_ptr<td_api::message>> MessagesManager::forward_message(
   bool need_copy = copy_options.send_copy;
   vector<MessageCopyOptions> all_copy_options;
   all_copy_options.push_back(std::move(copy_options));
-  TRY_RESULT(result,
-             forward_messages(to_dialog_id, topic_id, from_dialog_id, {message_id}, std::move(options), in_game_share,
-                              new_video_start_timestamp, std::move(all_copy_options), add_offer, reply_to_message_id));
+  TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(td_, to_dialog_id, std::move(options),
+                                                                                false, true, true, true, 1));
+  TRY_RESULT(result, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, {message_id}, message_send_options,
+                                           in_game_share, new_video_start_timestamp, std::move(all_copy_options),
+                                           add_offer, reply_to_message_id));
   CHECK(result->messages_.size() == 1);
   if (result->messages_[0] == nullptr) {
     return Status::Error(400,
@@ -24555,16 +24557,9 @@ void MessagesManager::fix_forwarded_message(Message *m, DialogId to_dialog_id, c
 
 Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messages(
     DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
-    const vector<MessageId> &message_ids, tl_object_ptr<td_api::messageSendOptions> &&options,
+    const vector<MessageId> &message_ids, const MessageSendOptions &message_send_options,
     int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer) {
   CHECK(copy_options.size() == message_ids.size());
-  if (message_ids.size() > 100) {  // TODO replace with const from config or implement mass-forward
-    return Status::Error(400, "Too many messages to forward");
-  }
-  if (message_ids.empty()) {
-    return Status::Error(400, "There are no messages to forward");
-  }
-
   Dialog *from_dialog = get_dialog_force(from_dialog_id, "forward_messages from");
   if (from_dialog == nullptr) {
     return Status::Error(400, "Chat to forward messages from not found");
@@ -24586,10 +24581,6 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
   }
 
   TRY_STATUS(can_send_message(to_dialog_id));
-  TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(
-                                       td_, to_dialog_id, std::move(options), false, message_ids.size() == 1u,
-                                       add_offer || message_ids.size() == 1u, message_ids.size() == 1u,
-                                       static_cast<int32>(message_ids.size())));
   TRY_RESULT(message_topic, MessageTopic::get_send_message_topic(td_, to_dialog_id, topic_id));
   if (message_topic.is_thread()) {
     return Status::Error(400, "Can't forward messages to a specific message thread");
@@ -24765,21 +24756,38 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
   for (auto &message : copied_messages) {
     message.media_album_id = new_copied_media_album_ids[message.media_album_id].first;
   }
-  result.message_send_options = std::move(message_send_options);
   return std::move(result);
 }
 
 Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
     DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
     vector<MessageId> message_ids, tl_object_ptr<td_api::messageSendOptions> &&options, bool in_game_share,
+    int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options) {
+  CHECK(copy_options.size() == message_ids.size());
+  if (message_ids.size() > 100) {  // TODO replace with const from config or implement mass-forward
+    return Status::Error(400, "Too many messages to forward");
+  }
+  if (message_ids.empty()) {
+    return Status::Error(400, "There are no messages to forward");
+  }
+  auto message_count = static_cast<int32>(message_ids.size());
+  TRY_RESULT(message_send_options, MessageSendOptions::get_message_send_options(
+                                       td_, to_dialog_id, std::move(options), false, message_count == 1,
+                                       message_count == 1, message_count == 1, message_count));
+  return forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(message_ids), message_send_options,
+                               in_game_share, new_video_start_timestamp, std::move(copy_options), false, MessageId());
+}
+
+Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages_impl(
+    DialogId to_dialog_id, const td_api::object_ptr<td_api::MessageTopic> &topic_id, DialogId from_dialog_id,
+    vector<MessageId> message_ids, const MessageSendOptions &message_send_options, bool in_game_share,
     int32 new_video_start_timestamp, vector<MessageCopyOptions> &&copy_options, bool add_offer,
     MessageId suggested_post_reply_to_message_id) {
   TRY_RESULT(forwarded_messages_info,
-             get_forwarded_messages(to_dialog_id, topic_id, from_dialog_id, message_ids, std::move(options),
+             get_forwarded_messages(to_dialog_id, topic_id, from_dialog_id, message_ids, message_send_options,
                                     new_video_start_timestamp, std::move(copy_options), add_offer));
   auto from_dialog = forwarded_messages_info.from_dialog;
   auto to_dialog = forwarded_messages_info.to_dialog;
-  const auto &message_send_options = forwarded_messages_info.message_send_options;
   auto &copied_messages = forwarded_messages_info.copied_messages;
   auto &forwarded_message_contents = forwarded_messages_info.forwarded_message_contents;
   auto drop_author = forwarded_messages_info.drop_author;
@@ -24806,7 +24814,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
       if (it != forwarded_message_id_to_new_message_id.end()) {
         // keep replies in forwarded messages
         input_reply_to = forwarded_message->replied_message_info.get_message_input_reply_to();
-        input_reply_to.set_message_id(it->second, "forward_messages");
+        input_reply_to.set_message_id(it->second, "forward_messages_impl");
       }
     }
     if (add_offer) {
@@ -24851,7 +24859,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
       forwarded_message_ids.push_back(message_id);
     }
 
-    result[forwarded_message_contents[j].index] = get_message_object(to_dialog_id, m, "forward_messages");
+    result[forwarded_message_contents[j].index] = get_message_object(to_dialog_id, m, "forward_messages_impl");
   }
 
   if (!forwarded_messages.empty()) {
@@ -24916,12 +24924,12 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
       }
     }
 
-    result[copied_message.index] = get_message_object(to_dialog_id, m, "forward_messages");
+    result[copied_message.index] = get_message_object(to_dialog_id, m, "forward_messages_impl");
   }
 
   if (need_update_dialog_pos) {
     CHECK(!message_send_options.only_preview);
-    send_update_chat_last_message(to_dialog, "forward_messages");
+    send_update_chat_last_message(to_dialog, "forward_messages_impl");
   }
 
   if (!authentication_codes.empty()) {
