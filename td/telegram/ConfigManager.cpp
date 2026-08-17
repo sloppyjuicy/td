@@ -1393,6 +1393,7 @@ void ConfigManager::process_app_config(tl_object_ptr<telegram_api::JSONValue> &c
       {"chat_read_mark_expire_period", ""},
       {"chat_read_mark_size_threshold", ""},
       {"chatlist_update_period", "chat_folder_new_chats_update_period"},
+      {"community_peers_limit", "community_chat_count_max"},
       {"conference_call_size_limit", "group_call_participant_count_max"},
       {"contact_note_length_limit", "user_note_text_length_max"},
       {"ephemeral_welcome_messages_max", "welcome_message_count_max"},
