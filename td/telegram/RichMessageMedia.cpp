@@ -29,6 +29,7 @@ Result<RichMessageMedia> RichMessageMedia::get_rich_message_media(
   switch (input_message_content.content->get_type()) {
     case MessageContentType::Animation:
     case MessageContentType::Audio:
+    case MessageContentType::Document:
     case MessageContentType::Photo:
     case MessageContentType::Video:
     case MessageContentType::VoiceNote:
