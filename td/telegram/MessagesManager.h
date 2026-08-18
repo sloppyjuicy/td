@@ -3152,7 +3152,7 @@ class MessagesManager final : public Actor {
 
   MessageId get_next_message_id(Dialog *d, MessageType type) const;
 
-  MessageId get_next_local_message_id(Dialog *d) const;
+  MessageId get_next_local_message_id(Dialog *d);
 
   MessageId get_next_yet_unsent_message_id(Dialog *d) const;
 

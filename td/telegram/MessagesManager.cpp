@@ -28239,8 +28239,12 @@ MessageId MessagesManager::get_next_yet_unsent_message_id(Dialog *d) const {
   return get_next_message_id(d, MessageType::YetUnsent);
 }
 
-MessageId MessagesManager::get_next_local_message_id(Dialog *d) const {
-  return get_next_message_id(d, MessageType::Local);
+MessageId MessagesManager::get_next_local_message_id(Dialog *d) {
+  auto message_id = get_next_message_id(d, MessageType::Local);
+  while (get_message_force(d, message_id, "get_next_local_message_id") != nullptr) {
+    message_id = message_id.get_next_message_id(MessageType::Local);
+  }
+  return message_id;
 }
 
 MessageId MessagesManager::get_next_yet_unsent_scheduled_message_id(Dialog *d, int32 date) {
@@ -28294,9 +28298,6 @@ void MessagesManager::fail_send_message(MessageFullId message_full_id, int32 err
     if (get_message_force(d, new_message_id, "fail_send_message") != nullptr || is_deleted_message(d, new_message_id) ||
         new_message_id <= d->last_clear_history_message_id) {
       new_message_id = get_next_local_message_id(d);
-      while (get_message_force(d, new_message_id, "fail_send_message") != nullptr) {
-        new_message_id = new_message_id.get_next_message_id(MessageType::Local);
-      }
     }
     if (new_message_id > d->last_assigned_message_id) {
       d->last_assigned_message_id = new_message_id;
