@@ -2705,7 +2705,7 @@ void WebPagesManager::on_load_web_page_from_database(WebPageId web_page_id, stri
         const WebPage *web_page = get_web_page(web_page_id);
         if (web_page != nullptr && can_web_page_be_album(web_page) && !web_page->instant_view_.is_empty_ &&
             !web_page->instant_view_.is_loaded_) {
-          LOG(INFO) << "Forcely load instant view of " << web_page_id;
+          LOG(INFO) << "Forcibly load instant view of " << web_page_id;
           on_load_web_page_instant_view_from_database(
               web_page_id,
               G()->td_db()->get_sqlite_sync_pmc()->get(get_web_page_instant_view_database_key(web_page_id)));

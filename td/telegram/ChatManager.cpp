@@ -5127,7 +5127,7 @@ void ChatManager::on_load_channel_full_from_database(ChannelId channel_id, strin
   Dependencies dependencies;
   dependencies.add(channel_id);
   // must not depend on the linked_dialog_id/monoforum_dialog_id itself, because message database can be disabled
-  // the Dialog will be forcely created in update_channel_full
+  // the Dialog will be forcibly created in update_channel_full
   dependencies.add_dialog_dependencies(DialogId(channel_full->linked_channel_id));
   dependencies.add_dialog_dependencies(DialogId(channel_full->monoforum_channel_id));
   dependencies.add(channel_full->linked_community_id);

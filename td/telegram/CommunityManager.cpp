@@ -1158,7 +1158,7 @@ void CommunityManager::set_community_name(CommunityId community_id, const string
   }
   auto status = get_community_status(c);
   if (!status.is_administrator() || !status.can_change_info_and_settings()) {
-    return promise.set_error(400, "Have no enough rights");
+    return promise.set_error(400, "Have not enough rights");
   }
   auto title = clean_name(name, MAX_TITLE_LENGTH);
   if (title.empty()) {

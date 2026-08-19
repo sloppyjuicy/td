@@ -19,6 +19,7 @@
 #include "td/telegram/SuggestedPost.h"
 #include "td/telegram/Td.h"
 #include "td/telegram/telegram_api.h"
+#include "td/telegram/UserId.h"
 
 #include "td/utils/logging.h"
 #include "td/utils/tl_helpers.h"

@@ -37,6 +37,7 @@
 #include "td/utils/Random.h"
 #include "td/utils/SliceBuilder.h"
 #include "td/utils/Status.h"
+#include "td/utils/tl_helpers.h"
 
 namespace td {
 
