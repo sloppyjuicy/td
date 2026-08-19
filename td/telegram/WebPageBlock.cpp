@@ -5448,6 +5448,8 @@ void WebPageBlock::call_impl(Type type, const WebPageBlock *ptr, F &&f) {
       return f(static_cast<const WebPageBlockButtonRow *>(ptr));
     case Type::ExpandableBlockQuote:
       return f(static_cast<const WebPageBlockExpandableBlockQuote *>(ptr));
+    case Type::Unsupported:
+      return f(static_cast<const WebPageBlockUnsupported *>(ptr));
 
     default:
       UNREACHABLE();
