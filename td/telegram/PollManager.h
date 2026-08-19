@@ -35,6 +35,7 @@
 #include "td/utils/WaitFreeHashMap.h"
 #include "td/utils/WaitFreeHashSet.h"
 
+#include <memory>
 #include <utility>
 
 namespace td {

@@ -9,7 +9,6 @@
 #include "td/telegram/DialogId.h"
 #include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileSourceId.h"
-#include "td/telegram/ForumTopicId.h"
 #include "td/telegram/MessageContentUploadId.h"
 #include "td/telegram/MessageTopic.h"
 #include "td/telegram/SavedMessagesTopicId.h"
@@ -19,6 +18,9 @@
 #include "td/utils/common.h"
 #include "td/utils/FlatHashMap.h"
 #include "td/utils/Promise.h"
+#include "td/utils/Status.h"
+
+#include <memory>
 
 namespace td {
 

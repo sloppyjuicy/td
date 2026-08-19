@@ -7,8 +7,10 @@
 #pragma once
 
 #include "td/telegram/CommunityId.h"
+#include "td/telegram/DialogId.h"
 #include "td/telegram/DialogParticipant.h"
 #include "td/telegram/DialogPhoto.h"
+#include "td/telegram/files/FileId.h"
 #include "td/telegram/files/FileSourceId.h"
 #include "td/telegram/Photo.h"
 #include "td/telegram/QueryCombiner.h"

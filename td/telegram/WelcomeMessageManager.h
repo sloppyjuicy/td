@@ -23,6 +23,8 @@
 #include "td/utils/Promise.h"
 #include "td/utils/Status.h"
 
+#include <memory>
+
 namespace td {
 
 class MessageContent;

@@ -19,7 +19,6 @@
 #include "td/telegram/MessageEntity.h"
 #include "td/telegram/MessageSelfDestructType.h"
 #include "td/telegram/net/DcId.h"
-#include "td/telegram/OptionManager.h"
 #include "td/telegram/ReplyMarkup.h"
 #include "td/telegram/RichMessage.h"
 #include "td/telegram/Td.h"

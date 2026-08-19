@@ -7,14 +7,11 @@
 #include "td/telegram/ReplyMarkup.h"
 
 #include "td/telegram/Dependencies.h"
-#include "td/telegram/misc.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
-#include "td/telegram/UserManager.h"
 
 #include "td/utils/algorithm.h"
 #include "td/utils/logging.h"
-#include "td/utils/SliceBuilder.h"
 
 namespace td {
 
