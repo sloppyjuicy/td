@@ -7,13 +7,12 @@
 #pragma once
 
 #include "td/telegram/DialogId.h"
+#include "td/telegram/InlineKeyboardButton.h"
 #include "td/telegram/KeyboardButton.h"
-#include "td/telegram/KeyboardButtonStyle.h"
 #include "td/telegram/MessageContentDupType.h"
 #include "td/telegram/RequestedDialogType.h"
 #include "td/telegram/td_api.h"
 #include "td/telegram/telegram_api.h"
-#include "td/telegram/UserId.h"
 
 #include "td/utils/common.h"
 #include "td/utils/Status.h"
@@ -23,53 +22,6 @@ namespace td {
 
 class Dependencies;
 class UserManager;
-
-struct InlineKeyboardButton {
-  // append only
-  enum class Type : int32 {
-    Url,
-    Callback,
-    CallbackGame,
-    SwitchInline,
-    SwitchInlineCurrentDialog,
-    Buy,
-    UrlAuth,
-    CallbackWithPassword,
-    User,
-    WebView,
-    Copy,
-    Disabled
-  };
-
-  Type type = Type::Disabled;
-  int64 id = 0;    // UrlAuth: button_id or (2 * request_write_access - 1) * bot_user_id + request_write_access - 1
-                   // SwitchInline: mask of allowed target chats; 0 if any
-  UserId user_id;  // User only
-  KeyboardButtonStyle style;
-  string text;
-  string forward_text;  // UrlAuth only
-  string data;
-
-  InlineKeyboardButton copy() const;
-
-  InlineKeyboardButton() = default;
-  InlineKeyboardButton(const InlineKeyboardButton &) = delete;
-  InlineKeyboardButton &operator=(const InlineKeyboardButton &) = delete;
-  InlineKeyboardButton(InlineKeyboardButton &&) = default;
-  InlineKeyboardButton &operator=(InlineKeyboardButton &&) = default;
-  ~InlineKeyboardButton() = default;
-
-  void add_dependencies(Dependencies &dependencies) const;
-
-  InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot,
-                             bool is_rich_message) const;
-
-  bool is_disabled() const {
-    return type == Type::Disabled;
-  }
-};
-
-bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);
 
 struct ReplyMarkup {
   // append only
@@ -102,18 +54,6 @@ bool operator==(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 bool operator!=(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
 
 StringBuilder &operator<<(StringBuilder &string_builder, const ReplyMarkup &reply_markup);
-
-InlineKeyboardButton get_inline_keyboard_button(
-    telegram_api::object_ptr<telegram_api::keyboardInlineButton> &&keyboard_button);
-
-Result<InlineKeyboardButton> get_inline_keyboard_button(td_api::object_ptr<td_api::inlineKeyboardButton> &&button,
-                                                        bool switch_inline_buttons_allowed);
-
-telegram_api::object_ptr<telegram_api::keyboardInlineButton> get_input_keyboard_inline_button(
-    const UserManager *user_manager, const InlineKeyboardButton &keyboard_button);
-
-td_api::object_ptr<td_api::inlineKeyboardButton> get_inline_keyboard_button_object(
-    UserManager *user_manager, const InlineKeyboardButton &keyboard_button);
 
 unique_ptr<ReplyMarkup> get_reply_markup(telegram_api::object_ptr<telegram_api::ReplyMarkup> &&reply_markup_ptr,
                                          bool is_bot, bool only_inline_keyboard, bool message_contains_mention);
