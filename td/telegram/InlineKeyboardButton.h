@@ -65,6 +65,10 @@ struct InlineKeyboardButton {
   bool is_disabled() const {
     return type == Type::Disabled;
   }
+
+  const string &get_forward_text() const {
+    return forward_text;
+  }
 };
 
 bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);

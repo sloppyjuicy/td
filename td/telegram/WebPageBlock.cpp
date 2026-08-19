@@ -488,6 +488,12 @@ class RichText {
     result.user_id = user_id;
     result.button_style = button_style;
     if (button != nullptr) {
+      if (context.dup_type_ == MessageContentDupType::Forward && !button->get_forward_text().empty()) {
+        CHECK(result.texts.size() == 1u);
+        result.texts[0] = {};
+        result.texts[0].type = Type::Plain;
+        result.texts[0].content = button->get_forward_text();
+      }
       result.button = make_unique<InlineKeyboardButton>(
           button->clone(context.dialog_id_, context.dup_type_, context.is_via_bot_, true));
     }
@@ -2520,7 +2526,12 @@ class WebPageBlockButtonRow final : public WebPageBlock {
 
     Button clone(CloneContext &context) const {
       Button result;
-      result.text = text.clone(context);
+      if (context.dup_type_ == MessageContentDupType::Forward && !button.get_forward_text().empty()) {
+        result.text.type = RichText::Type::Plain;
+        result.text.content = button.get_forward_text();
+      } else {
+        result.text = text.clone(context);
+      }
       result.style = style;
       result.button = button.clone(context.dialog_id_, context.dup_type_, context.is_via_bot_, true);
       return result;
