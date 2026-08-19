@@ -42,7 +42,7 @@ void InlineKeyboardButton::add_dependencies(Dependencies &dependencies) const {
 InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const MessageContentDupType &dup_type,
                                                  bool is_via_bot, bool is_rich_message) const {
   if (dialog_id.get_type() == DialogType::SecretChat) {
-    // secret chats has no reply markup support
+    // secret chats have no reply markup support
     return InlineKeyboardButton();
   }
   if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot) {

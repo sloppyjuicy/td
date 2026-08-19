@@ -2234,7 +2234,7 @@ void QuickReplyManager::on_send_media_group_file_reference_error(QuickReplyShort
     request.results.push_back(Status::OK());
   }
 
-  for (auto upload_id : upload_ids) {
+  for (const auto &upload_id : upload_ids) {
     td_->message_query_manager_->start_upload_message_content(upload_id, true);
   }
 }

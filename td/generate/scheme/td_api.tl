@@ -11802,7 +11802,7 @@ loadCommunityFullInfo community_id:int53 = Ok;
 //@name Name of the new community
 //@chat_id Identifier of the chat in the community; only chats with owned bots and owned basic group, supergroup and channel chats are allowed;
 //-basic group chats will be automatically upgraded to supergroup chats
-//@is_chat_hidden Pass True, if the chat will be visible only to administrators of the community
+//@is_chat_hidden Pass true if the chat will be visible only to administrators of the community
 createCommunity name:string chat_id:int53 is_chat_hidden:Bool = CommunityId;
 
 //@description Changes name of the given community; requires can_change_info administrator right in the community
@@ -12256,7 +12256,7 @@ resendMessages chat_id:int53 message_ids:vector<int53> quote:inputTextQuote paid
 //@topic_id Topic in which the message will be sent; pass null if none
 //@receiver_user_id Identifier of the user who will receive the message
 //@callback_query_id Identifier of the callback query which triggered the message; for bots only
-//@replace_callback_query_message Pass true, if the ephemeral message must replace the message from which the callback query originated; for bots only
+//@replace_callback_query_message Pass true if the ephemeral message must replace the message from which the callback query originated; for bots only
 //@reply_to Information about the message to be replied; pass null if none. The message can be an incoming ephemeral message
 //@protect_content Pass true if the content of the message must be protected from forwarding and saving; for bots only
 //@sending_id Non-persistent identifier, which will be returned back in messageSendingStatePending object and can be used to match sent messages and corresponding updateNewMessage updates
@@ -12613,7 +12613,7 @@ addQuickReplyShortcutInlineQueryResultMessage shortcut_name:string reply_to_mess
 addQuickReplyShortcutMessageAlbum shortcut_name:string reply_to_message_id:int53 input_message_contents:vector<InputMessageContent> = QuickReplyMessages;
 
 //@description Re-adds quick reply messages which failed to add. Can be called only for messages for which messageSendingStateFailed.can_retry is true and after specified in messageSendingStateFailed.retry_after time passed.
-//-If a message is re-added, the corresponding failed to send message is deleted. Returns the sent messages in the same order as the message identifiers passed in message_ids. If a message can't be readded, null will be returned instead of the message
+//-If a message is re-added, the corresponding failed to send message is deleted. Returns the sent messages in the same order as the message identifiers passed in message_ids. If a message can't be re-added, null will be returned instead of the message
 //@shortcut_name Name of the target shortcut
 //@message_ids Identifiers of the quick reply messages to re-add. Message identifiers must be in a strictly increasing order
 readdQuickReplyShortcutMessages shortcut_name:string message_ids:vector<int53> = QuickReplyMessages;

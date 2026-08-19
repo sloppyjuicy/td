@@ -244,11 +244,11 @@ class UploadGenericMediaQuery final : public Td::ResultHandler {
   }
 
   void on_error(Status status) final {
-    LOG(INFO) << "Receive error for UploadGenericMediaQuery of media " << media_pos_ << " of " << upload_id_ << ": "
-              << status;
     if (G()->close_flag() && G()->use_message_database()) {
       return;
     }
+    LOG(INFO) << "Receive error for UploadGenericMediaQuery of media " << media_pos_ << " of " << upload_id_ << ": "
+              << status;
     td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "UploadGenericMediaQuery");
     if (td_->file_reference_manager_->process_file_reference_error(
             status, true, {}, {}, {cover_file_id_}, {cover_file_reference_}, false, [&](size_t pos, FileId file_id) {

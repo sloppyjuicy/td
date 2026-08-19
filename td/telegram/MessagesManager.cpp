@@ -1561,7 +1561,8 @@ class SendMediaQuery final : public Td::ResultHandler {
       }
       bool invert_media = (flags & MessagesManager::SEND_MESSAGE_FLAG_INVERT_MEDIA) != 0;
       bool noforwards = (flags & MessagesManager::SEND_MESSAGE_FLAG_NOFORWARDS) != 0;
-      flags = telegram_api::ephemeral_sendMessage::PEER_MASK;
+      flags = 0;
+      flags |= telegram_api::ephemeral_sendMessage::PEER_MASK;
       if (reply_to != nullptr) {
         flags |= telegram_api::ephemeral_sendMessage::REPLY_TO_MASK;
       }
@@ -24804,7 +24805,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
                  forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(part_message_ids),
                                        message_send_options, in_game_share, new_video_start_timestamp,
                                        std::move(part_copy_options), false, MessageId()));
-      td::append(messages, std::move(part_messages));
+      append(messages, std::move(part_messages));
       part_message_ids.clear();
       part_copy_options.clear();
     }
@@ -24815,7 +24816,7 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
   TRY_RESULT(part_messages, forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(part_message_ids),
                                                   message_send_options, in_game_share, new_video_start_timestamp,
                                                   std::move(part_copy_options), false, MessageId()));
-  td::append(messages, std::move(part_messages));
+  append(messages, std::move(part_messages));
   return get_messages_object(-1, std::move(messages), false);
 }
 

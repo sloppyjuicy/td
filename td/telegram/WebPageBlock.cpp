@@ -2564,7 +2564,7 @@ class WebPageBlockButtonRow final : public WebPageBlock {
     template <class ParserT>
     void parse(ParserT &parser) {
       using ::td::parse;
-      bool has_style = !style.is_default();
+      bool has_style;
       BEGIN_PARSE_FLAGS();
       PARSE_FLAG(has_style);
       END_PARSE_FLAGS();

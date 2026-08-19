@@ -358,7 +358,7 @@ Status WelcomeMessageManager::can_access_welcome_messages(DialogId dialog_id) {
     return Status::Error(400, "Chat can't have welcome messages");
   }
   if (!td_->dialog_manager_->get_dialog_status(dialog_id).can_manage_welcome_messages()) {
-    return Status::Error(400, "Have no enough rights");
+    return Status::Error(400, "Have not enough rights");
   }
   return Status::OK();
 }
@@ -882,7 +882,7 @@ vector<FileId> WelcomeMessageManager::get_dialog_welcome_message_file_ids(
     const vector<unique_ptr<WelcomeMessage>> &messages) const {
   vector<FileId> file_ids;
   for (auto &message : messages) {
-    td::append(file_ids, get_message_content_file_ids(message->content_.get(), td_));
+    append(file_ids, get_message_content_file_ids(message->content_.get(), td_));
   }
   return file_ids;
 }
