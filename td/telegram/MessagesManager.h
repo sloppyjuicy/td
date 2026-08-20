@@ -2322,6 +2322,10 @@ class MessagesManager final : public Actor {
 
   void delete_message_files(DialogId dialog_id, const Message *m) const;
 
+  void do_delete_message_ephemeral_message(MessageFullId message_full_id);
+
+  void register_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id, MessageId message_id);
+
   static void add_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id);
 
   static void delete_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id);

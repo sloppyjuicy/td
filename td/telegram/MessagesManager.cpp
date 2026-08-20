@@ -13247,6 +13247,27 @@ unique_ptr<MessagesManager::Message> MessagesManager::delete_message(Dialog *d, 
   return do_delete_message(d, message_id, is_permanently_deleted, false, need_update_dialog_pos, source);
 }
 
+void MessagesManager::register_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id,
+                                                        MessageId message_id) {
+  if (ephemeral_message_id.is_valid() && d->ephemeral_message_ids.emplace(ephemeral_message_id, message_id).second &&
+      d->ephemeral_message_ids.size() > MAX_DIALOG_EPHEMERAL_MESSAGES) {
+    auto oldest_message_id = message_id;
+    for (const auto &it : d->ephemeral_message_ids) {
+      if (it.second < oldest_message_id) {
+        oldest_message_id = it.second;
+      }
+    }
+    if (oldest_message_id.is_server()) {
+      send_closure_later(actor_id(this), &MessagesManager::do_delete_message_ephemeral_message,
+                         MessageFullId{d->dialog_id, oldest_message_id});
+    } else {
+      send_closure_later(actor_id(this), &MessagesManager::delete_dialog_messages, d->dialog_id,
+                         vector<MessageId>{oldest_message_id}, false, "register_dialog_ephemeral_message");
+    }
+    on_dialog_updated(d->dialog_id, "register_dialog_ephemeral_message");
+  }
+}
+
 void MessagesManager::add_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id) {
   CHECK(d != nullptr);
   CHECK(d->dialog_id.get_type() == DialogType::SecretChat || message_id.is_yet_unsent());
@@ -23857,6 +23878,13 @@ void MessagesManager::delete_message_ephemeral_message(MessageFullId message_ful
   promise.set_value(Unit());
 }
 
+void MessagesManager::do_delete_message_ephemeral_message(MessageFullId message_full_id) {
+  Message *m = get_message_force(message_full_id, "delete_message_ephemeral_message");
+  if (m != nullptr && m->ephemeral_message != nullptr) {
+    set_message_ephemeral_message(get_dialog(message_full_id.get_dialog_id()), m, nullptr);
+  }
+}
+
 void MessagesManager::set_message_fact_check(MessageFullId message_full_id,
                                              td_api::object_ptr<td_api::formattedText> &&text,
                                              Promise<Unit> &&promise) {
@@ -31567,20 +31595,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
     default:
       UNREACHABLE();
   }
-  if (m->ephemeral_message_id.is_valid()) {
-    if (d->ephemeral_message_ids.emplace(m->ephemeral_message_id, m->message_id).second &&
-        d->ephemeral_message_ids.size() > MAX_DIALOG_EPHEMERAL_MESSAGES) {
-      auto oldest_message_id = m->message_id;
-      for (const auto &it : d->ephemeral_message_ids) {
-        if (it.second < oldest_message_id) {
-          oldest_message_id = it.second;
-        }
-      }
-      send_closure_later(actor_id(this), &MessagesManager::delete_dialog_messages, dialog_id,
-                         vector<MessageId>{oldest_message_id}, false, "add_ephemeral_message");
-      on_dialog_updated(dialog_id, "add_ephemeral_message");
-    }
-  }
+  register_dialog_ephemeral_message(d, m->ephemeral_message_id, m->message_id);
 
   if (m->message_id.is_yet_unsent() || dialog_type == DialogType::SecretChat) {
     add_random_id_to_message_id_correspondence(d, m->random_id, m->message_id);
