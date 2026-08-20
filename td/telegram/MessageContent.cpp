@@ -13091,6 +13091,21 @@ int64 get_message_content_prize_ton_count(const MessageContent *content) {
   }
 }
 
+void extract_message_content_authentication_codes(const MessageContent *content, vector<string> &authentication_codes) {
+  CHECK(content != nullptr);
+  switch (content->get_type()) {
+    case MessageContentType::Text:
+      find_authentication_codes(static_cast<const MessageText *>(content)->text.text, authentication_codes);
+      return;
+    case MessageContentType::RichText:
+      static_cast<const MessageRichText *>(content)->rich_message.for_each_text(
+          [&](Slice text) { find_authentication_codes(text, authentication_codes); });
+      return;
+    default:
+      return;
+  }
+}
+
 bool update_message_content_extended_media(
     MessageContent *content, vector<telegram_api::object_ptr<telegram_api::MessageExtendedMedia>> extended_media,
     DialogId owner_dialog_id, Td *td) {

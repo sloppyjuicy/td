@@ -370,6 +370,8 @@ int64 get_message_content_stake_ton_count(const MessageContent *content);
 
 int64 get_message_content_prize_ton_count(const MessageContent *content);
 
+void extract_message_content_authentication_codes(const MessageContent *content, vector<string> &authentication_codes);
+
 bool update_message_content_extended_media(
     MessageContent *content, vector<telegram_api::object_ptr<telegram_api::MessageExtendedMedia>> extended_media,
     DialogId owner_dialog_id, Td *td);

@@ -4460,18 +4460,7 @@ void MessagesManager::extract_authentication_codes(DialogId dialog_id, const Mes
       m->is_outgoing) {
     return;
   }
-  switch (m->content->get_type()) {
-    case MessageContentType::Text:
-      find_authentication_codes(get_message_content_text(m->content.get())->text, authentication_codes);
-      break;
-    case MessageContentType::RichText:
-      get_message_content_rich_message(m->content.get())->for_each_text([&](Slice text) {
-        find_authentication_codes(text, authentication_codes);
-      });
-      break;
-    default:
-      break;
-  }
+  extract_message_content_authentication_codes(m->content.get(), authentication_codes);
 }
 
 void MessagesManager::save_auth_notification_ids() {
