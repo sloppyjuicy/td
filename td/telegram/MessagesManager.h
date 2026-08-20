@@ -2326,6 +2326,8 @@ class MessagesManager final : public Actor {
 
   void register_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id, MessageId message_id);
 
+  void unregister_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id);
+
   static void add_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id);
 
   static void delete_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id);

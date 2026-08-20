@@ -13264,6 +13264,12 @@ void MessagesManager::register_dialog_ephemeral_message(Dialog *d, EphemeralMess
   }
 }
 
+void MessagesManager::unregister_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id) {
+  if (d->ephemeral_message_ids.erase(ephemeral_message_id) > 0) {
+    on_dialog_updated(d->dialog_id, "unregister_dialog_ephemeral_message");
+  }
+}
+
 void MessagesManager::add_random_id_to_message_id_correspondence(Dialog *d, int64 random_id, MessageId message_id) {
   CHECK(d != nullptr);
   CHECK(d->dialog_id.get_type() == DialogType::SecretChat || message_id.is_yet_unsent());
@@ -13751,11 +13757,7 @@ void MessagesManager::on_message_deleted(Dialog *d, Message *m, bool is_permanen
     default:
       UNREACHABLE();
   }
-  if (m->ephemeral_message_id.is_valid() && is_permanently_deleted) {
-    auto is_erased = d->ephemeral_message_ids.erase(m->ephemeral_message_id) > 0;
-    CHECK(is_erased);
-    on_dialog_updated(d->dialog_id, "delete_ephemeral_message");
-  }
+  unregister_dialog_ephemeral_message(d, get_message_ephemeral_message_id(m));
   ttl_unregister_message(d->dialog_id, m, source);
   ttl_period_unregister_message(d->dialog_id, m);
   delete_bot_command_message_id(d->dialog_id, m->message_id);
@@ -31381,6 +31383,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
     if (message->date + message->ttl_period <= server_time) {
       LOG(INFO) << "Can't add auto-deleted " << message_id << " sent at " << message->date << " with auto-delete time "
                 << message->ttl_period << " to " << dialog_id << " from " << source;
+      unregister_dialog_ephemeral_message(d, message->ephemeral_message_id);
       delete_message_from_database(d, message_id, message.get(), true, "delete auto-deleted message");
       debug_add_message_to_dialog_fail_reason_ = "delete auto-deleted message";
       d->being_added_message_id = MessageId();
@@ -31391,6 +31394,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
   }
   if (message->ephemeral_message != nullptr &&
       message->ephemeral_message->date + message->ephemeral_message->ttl_period <= G()->server_time()) {
+    unregister_dialog_ephemeral_message(d, message->ephemeral_message->ephemeral_message_id);
     message->ephemeral_message = nullptr;
   }
 
