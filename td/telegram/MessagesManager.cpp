@@ -4365,6 +4365,7 @@ void MessagesManager::on_delete_ephemeral_messages(DialogId dialog_id,
   if (d == nullptr) {
     return;
   }
+  vector<MessageId> anchored_message_ids;
   vector<MessageId> message_ids;
   for (auto ephemeral_message_id : ephemeral_message_ids) {
     if (!ephemeral_message_id.is_valid()) {
@@ -4374,8 +4375,15 @@ void MessagesManager::on_delete_ephemeral_messages(DialogId dialog_id,
     d->deleted_ephemeral_message_ids.insert(ephemeral_message_id);
     auto it = d->ephemeral_message_ids.find(ephemeral_message_id);
     if (it != d->ephemeral_message_ids.end()) {
-      message_ids.push_back(it->second);
+      if (it->second.is_server()) {
+        anchored_message_ids.push_back(it->second);
+      } else {
+        message_ids.push_back(it->second);
+      }
     }
+  }
+  for (auto message_id : anchored_message_ids) {
+    do_delete_message_ephemeral_message({dialog_id, message_id});
   }
   do_delete_dialog_messages(d, message_ids, false, "on_delete_ephemeral_messages");
 }
