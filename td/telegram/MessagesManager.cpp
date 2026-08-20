@@ -4397,8 +4397,7 @@ void MessagesManager::add_anchored_ephemeral_message(MessageInfo &&message_info)
   set_message_ephemeral_message(d, m, std::move(ephemeral_message.second));
 }
 
-void MessagesManager::set_message_ephemeral_message(const Dialog *d, Message *m,
-                                                    unique_ptr<Message> ephemeral_message) {
+void MessagesManager::set_message_ephemeral_message(Dialog *d, Message *m, unique_ptr<Message> ephemeral_message) {
   CHECK(d != nullptr);
   CHECK(m != nullptr);
   if (ephemeral_message != nullptr) {
@@ -4414,8 +4413,14 @@ void MessagesManager::set_message_ephemeral_message(const Dialog *d, Message *m,
     ephemeral_message->forward_count = m->forward_count;
   }
   auto old_file_ids = get_message_file_ids(m->ephemeral_message.get());
+  if (m->ephemeral_message != nullptr) {
+    unregister_dialog_ephemeral_message(d, m->ephemeral_message->ephemeral_message_id);
+  }
   // TODO reregister content
   m->ephemeral_message = std::move(ephemeral_message);
+  if (m->ephemeral_message != nullptr) {
+    register_dialog_ephemeral_message(d, m->ephemeral_message->ephemeral_message_id, m->message_id);
+  }
   auto new_file_ids = get_message_file_ids(m->ephemeral_message.get());
   for (auto file_id : old_file_ids) {
     if (!td::contains(new_file_ids, file_id)) {

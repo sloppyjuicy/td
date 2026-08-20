@@ -3148,7 +3148,7 @@ class MessagesManager final : public Actor {
 
   void add_anchored_ephemeral_message(MessageInfo &&message_info);
 
-  void set_message_ephemeral_message(const Dialog *d, Message *m, unique_ptr<Message> ephemeral_message);
+  void set_message_ephemeral_message(Dialog *d, Message *m, unique_ptr<Message> ephemeral_message);
 
   Dialog *get_service_notifications_dialog();
 
