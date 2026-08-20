@@ -409,6 +409,17 @@ void DialogActionManager::send_dialog_action(DialogId dialog_id, MessageTopic me
     return promise.set_error(400, "New files can't be uploaded using the method");
   }
 
+  if (dialog_id.get_type() == DialogType::User && (message_topic.is_empty() || message_topic.is_forum())) {
+    auto info = action.get_stop_draft_info();
+    if (info.random_id_ != 0) {
+      auto forum_topic_id = message_topic.is_empty() ? ForumTopicId() : message_topic.get_forum_topic_id();
+      send_closure(G()->td(), &Td::send_update,
+                   td_api::make_object<td_api::updateStopMessageDraft>(
+                       td_->dialog_manager_->get_chat_id_object(dialog_id, "updateChatAction"), forum_topic_id.get(),
+                       info.random_id_));
+    }
+  }
+
   CHECK(input_peer != nullptr);
   auto new_query_ref =
       td_->create_handler<SetTypingQuery>(std::move(promise))
