@@ -3216,6 +3216,8 @@ class MessagesManager final : public Actor {
 
   static bool is_ephemeral_message(const Message *m);
 
+  static EphemeralMessageId get_message_ephemeral_message_id(const Message *m);
+
   static bool is_message_forward(const Message *m);
 
   static int32 get_message_schedule_date(const Message *m);
