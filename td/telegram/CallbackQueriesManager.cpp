@@ -353,16 +353,13 @@ void CallbackQueriesManager::send_callback_query(MessageFullId message_full_id,
   if (message_id.is_valid_scheduled()) {
     return promise.set_error(400, "Can't send callback queries from scheduled messages");
   }
+  auto ephemeral_message_id = td_->messages_manager_->get_ephemeral_message_id_of_message_id(message_full_id);
+  if (ephemeral_message_id.is_valid() && payload->get_id() == td_api::callbackQueryPayloadData::ID) {
+    td_->create_handler<GetEphemeralCallbackAnswerQuery>(std::move(promise))
+        ->send(dialog_id, ephemeral_message_id, static_cast<td_api::callbackQueryPayloadData *>(payload.get())->data_);
+    return;
+  }
   if (!message_id.is_server()) {
-    if (payload->get_id() == td_api::callbackQueryPayloadData::ID) {
-      auto ephemeral_message_id = td_->messages_manager_->get_ephemeral_message_id_of_message_id(message_full_id);
-      if (ephemeral_message_id.is_valid()) {
-        td_->create_handler<GetEphemeralCallbackAnswerQuery>(std::move(promise))
-            ->send(dialog_id, ephemeral_message_id,
-                   static_cast<td_api::callbackQueryPayloadData *>(payload.get())->data_);
-        return;
-      }
-    }
     return promise.set_error(400, "Wrong message identifier");
   }
 
