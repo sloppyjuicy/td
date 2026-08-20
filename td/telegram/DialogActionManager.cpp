@@ -387,7 +387,7 @@ void DialogActionManager::send_dialog_action(DialogId dialog_id, MessageTopic me
       return promise.set_value(Unit());
     }
 
-    if (td_->dialog_manager_->is_dialog_action_unneeded(dialog_id)) {
+    if (td_->dialog_manager_->is_dialog_action_unneeded(dialog_id) && action.get_stop_draft_info().random_id_ == 0) {
       LOG(INFO) << "Skip unneeded " << action << " in " << dialog_id;
       return promise.set_value(Unit());
     }
