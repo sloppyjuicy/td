@@ -127,7 +127,7 @@ void DialogActionManager::on_dialog_action(DialogId dialog_id, MessageId top_thr
   {
     auto info = action.get_stop_draft_info();
     if (info.random_id_ != 0) {
-      if (!td_->auth_manager_->is_bot() || dialog_id.get_type() != DialogType::User || dialog_id != typing_dialog_id) {
+      if (dialog_id.get_type() != DialogType::User || dialog_id != typing_dialog_id) {
         LOG(ERROR) << "Ignore " << action << " in " << dialog_id;
         return;
       }
