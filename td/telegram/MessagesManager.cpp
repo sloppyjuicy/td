@@ -21835,6 +21835,9 @@ Result<InputMessageContent> MessagesManager::process_input_message_content(
     if (!can_forward_message(from_dialog_id, copied_message, true)) {
       return Status::Error(400, "Can't copy message");
     }
+    if (copied_message->ephemeral_message != nullptr) {
+      copied_message = copied_message->ephemeral_message.get();
+    }
 
     auto new_invert_media =
         copy_options.replace_caption && is_allowed_invert_caption_message_content(copied_message->content->get_type())
