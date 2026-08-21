@@ -23289,19 +23289,12 @@ bool MessagesManager::can_edit_message_media(DialogId dialog_id, const Message *
   if (m->video_processing_pending) {
     return false;
   }
-  switch (m->content->get_type()) {
-    case MessageContentType::Text:
-    case MessageContentType::RichText:
-    case MessageContentType::Animation:
-    case MessageContentType::Audio:
-    case MessageContentType::Document:
-    case MessageContentType::Photo:
-    case MessageContentType::Video:
-      break;
-    default:
-      return false;
-  }
   if (!m->ttl.is_empty()) {
+    return false;
+  }
+  auto content_type = m->content->get_type();
+  if (!is_editable_media_message_content(content_type) && content_type != MessageContentType::RichText &&
+      content_type != MessageContentType::Text) {
     return false;
   }
   return true;
