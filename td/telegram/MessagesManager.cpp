@@ -24539,6 +24539,7 @@ MessageOrigin MessagesManager::get_forwarded_message_origin(DialogId dialog_id, 
 unique_ptr<MessageForwardInfo> MessagesManager::create_message_forward_info(DialogId from_dialog_id,
                                                                             DialogId to_dialog_id,
                                                                             const Message *m) const {
+  CHECK(m->ephemeral_message == nullptr);
   auto content_type = m->content->get_type();
   if (content_type == MessageContentType::Game) {
     return nullptr;
@@ -24574,6 +24575,7 @@ unique_ptr<MessageForwardInfo> MessagesManager::create_message_forward_info(Dial
 
 void MessagesManager::fix_forwarded_message(Message *m, DialogId to_dialog_id, const Message *forwarded_message,
                                             int64 media_album_id, const MessageContentDupType &dup_type) const {
+  CHECK(m->ephemeral_message == nullptr);
   bool is_game = m->content->get_type() == MessageContentType::Game;
   if (dup_type == MessageContentDupType::Forward || is_game) {
     m->via_bot_user_id = forwarded_message->via_bot_user_id;
