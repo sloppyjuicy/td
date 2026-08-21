@@ -6487,7 +6487,7 @@ bool MessagesManager::need_poll_message_reactions(const Dialog *d, const Message
   if (m->available_reactions_generation == d->available_reactions_generation) {
     return false;
   }
-  if (is_service_message_content(m->content->get_type()) && !m->reactions_are_possible) {
+  if (!m->reactions_are_possible && is_service_message_content(m->content->get_type())) {
     return false;
   }
   return true;
@@ -8300,8 +8300,7 @@ bool MessagesManager::can_forward_message(DialogId from_dialog_id, const Message
       UNREACHABLE();
       return false;
   }
-  if (!can_forward_message_content(
-          td_, m->ephemeral_message == nullptr ? m->content.get() : m->ephemeral_message->content.get(), is_copy)) {
+  if (!can_forward_message_content(td_, get_message_actual_content(m), is_copy)) {
     return false;
   }
   if (!(is_copy && td_->auth_manager_->is_bot()) && get_message_has_protected_content(from_dialog_id, m)) {
@@ -23412,6 +23411,11 @@ EphemeralMessageId MessagesManager::get_message_ephemeral_message_id(const Messa
     return EphemeralMessageId();
   }
   return m->ephemeral_message == nullptr ? m->ephemeral_message_id : m->ephemeral_message->ephemeral_message_id;
+}
+
+const MessageContent *MessagesManager::get_message_actual_content(const Message *m) {
+  CHECK(m != nullptr);
+  return m->ephemeral_message == nullptr ? m->content.get() : m->ephemeral_message->content.get();
 }
 
 bool MessagesManager::is_message_forward(const Message *m) {
