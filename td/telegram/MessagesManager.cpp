@@ -24174,6 +24174,9 @@ void MessagesManager::unregister_message_reply(DialogId dialog_id, const Message
 }
 
 bool MessagesManager::get_message_disable_web_page_preview(const Message *m) {
+  if (m->ephemeral_message != nullptr) {
+    return get_message_disable_web_page_preview(m->ephemeral_message.get());
+  }
   if (m->content->get_type() != MessageContentType::Text) {
     return false;
   }
