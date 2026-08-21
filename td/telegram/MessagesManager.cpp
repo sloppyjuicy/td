@@ -15145,7 +15145,7 @@ void MessagesManager::translate_message_text(MessageFullId message_full_id, cons
     return promise.set_error(400, "Message not found");
   }
 
-  auto text = get_message_content_text(m->content.get());
+  auto text = get_message_content_text(get_message_actual_content(m));
   if (text == nullptr || text->text.empty()) {
     return promise.set_value(td_api::make_object<td_api::formattedText>());
   }
@@ -15172,7 +15172,7 @@ void MessagesManager::translate_message_rich_message(MessageFullId message_full_
     return promise.set_error(400, "Message not found");
   }
 
-  auto message = get_message_content_rich_message(m->content.get());
+  auto message = get_message_content_rich_message(get_message_actual_content(m));
   if (message == nullptr) {
     return promise.set_value(td_api::make_object<td_api::richMessage>());
   }
@@ -15381,7 +15381,7 @@ void MessagesManager::get_full_rich_message(MessageFullId message_full_id,
   if (m == nullptr) {
     return promise.set_error(400, "Message not found");
   }
-  if (m->content->get_type() != MessageContentType::RichText) {
+  if (m->ephemeral_message != nullptr || m->content->get_type() != MessageContentType::RichText) {
     return promise.set_error(400, "Invalid message specified");
   }
   td_->message_query_manager_->get_full_rich_message(message_full_id, std::move(promise));
