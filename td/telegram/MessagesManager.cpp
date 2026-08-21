@@ -15156,7 +15156,7 @@ void MessagesManager::translate_message_text(MessageFullId message_full_id, cons
   auto dialog_id = message_full_id.get_dialog_id();
   auto has_autotranslation = dialog_id.get_type() == DialogType::Channel &&
                              td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read) &&
-                             m->message_id.is_server() &&
+                             m->message_id.is_server() && m->ephemeral_message == nullptr &&
                              td_->chat_manager_->get_channel_autotranslation(dialog_id.get_channel_id());
   td_->translation_manager_->translate_text(std::move(input_text),
                                             has_autotranslation ? message_full_id : MessageFullId(), to_language_code,
@@ -15182,7 +15182,7 @@ void MessagesManager::translate_message_rich_message(MessageFullId message_full_
   input_rich_message.skip_bot_commands_ = need_skip_bot_commands(message_full_id.get_dialog_id(), m);
   auto has_autotranslation = dialog_id.get_type() == DialogType::Channel &&
                              td_->dialog_manager_->have_input_peer(dialog_id, false, AccessRights::Read) &&
-                             m->message_id.is_server() &&
+                             m->message_id.is_server() && m->ephemeral_message == nullptr &&
                              td_->chat_manager_->get_channel_autotranslation(dialog_id.get_channel_id());
   td_->translation_manager_->translate_rich_message(std::move(input_rich_message),
                                                     has_autotranslation ? message_full_id : MessageFullId(),
