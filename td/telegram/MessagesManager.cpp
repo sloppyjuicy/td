@@ -4344,10 +4344,6 @@ MessageFullId MessagesManager::on_edited_ephemeral_message(
   }
 
   message_info.message_id = get_message_id_of_ephemeral_message_id(dialog_id, message_info.ephemeral_message_id);
-  if (!message_info.message_id.is_local()) {
-    LOG(ERROR) << "Receive ephemeral " << message_info.message_id << " in " << dialog_id;
-    return MessageFullId();
-  }
   if (message_info.message_id == MessageId()) {
     if (!force && !td_->auth_manager_->is_bot()) {
       return MessageFullId();
@@ -4359,6 +4355,9 @@ MessageFullId MessagesManager::on_edited_ephemeral_message(
     }
     CHECK(d->ephemeral_message_ids.count(message_info.ephemeral_message_id) == 0);
     message_info.message_id = get_next_local_message_id(d);
+  } else if (!message_info.message_id.is_local()) {
+    LOG(ERROR) << "Receive ephemeral " << message_info.message_id << " in " << dialog_id;
+    return MessageFullId();
   }
   return on_get_message(std::move(message_info), false, "on_edited_ephemeral_message");
 }
