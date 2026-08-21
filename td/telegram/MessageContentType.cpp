@@ -393,6 +393,21 @@ bool can_message_content_have_multiple_files(MessageContentType content_type) {
   }
 }
 
+bool can_message_content_have_fact_check(MessageContentType content_type) {
+  switch (content_type) {
+    case MessageContentType::Animation:
+    case MessageContentType::Audio:
+    case MessageContentType::Document:
+    case MessageContentType::Photo:
+    case MessageContentType::RichText:
+    case MessageContentType::Text:
+    case MessageContentType::Video:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool can_be_secret_message_content(MessageContentType content_type) {
   switch (content_type) {
     case MessageContentType::Animation:

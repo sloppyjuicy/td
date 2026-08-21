@@ -129,6 +129,8 @@ bool is_allowed_ephemeral_message_content(MessageContentType content_type);
 
 bool can_message_content_have_multiple_files(MessageContentType content_type);
 
+bool can_message_content_have_fact_check(MessageContentType content_type);
+
 bool can_be_secret_message_content(MessageContentType content_type);
 
 bool can_be_local_message_content(MessageContentType content_type);

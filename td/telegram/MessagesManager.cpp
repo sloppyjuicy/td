@@ -15440,7 +15440,8 @@ void MessagesManager::get_message_properties(DialogId dialog_id, MessageId messa
   auto can_be_saved = can_save_message(dialog_id, m);
   auto can_be_edited = can_edit_message(dialog_id, m, false, is_bot);
   auto can_be_forwarded = can_forward_message(dialog_id, m, false);
-  auto can_be_copied_to_secret_chat = can_be_copied && can_send_message_content_to_secret_chat(m->content->get_type());
+  auto can_be_copied_to_secret_chat =
+      can_be_copied && can_send_message_content_to_secret_chat(get_message_actual_content(m)->get_type());
   auto can_be_paid = get_invoice_message_info({dialog_id, message_id}).is_ok();
   auto can_be_pinned = can_pin_message(dialog_id, m).is_ok();
   auto can_be_replied = can_reply_to_message(d, message_id, m);
@@ -15494,7 +15495,7 @@ void MessagesManager::get_poll_option_properties(DialogId dialog_id, MessageId m
   TRY_RESULT_PROMISE(promise, d,
                      check_dialog_access(dialog_id, true, AccessRights::Read, "get_poll_option_properties"));
   const Message *m = get_message_force(d, message_id, "get_poll_option_properties");
-  if (m == nullptr || m->content->get_type() != MessageContentType::Poll) {
+  if (m == nullptr || m->ephemeral_message != nullptr || m->content->get_type() != MessageContentType::Poll) {
     return promise.set_error(400, "Poll not found");
   }
 
@@ -15651,21 +15652,7 @@ bool MessagesManager::can_set_message_fact_check(DialogId dialog_id, const Messa
       !td_->dialog_manager_->is_broadcast_channel(dialog_id)) {
     return false;
   }
-  auto content_type = m->content->get_type();
-  switch (content_type) {
-    case MessageContentType::Animation:
-    case MessageContentType::Audio:
-    case MessageContentType::Document:
-    case MessageContentType::Photo:
-    case MessageContentType::RichText:
-    case MessageContentType::Text:
-    case MessageContentType::Video:
-      // ok
-      break;
-    default:
-      return false;
-  }
-  return true;
+  return can_message_content_have_fact_check(m->content->get_type());
 }
 
 Result<std::pair<string, bool>> MessagesManager::get_message_link(MessageFullId message_full_id, int32 media_timestamp,
@@ -17096,7 +17083,7 @@ Status MessagesManager::open_message_content(MessageFullId message_full_id) {
     td_->message_query_manager_->read_message_contents_on_server(dialog_id, {m->message_id}, 0, Auto());
   }
 
-  if (m->content->get_type() == MessageContentType::LiveLocation) {
+  if (m->ephemeral_message == nullptr && m->content->get_type() == MessageContentType::LiveLocation) {
     on_message_live_location_viewed(d, m);
   }
 
@@ -17120,7 +17107,8 @@ void MessagesManager::click_animated_emoji_message(MessageFullId message_full_id
     return promise.set_error(400, "Message not found");
   }
 
-  if (m->message_id.is_scheduled() || dialog_id.get_type() != DialogType::User || !m->message_id.is_server()) {
+  if (m->message_id.is_scheduled() || dialog_id.get_type() != DialogType::User || !m->message_id.is_server() ||
+      m->ephemeral_message != nullptr) {
     return promise.set_value(nullptr);
   }
 
