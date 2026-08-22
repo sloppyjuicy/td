@@ -255,11 +255,8 @@ void CallbackQueriesManager::on_new_ephemeral_callback_query(
   }
 
   auto payload = get_query_payload(std::move(data), string());
-  if (payload == nullptr) {
+  if (payload == nullptr || message->peer_id_ == nullptr) {
     return;
-  }
-  if (message->peer_id_ == nullptr) {
-    message->peer_id_ = telegram_api::make_object<telegram_api::peerUser>(td_->user_manager_->get_my_id().get());
   }
 
   auto message_full_id = td_->messages_manager_->on_edited_ephemeral_message(std::move(message), true);
