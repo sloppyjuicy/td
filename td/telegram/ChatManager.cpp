@@ -8151,6 +8151,14 @@ void ChatManager::on_update_channel_linked_channel_id(ChannelId channel_id, Chan
   }
 }
 
+void ChatManager::on_update_channel_linked_community_id(ChannelId channel_id, CommunityId linked_community_id) {
+  auto channel_full = get_channel_full_force(channel_id, true, "on_update_channel_linked_community_id");
+  if (channel_full != nullptr) {
+    on_update_channel_full_linked_community_id(channel_full, channel_id, linked_community_id);
+    update_channel_full(channel_full, channel_id, "on_update_channel_linked_community_id");
+  }
+}
+
 void ChatManager::on_update_channel_location(ChannelId channel_id, const DialogLocation &location) {
   auto channel_full = get_channel_full_force(channel_id, true, "on_update_channel_location");
   if (channel_full != nullptr) {
