@@ -13697,9 +13697,22 @@ void apply_updates_from_service_message_content(Td *td, const MessageContent *co
       return td->messages_manager_->get_message_from_server(
           get_message_content_replied_message_full_id(dialog_id, content), Promise<Unit>(),
           "apply_updates_from_service_message_content");
-    case MessageContentType::ChangeCommunity:
-      // TODO apply community change
-      return;
+    case MessageContentType::ChangeCommunity: {
+      auto community_id = static_cast<const MessageChangeCommunity *>(content)->community_id;
+      switch (dialog_id.get_type()) {
+        case DialogType::User:
+          if (td->user_manager_->is_user_bot(dialog_id.get_user_id())) {
+            td->user_manager_->on_update_user_linked_community_id(dialog_id.get_user_id(), community_id);
+          }
+          return;
+        case DialogType::Channel:
+          td->chat_manager_->on_update_channel_linked_community_id(dialog_id.get_channel_id(), community_id);
+          return;
+        default:
+          LOG(ERROR) << "Receive ChangeCommunity in " << dialog_id;
+          return;
+      }
+    }
     default:
       // nothing to do
       return;
