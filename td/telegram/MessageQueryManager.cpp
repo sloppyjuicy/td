@@ -4200,6 +4200,8 @@ void MessageQueryManager::edit_ephemeral_message_caption(DialogId dialog_id, Use
 void MessageQueryManager::edit_callback_query_message(
     int64 callback_query_id, bool noforwards, td_api::object_ptr<td_api::ReplyMarkup> &&reply_markup,
     td_api::object_ptr<td_api::InputMessageContent> &&input_message_content, Promise<Unit> &&promise) {
+  return promise.set_error(500, "Unsupported");
+
   auto is_bot = td_->auth_manager_->is_bot();
   CHECK(is_bot);
 
