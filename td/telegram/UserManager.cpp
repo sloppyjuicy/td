@@ -3766,6 +3766,14 @@ void UserManager::on_update_user_profile_colors(User *u, UserId user_id, AccentC
   }
 }
 
+void UserManager::on_update_user_linked_community_id(UserId user_id, CommunityId linked_community_id) {
+  User *u = get_user_force(user_id, "on_update_user_linked_community_id");
+  if (u != nullptr) {
+    on_update_user_linked_community_id(u, user_id, linked_community_id);
+    update_user(u, user_id);
+  }
+}
+
 void UserManager::on_update_user_linked_community_id(User *u, UserId user_id, CommunityId linked_community_id) {
   if (!linked_community_id.is_valid() || !is_user_bot(u)) {
     linked_community_id = CommunityId();
