@@ -3369,9 +3369,13 @@ void MessagesManager::Dialog::store(StorerT &storer) const {
     store(business_bot_manage_bar, storer);
   }
   if (has_ephemeral_message_ids) {
-    vector<std::pair<EphemeralMessageId, MessageId>> stored_data;
+    std::map<uint32, std::pair<EphemeralMessageId, MessageId>> sorted_data;
     for (const auto &it : ephemeral_message_ids) {
-      stored_data.emplace_back(it.first, it.second);
+      sorted_data.emplace(it.second.monotonic_id, std::make_pair(it.first, it.second.anchor_message_id));
+    }
+    vector<std::pair<EphemeralMessageId, MessageId>> stored_data;
+    for (const auto &it : sorted_data) {
+      stored_data.push_back(it.second);
     }
     store(stored_data, storer);
   }
@@ -3728,7 +3732,7 @@ void MessagesManager::Dialog::parse(ParserT &parser) {
       if (!it.first.is_valid() || !it.second.is_valid()) {
         parser.set_error("Have invalid ephemeral message");
       } else {
-        ephemeral_message_ids.emplace(it.first, it.second);
+        ephemeral_message_ids.emplace(it.first, EphemeralMessageInfo{it.second, max_ephemeral_message_num++});
       }
     }
   }
@@ -4301,7 +4305,7 @@ MessageId MessagesManager::get_message_id_of_ephemeral_message_id(DialogId dialo
   if (it == d->ephemeral_message_ids.end()) {
     return MessageId();
   }
-  return it->second;
+  return it->second.anchor_message_id;
 }
 
 EphemeralMessageId MessagesManager::get_ephemeral_message_id_of_message_id(MessageFullId message_full_id) {
@@ -4378,10 +4382,10 @@ void MessagesManager::on_delete_ephemeral_messages(DialogId dialog_id,
     d->deleted_ephemeral_message_ids.insert(ephemeral_message_id);
     auto it = d->ephemeral_message_ids.find(ephemeral_message_id);
     if (it != d->ephemeral_message_ids.end()) {
-      if (it->second.is_server()) {
-        anchored_message_ids.push_back(it->second);
+      if (it->second.anchor_message_id.is_server()) {
+        anchored_message_ids.push_back(it->second.anchor_message_id);
       } else {
-        message_ids.push_back(it->second);
+        message_ids.push_back(it->second.anchor_message_id);
       }
     }
   }
@@ -13245,20 +13249,27 @@ unique_ptr<MessagesManager::Message> MessagesManager::delete_message(Dialog *d, 
 
 void MessagesManager::register_dialog_ephemeral_message(Dialog *d, EphemeralMessageId ephemeral_message_id,
                                                         MessageId message_id) {
-  if (ephemeral_message_id.is_valid() && d->ephemeral_message_ids.emplace(ephemeral_message_id, message_id).second &&
-      d->ephemeral_message_ids.size() > MAX_DIALOG_EPHEMERAL_MESSAGES) {
-    auto oldest_message_id = message_id;
-    for (const auto &it : d->ephemeral_message_ids) {
-      if (it.second < oldest_message_id) {
-        oldest_message_id = it.second;
+  if (ephemeral_message_id.is_valid() &&
+      d->ephemeral_message_ids
+          .emplace(ephemeral_message_id, EphemeralMessageInfo{message_id, d->max_ephemeral_message_num})
+          .second) {
+    d->max_ephemeral_message_num++;
+    if (d->ephemeral_message_ids.size() > MAX_DIALOG_EPHEMERAL_MESSAGES) {
+      auto max_monotonic_id = d->max_ephemeral_message_num;
+      MessageId oldest_message_id;
+      for (const auto &it : d->ephemeral_message_ids) {
+        if (it.second.monotonic_id < max_monotonic_id) {
+          max_monotonic_id = it.second.monotonic_id;
+          oldest_message_id = it.second.anchor_message_id;
+        }
       }
-    }
-    if (oldest_message_id.is_server()) {
-      send_closure_later(actor_id(this), &MessagesManager::do_delete_message_ephemeral_message,
-                         MessageFullId{d->dialog_id, oldest_message_id});
-    } else {
-      send_closure_later(actor_id(this), &MessagesManager::delete_dialog_messages, d->dialog_id,
-                         vector<MessageId>{oldest_message_id}, false, "register_dialog_ephemeral_message");
+      if (oldest_message_id.is_server()) {
+        send_closure_later(actor_id(this), &MessagesManager::do_delete_message_ephemeral_message,
+                           MessageFullId{d->dialog_id, oldest_message_id});
+      } else {
+        send_closure_later(actor_id(this), &MessagesManager::delete_dialog_messages, d->dialog_id,
+                           vector<MessageId>{oldest_message_id}, false, "register_dialog_ephemeral_message");
+      }
     }
     on_dialog_updated(d->dialog_id, "register_dialog_ephemeral_message");
   }

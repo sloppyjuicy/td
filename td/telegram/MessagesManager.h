@@ -1300,6 +1300,11 @@ class MessagesManager final : public Actor {
     FlatHashMap<NotificationId, MessageId, NotificationIdHash> notification_id_to_message_id_;
   };
 
+  struct EphemeralMessageInfo {
+    MessageId anchor_message_id;
+    uint32 monotonic_id;
+  };
+
   struct Dialog {
     DialogId dialog_id;
     MessageId last_new_message_id;  // identifier of the last known server message received from update, there should be
@@ -1349,6 +1354,7 @@ class MessagesManager final : public Actor {
     int64 last_media_album_id = 0;
     uint32 history_generation = 0;
     uint32 open_count = 0;
+    uint32 max_ephemeral_message_num = 0;
 
     unique_ptr<NotificationInfo> notification_info;
 
@@ -1445,7 +1451,7 @@ class MessagesManager final : public Actor {
     MessageId pending_read_channel_inbox_max_message_id;       // for channels only
     FlatHashMap<int64, MessageId> random_id_to_message_id;     // for secret chats and yet unsent messages only
 
-    FlatHashMap<EphemeralMessageId, MessageId, EphemeralMessageIdHash> ephemeral_message_ids;
+    FlatHashMap<EphemeralMessageId, EphemeralMessageInfo, EphemeralMessageIdHash> ephemeral_message_ids;
 
     MessageId last_assigned_message_id;  // identifier of the last local or yet unsent message, assigned after
                                          // application start, used to guarantee that all assigned message identifiers
