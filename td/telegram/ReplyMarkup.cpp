@@ -345,7 +345,9 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
   auto result = make_unique<ReplyMarkup>();
   result->type = reply_markup->type;
   result->is_personal = reply_markup->is_personal;
-  result->force_reply = reply_markup->force_reply;
+  if (is_send) {
+    result->force_reply = reply_markup->force_reply;
+  }
   result->is_persistent = reply_markup->is_persistent;
   result->need_resize_keyboard = reply_markup->need_resize_keyboard;
   result->keyboard = transform(reply_markup->keyboard, [](const vector<KeyboardButton> &row) {
