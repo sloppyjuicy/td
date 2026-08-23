@@ -467,6 +467,18 @@ const RequestedDialogType *ReplyMarkup::get_requested_dialog_type(int32 button_i
   return nullptr;
 }
 
+const string *ReplyMarkup::get_login_button_url(int64 button_id) const {
+  for (auto &row : inline_keyboard) {
+    for (auto &button : row) {
+      auto login_url = button.get_login_url(button_id);
+      if (login_url != nullptr) {
+        return login_url;
+      }
+    }
+  }
+  return nullptr;
+}
+
 bool ReplyMarkup::has_buy_button() const {
   return !inline_keyboard.empty() && !inline_keyboard[0].empty() && inline_keyboard[0][0].is_buy();
 }

@@ -6727,7 +6727,7 @@ Result<string> MessagesManager::get_login_button_url(MessageFullId message_full_
   if (m == nullptr) {
     return Status::Error(400, "Message not found");
   }
-  if (m->reply_markup == nullptr || m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard) {
+  if (m->reply_markup == nullptr) {
     return Status::Error(400, "Message has no inline keyboard");
   }
   if (m->message_id.is_scheduled()) {
@@ -6741,14 +6741,10 @@ Result<string> MessagesManager::get_login_button_url(MessageFullId message_full_
     return Status::Error(400, "Invalid button identifier specified");
   }
 
-  for (auto &row : m->reply_markup->inline_keyboard) {
-    for (auto &button : row) {
-      if (button.type == InlineKeyboardButton::Type::UrlAuth && button.id == button_id) {
-        return button.data;
-      }
-    }
+  const auto *url = m->reply_markup->get_login_button_url(button_id);
+  if (url != nullptr) {
+    return *url;
   }
-
   return Status::Error(400, "Button not found");
 }
 

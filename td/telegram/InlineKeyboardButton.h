@@ -73,6 +73,13 @@ struct InlineKeyboardButton {
   const string &get_forward_text() const {
     return forward_text;
   }
+
+  const string *get_login_url(int64 button_id) const {
+    if (type == Type::UrlAuth && id == button_id) {
+      return &data;
+    }
+    return nullptr;
+  }
 };
 
 bool operator==(const InlineKeyboardButton &lhs, const InlineKeyboardButton &rhs);
