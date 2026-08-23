@@ -2474,8 +2474,9 @@ void DialogManager::set_dialog_photo(DialogId dialog_id, const td_api::object_pt
   }
 
   auto file_type = is_animation ? FileType::Animation : FileType::Photo;
-  TRY_RESULT_PROMISE(promise, file_id,
-                     td_->file_manager_->get_input_file_id(file_type, *input_file, dialog_id, true, false));
+  TRY_RESULT_PROMISE(
+      promise, file_id,
+      td_->file_manager_->get_input_file_id(file_type, *input_file, dialog_id, true, false, false, false, false, true));
   if (!file_id.is_valid()) {
     send_edit_dialog_photo_query(dialog_id, FileUploadId(),
                                  telegram_api::make_object<telegram_api::inputChatPhotoEmpty>(), std::move(promise));

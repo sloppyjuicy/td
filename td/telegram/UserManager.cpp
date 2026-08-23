@@ -6061,7 +6061,8 @@ void UserManager::set_profile_photo_impl(UserId user_id, const td_api::object_pt
 
   auto file_type = is_animation ? FileType::Animation : FileType::Photo;
   TRY_RESULT_PROMISE(promise, file_id,
-                     td_->file_manager_->get_input_file_id(file_type, *input_file, DialogId(user_id), false, false));
+                     td_->file_manager_->get_input_file_id(file_type, *input_file, DialogId(user_id), false, false,
+                                                           false, false, false, true));
 
   upload_profile_photo(user_id, {file_id, FileManager::get_internal_upload_id()}, is_fallback, only_suggest,
                        is_animation, main_frame_timestamp, std::move(promise));

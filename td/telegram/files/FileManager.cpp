@@ -4210,7 +4210,7 @@ Result<FileId> FileManager::get_input_thumbnail_file_id(const tl_object_ptr<td_a
 
 Result<FileId> FileManager::get_input_file_id(FileType type, const tl_object_ptr<td_api::InputFile> &file,
                                               DialogId owner_dialog_id, bool allow_zero, bool is_encrypted,
-                                              bool get_by_hash, bool is_secure, bool force_reuse) {
+                                              bool get_by_hash, bool is_secure, bool force_reuse, bool never_reuse) {
   if (file == nullptr) {
     if (allow_zero) {
       return FileId();
@@ -4233,7 +4233,7 @@ Result<FileId> FileManager::get_input_file_id(FileType type, const tl_object_ptr
         }
         string hash;
         if (G()->get_option_boolean("reuse_uploaded_photos_by_hash") &&
-            get_main_file_type(new_type) == FileType::Photo) {
+            get_main_file_type(new_type) == FileType::Photo && !never_reuse) {
           auto r_stat = stat(path);
           if (r_stat.is_ok() && r_stat.ok().size_ > 0 && r_stat.ok().size_ < 11000000) {
             auto r_file_content = read_file_str(path, r_stat.ok().size_);
@@ -4273,13 +4273,22 @@ Result<FileId> FileManager::get_input_file_id(FileType type, const tl_object_ptr
       }
       case td_api::inputFileId::ID: {
         FileId file_id(static_cast<const td_api::inputFileId *>(file.get())->id_, 0);
+        if (never_reuse) {
+          return Status::Error(400, "Can't use inputFileId");
+        }
         if (!file_id.is_valid()) {
+          if (!allow_zero) {
+            return Status::Error(400, "InputFile is not specified");
+          }
           return FileId();
         }
         return file_id;
       }
       case td_api::inputFileRemote::ID: {
         const string &file_persistent_id = static_cast<const td_api::inputFileRemote *>(file.get())->id_;
+        if (never_reuse) {
+          return Status::Error(400, "Can't use inputFileRemote");
+        }
         if (allow_zero && file_persistent_id.empty()) {
           return FileId();
         }
