@@ -24268,10 +24268,6 @@ bool MessagesManager::can_set_game_score(DialogId dialog_id, const Message *m) c
   if (!td_->auth_manager_->is_bot()) {
     return false;
   }
-  if (m->reply_markup == nullptr || m->reply_markup->type != ReplyMarkup::Type::InlineKeyboard ||
-      m->reply_markup->inline_keyboard.empty()) {
-    return false;
-  }
 
   switch (dialog_id.get_type()) {
     case DialogType::User:
