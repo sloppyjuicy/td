@@ -24835,8 +24835,8 @@ Result<td_api::object_ptr<td_api::messages>> MessagesManager::forward_messages(
   for (size_t i = 0; i < message_ids.size(); i++) {
     auto message_id = message_ids[i];
     auto *m = get_message_force({from_dialog_id, message_id}, "forward_messages");
-    auto is_ephemeral =
-        m == nullptr ? message_id.is_local() : is_ephemeral_message(m) || m->ephemeral_message != nullptr;
+    auto is_ephemeral = m == nullptr ? message_id.is_valid() && message_id.is_local()
+                                     : is_ephemeral_message(m) || m->ephemeral_message != nullptr;
     if (!part_message_ids.empty() && is_part_ephemeral != is_ephemeral) {
       TRY_RESULT(part_messages,
                  forward_messages_impl(to_dialog_id, topic_id, from_dialog_id, std::move(part_message_ids),
