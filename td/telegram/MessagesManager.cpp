@@ -36601,9 +36601,7 @@ Result<MessagesManager::InvoiceMessageInfo> MessagesManager::get_invoice_message
   if (!m->message_id.is_server() || m->ephemeral_message != nullptr) {
     return Status::Error(400, "Wrong message identifier");
   }
-  if (m->reply_markup == nullptr || m->reply_markup->inline_keyboard.empty() ||
-      m->reply_markup->inline_keyboard[0].empty() ||
-      m->reply_markup->inline_keyboard[0][0].type != InlineKeyboardButton::Type::Buy) {
+  if (m->reply_markup == nullptr || !m->reply_markup->has_buy_button()) {
     if (content_type != MessageContentType::PaidMedia) {
       return Status::Error(400, "Message has no Pay button");
     }

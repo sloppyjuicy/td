@@ -47,6 +47,8 @@ struct ReplyMarkup {
 
   const RequestedDialogType *get_requested_dialog_type(int32 button_id) const;
 
+  bool has_buy_button() const;
+
   bool has_disabled_buttons() const;
 };
 

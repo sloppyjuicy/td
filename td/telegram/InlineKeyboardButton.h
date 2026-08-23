@@ -62,6 +62,10 @@ struct InlineKeyboardButton {
   InlineKeyboardButton clone(DialogId dialog_id, const MessageContentDupType &dup_type, bool is_via_bot,
                              bool is_rich_message) const;
 
+  bool is_buy() const {
+    return type == Type::Buy;
+  }
+
   bool is_disabled() const {
     return type == Type::Disabled;
   }

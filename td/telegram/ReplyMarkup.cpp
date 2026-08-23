@@ -467,6 +467,10 @@ const RequestedDialogType *ReplyMarkup::get_requested_dialog_type(int32 button_i
   return nullptr;
 }
 
+bool ReplyMarkup::has_buy_button() const {
+  return !inline_keyboard.empty() && !inline_keyboard[0].empty() && inline_keyboard[0][0].is_buy();
+}
+
 bool ReplyMarkup::has_disabled_buttons() const {
   for (auto &row : inline_keyboard) {
     for (auto &button : row) {
