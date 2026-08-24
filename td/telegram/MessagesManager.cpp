@@ -36219,8 +36219,8 @@ void MessagesManager::on_binlog_events(vector<BinlogEvent> &&events) {
           message->message_id = get_next_yet_unsent_message_id(d);
           message->date = now;
           message->content =
-              dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::ServerCopy,
-                                  message->via_bot_user_id.is_valid(), MessageCopyOptions(true, false));
+              dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::SendQuickReply,
+                                  message->via_bot_user_id.is_valid(), MessageCopyOptions());
           CHECK(message->content != nullptr);
 
           restore_message_reply_to_message_id(d, message.get());

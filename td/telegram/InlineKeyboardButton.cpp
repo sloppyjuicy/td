@@ -45,7 +45,8 @@ InlineKeyboardButton InlineKeyboardButton::clone(DialogId dialog_id, const Messa
     // secret chats have no reply markup support
     return InlineKeyboardButton();
   }
-  if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot) {
+  if (dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot ||
+      dup_type == MessageContentDupType::SendQuickReply) {
     // any button can be sent
     return copy();
   }

@@ -2766,8 +2766,8 @@ Result<vector<QuickReplyManager::QuickReplyMessageContent>> QuickReplyManager::g
     if (!message->message_id.is_server()) {
       continue;
     }
-    auto content = dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::ServerCopy,
-                                       message->via_bot_user_id.is_valid(), MessageCopyOptions(true, false));
+    auto content = dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::SendQuickReply,
+                                       message->via_bot_user_id.is_valid(), MessageCopyOptions());
 
     auto can_send_status = can_send_message_content(dialog_id, content.get(), false, true, td_);
     if (can_send_status.is_error()) {
@@ -2782,7 +2782,7 @@ Result<vector<QuickReplyManager::QuickReplyMessageContent>> QuickReplyManager::g
     auto via_bot_user_id = message->hide_via_bot ? UserId() : message->via_bot_user_id;
     result.push_back({std::move(content), message->message_id, message->reply_to_message_id,
                       dup_reply_markup(message->reply_markup, td_->dialog_manager_->get_my_dialog_id(),
-                                       MessageContentDupType::SendViaBot, via_bot_user_id.is_valid()),
+                                       MessageContentDupType::SendQuickReply, via_bot_user_id.is_valid()),
                       via_bot_user_id, message->media_album_id, message->invert_media, disable_web_page_preview});
   }
 

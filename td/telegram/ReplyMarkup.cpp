@@ -338,7 +338,8 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
       dup_type == MessageContentDupType::Copy || dup_type == MessageContentDupType::ServerCopy) {
     return nullptr;
   }
-  bool is_send = dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot;
+  bool is_send = dup_type == MessageContentDupType::Send || dup_type == MessageContentDupType::SendViaBot ||
+                 dup_type == MessageContentDupType::SendQuickReply;
   if (!is_send && reply_markup->type != ReplyMarkup::Type::InlineKeyboard) {
     return nullptr;
   }

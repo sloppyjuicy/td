@@ -10150,6 +10150,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
     CHECK(type == MessageContentDupType::Copy || type == MessageContentDupType::ServerCopy);
   }
   if (type != MessageContentDupType::Forward && type != MessageContentDupType::SendViaBot &&
+      type != MessageContentDupType::SendQuickReply &&
       !can_message_content_have_input_media(td, content, type == MessageContentDupType::ServerCopy)) {
     return nullptr;
   }
@@ -10200,6 +10201,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
           case MessageContentDupType::SendViaBot:
             UNREACHABLE();
             break;
+          case MessageContentDupType::SendQuickReply:
           case MessageContentDupType::Forward:
           case MessageContentDupType::ServerCopy:
             return td::make_unique<MessageDice>(old_content->emoji, old_content->dice_value, true, old_content->seed,
@@ -10245,7 +10247,8 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
       }
       return make_unique<MessageInvoice>(*static_cast<const MessageInvoice *>(content));
     case MessageContentType::LiveLocation:
-      if (!to_secret && (type == MessageContentDupType::Send || type == MessageContentDupType::SendViaBot)) {
+      if (!to_secret && (type == MessageContentDupType::Send || type == MessageContentDupType::SendViaBot ||
+                         type == MessageContentDupType::SendQuickReply)) {
         return make_unique<MessageLiveLocation>(*static_cast<const MessageLiveLocation *>(content));
       } else {
         return make_unique<MessageLocation>(Location(static_cast<const MessageLiveLocation *>(content)->location));
@@ -10319,7 +10322,8 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
     }
     case MessageContentType::ToDoList: {
       auto result = make_unique<MessageToDoList>(*static_cast<const MessageToDoList *>(content));
-      if (type == MessageContentDupType::Copy || type == MessageContentDupType::ServerCopy) {
+      if (type == MessageContentDupType::Copy || type == MessageContentDupType::ServerCopy ||
+          type == MessageContentDupType::SendQuickReply) {
         result->completions.clear();
       }
       return result;
