@@ -3054,20 +3054,21 @@ bool QuickReplyManager::is_legacy_quick_reply_message(const QuickReplyMessage *m
   return need_reget_message_content(td_, m->content.get()) || (m->legacy_layer != 0 && m->legacy_layer < MTPROTO_LAYER);
 }
 
-QuickReplyManager::QuickReplyMessageUniqueId QuickReplyManager::get_quick_reply_unique_id(const QuickReplyMessage *m) {
-  return QuickReplyMessageUniqueId(m->message_id, m->edit_date);
+QuickReplyManager::QuickReplyMessageUniqueId QuickReplyManager::get_quick_reply_unique_id(
+    const QuickReplyMessage *m) const {
+  return QuickReplyMessageUniqueId(m->message_id, is_legacy_quick_reply_message(m) ? -1 : m->edit_date);
 }
 
 vector<QuickReplyManager::QuickReplyMessageUniqueId> QuickReplyManager::get_quick_reply_unique_ids(
-    const vector<unique_ptr<QuickReplyMessage>> &messages) {
+    const vector<unique_ptr<QuickReplyMessage>> &messages) const {
   return transform(
-      messages, [](const unique_ptr<QuickReplyMessage> &message) { return get_quick_reply_unique_id(message.get()); });
+      messages, [&](const unique_ptr<QuickReplyMessage> &message) { return get_quick_reply_unique_id(message.get()); });
 }
 
 vector<QuickReplyManager::QuickReplyMessageUniqueId> QuickReplyManager::get_server_quick_reply_unique_ids(
-    const vector<unique_ptr<QuickReplyMessage>> &messages) {
+    const vector<unique_ptr<QuickReplyMessage>> &messages) const {
   auto message_ids = get_quick_reply_unique_ids(messages);
-  td::remove_if(message_ids, [](const QuickReplyMessageUniqueId &message_id) { return !message_id.first.is_server(); });
+  td::remove_if(message_ids, [](const QuickReplyMessageUniqueId &unique_id) { return !unique_id.first.is_server(); });
   return message_ids;
 }
 
@@ -3084,7 +3085,7 @@ void QuickReplyManager::update_shortcut_from(Shortcut *new_shortcut, Shortcut *o
   if (is_partial) {
     // only the first server message is known
     // delete all definitely deleted server messages and insert the new message in the correct place
-    auto old_message_ids = get_quick_reply_unique_ids(old_shortcut->messages_);
+    auto old_unique_ids = get_quick_reply_unique_ids(old_shortcut->messages_);
     auto new_first_message_id = new_shortcut->messages_[0]->message_id;
     auto it = old_shortcut->messages_.begin();
     while (it != old_shortcut->messages_.end() && (*it)->message_id < new_first_message_id) {
@@ -3102,7 +3103,7 @@ void QuickReplyManager::update_shortcut_from(Shortcut *new_shortcut, Shortcut *o
       update_quick_reply_message(*it, std::move(new_shortcut->messages_[0]));
     }
     new_shortcut->messages_ = std::move(old_shortcut->messages_);
-    *are_messages_changed = (old_message_ids != get_quick_reply_unique_ids(new_shortcut->messages_));
+    *are_messages_changed = (old_unique_ids != get_quick_reply_unique_ids(new_shortcut->messages_));
 
     int32 server_total_count = 0;
     for (const auto &message : new_shortcut->messages_) {
@@ -3114,10 +3115,10 @@ void QuickReplyManager::update_shortcut_from(Shortcut *new_shortcut, Shortcut *o
       new_shortcut->server_total_count_ = server_total_count;
     }
   } else {
-    auto old_server_message_ids = get_server_quick_reply_unique_ids(old_shortcut->messages_);
-    auto new_server_message_ids = get_server_quick_reply_unique_ids(new_shortcut->messages_);
-    CHECK(static_cast<size_t>(new_shortcut->server_total_count_) == new_server_message_ids.size());
-    if (old_server_message_ids == new_server_message_ids) {
+    auto old_server_unique_ids = get_server_quick_reply_unique_ids(old_shortcut->messages_);
+    auto new_server_unique_ids = get_server_quick_reply_unique_ids(new_shortcut->messages_);
+    CHECK(static_cast<size_t>(new_shortcut->server_total_count_) == new_server_unique_ids.size());
+    if (old_server_unique_ids == new_server_unique_ids) {
       *are_messages_changed = false;
       new_shortcut->messages_ = std::move(old_shortcut->messages_);
     } else {

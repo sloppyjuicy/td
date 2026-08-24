@@ -315,13 +315,13 @@ class QuickReplyManager final : public Actor {
 
   using QuickReplyMessageUniqueId = std::pair<MessageId, int32>;
 
-  static QuickReplyMessageUniqueId get_quick_reply_unique_id(const QuickReplyMessage *m);
+  QuickReplyMessageUniqueId get_quick_reply_unique_id(const QuickReplyMessage *m) const;
 
-  static vector<QuickReplyMessageUniqueId> get_quick_reply_unique_ids(
-      const vector<unique_ptr<QuickReplyMessage>> &messages);
+  vector<QuickReplyMessageUniqueId> get_quick_reply_unique_ids(
+      const vector<unique_ptr<QuickReplyMessage>> &messages) const;
 
-  static vector<QuickReplyMessageUniqueId> get_server_quick_reply_unique_ids(
-      const vector<unique_ptr<QuickReplyMessage>> &messages);
+  vector<QuickReplyMessageUniqueId> get_server_quick_reply_unique_ids(
+      const vector<unique_ptr<QuickReplyMessage>> &messages) const;
 
   void update_shortcut_from(Shortcut *new_shortcut, Shortcut *old_shortcut, bool is_partial, bool *is_shortcut_changed,
                             bool *are_messages_changed);
