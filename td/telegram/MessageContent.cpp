@@ -6400,6 +6400,8 @@ Status can_send_message_content(DialogId dialog_id, const MessageContent *conten
         return Status::Error(400, "User restricted receiving of voice note messages");
       }
       break;
+    case MessageContentType::Unsupported:
+      break;
     case MessageContentType::None:
     case MessageContentType::ChatCreate:
     case MessageContentType::ChatChangeTitle:
@@ -6416,7 +6418,6 @@ Status can_send_message_content(DialogId dialog_id, const MessageContent *conten
     case MessageContentType::GameScore:
     case MessageContentType::ScreenshotTaken:
     case MessageContentType::ChatSetTtl:
-    case MessageContentType::Unsupported:
     case MessageContentType::Call:
     case MessageContentType::PaymentSuccessful:
     case MessageContentType::ContactRegistered:
@@ -10363,6 +10364,10 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
       return std::move(result);
     }
     case MessageContentType::Unsupported:
+      if (type == MessageContentDupType::SendViaBot || type == MessageContentDupType::SendQuickReply) {
+        return make_unique<MessageUnsupported>();
+      }
+      return nullptr;
     case MessageContentType::ChatCreate:
     case MessageContentType::ChatChangeTitle:
     case MessageContentType::ChatChangePhoto:

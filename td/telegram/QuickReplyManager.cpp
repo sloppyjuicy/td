@@ -2768,6 +2768,7 @@ Result<vector<QuickReplyManager::QuickReplyMessageContent>> QuickReplyManager::g
     }
     auto content = dup_message_content(td_, dialog_id, message->content.get(), MessageContentDupType::SendQuickReply,
                                        message->via_bot_user_id.is_valid(), MessageCopyOptions());
+    CHECK(content != nullptr);
 
     auto can_send_status = can_send_message_content(dialog_id, content.get(), false, true, td_);
     if (can_send_status.is_error()) {
