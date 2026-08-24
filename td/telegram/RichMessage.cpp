@@ -207,7 +207,7 @@ bool RichMessage::can_send(const RestrictedRights &rights) const {
 
 bool RichMessage::need_reget() const {
   for (const auto &block : blocks_) {
-    if (!block->need_reget()) {
+    if (block->need_reget()) {
       return true;
     }
   }
