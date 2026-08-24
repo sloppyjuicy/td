@@ -3050,6 +3050,10 @@ void QuickReplyManager::sort_quick_reply_messages(vector<unique_ptr<QuickReplyMe
             });
 }
 
+bool QuickReplyManager::is_legacy_quick_reply_message(const QuickReplyMessage *m) const {
+  return need_reget_message_content(td_, m->content.get()) || (m->legacy_layer != 0 && m->legacy_layer < MTPROTO_LAYER);
+}
+
 QuickReplyManager::QuickReplyMessageUniqueId QuickReplyManager::get_quick_reply_unique_id(const QuickReplyMessage *m) {
   return QuickReplyMessageUniqueId(m->message_id, m->edit_date);
 }
@@ -3202,8 +3206,7 @@ void QuickReplyManager::load_quick_reply_shortcuts() {
       register_new_message(message.get(), "load_quick_reply_shortcuts");
 
       if (message->message_id.is_server()) {
-        if (need_reget_message_content(td_, message->content.get()) ||
-            (message->legacy_layer != 0 && message->legacy_layer < MTPROTO_LAYER)) {
+        if (is_legacy_quick_reply_message(message.get())) {
           reload_quick_reply_message(shortcut->shortcut_id_, message->message_id, Promise<Unit>());
         }
         if (message->edited_content != nullptr) {

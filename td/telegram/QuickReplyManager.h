@@ -311,6 +311,8 @@ class QuickReplyManager final : public Actor {
 
   static void sort_quick_reply_messages(vector<unique_ptr<QuickReplyMessage>> &messages);
 
+  bool is_legacy_quick_reply_message(const QuickReplyMessage *m) const;
+
   using QuickReplyMessageUniqueId = std::pair<MessageId, int32>;
 
   static QuickReplyMessageUniqueId get_quick_reply_unique_id(const QuickReplyMessage *m);
