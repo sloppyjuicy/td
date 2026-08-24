@@ -55,8 +55,7 @@ Result<vector<RichMessageMedia>> RichMessageMedia::get_rich_message_media(
 
 unique_ptr<MessageContent> RichMessageMedia::get_message_content(Td *td) const {
   CHECK(td != nullptr);
-  return dup_message_content(td, DialogId(), media_.get(), MessageContentDupType::Send, false,
-                             MessageCopyOptions(true, false));
+  return dup_message_content(td, DialogId(), media_.get(), MessageContentDupType::Send, false, MessageCopyOptions());
 }
 
 RichMessageMedia RichMessageMedia::clone(Td *td, DialogId dialog_id, const MessageContentDupType &type,

@@ -1983,14 +1983,13 @@ void PollManager::on_online() {
 
 vector<unique_ptr<MessageContent>> PollManager::get_individual_message_contents(
     PollId poll_id, const MessageContent *attached_media) const {
-  return transform(get_individual_message_content_refs(poll_id, attached_media),
-                   [td = td_](const MessageContent *content) {
-                     if (content == nullptr) {
-                       return create_empty_text_message_content();
-                     }
-                     return dup_message_content(td, DialogId(), content, MessageContentDupType::Send, false,
-                                                MessageCopyOptions(true, false));
-                   });
+  return transform(
+      get_individual_message_content_refs(poll_id, attached_media), [td = td_](const MessageContent *content) {
+        if (content == nullptr) {
+          return create_empty_text_message_content();
+        }
+        return dup_message_content(td, DialogId(), content, MessageContentDupType::Send, false, MessageCopyOptions());
+      });
 }
 
 vector<MessageContent *> PollManager::get_individual_message_content_refs(PollId poll_id,
