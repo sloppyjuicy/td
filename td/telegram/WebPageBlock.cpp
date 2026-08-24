@@ -5246,7 +5246,7 @@ unique_ptr<WebPageBlock> get_web_page_block(Td *td, tl_object_ptr<telegram_api::
         LOG(ERROR) << "Receive invalid map location";
         break;
       }
-      if (zoom <= 0 || zoom > 30) {
+      if (zoom < 0 || zoom > 24) {
         LOG(ERROR) << "Receive invalid map zoom " << zoom;
         break;
       }
