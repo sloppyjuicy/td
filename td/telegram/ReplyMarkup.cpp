@@ -355,11 +355,17 @@ unique_ptr<ReplyMarkup> dup_reply_markup(const unique_ptr<ReplyMarkup> &reply_ma
     return transform(row, [](const KeyboardButton &button) { return button.clone(); });
   });
   result->placeholder = reply_markup->placeholder;
+  bool need_drop = false;
   result->inline_keyboard = transform(reply_markup->inline_keyboard, [&](const vector<InlineKeyboardButton> &row) {
-    return transform(
-        row, [&](const InlineKeyboardButton &button) { return button.clone(dialog_id, dup_type, is_via_bot, false); });
+    return transform(row, [&](const InlineKeyboardButton &button) {
+      auto new_button = button.clone(dialog_id, dup_type, is_via_bot, false);
+      if (new_button.is_disabled() && !button.is_disabled()) {
+        need_drop = true;
+      }
+      return new_button;
+    });
   });
-  if (result->has_disabled_buttons()) {
+  if (need_drop) {
     return nullptr;
   }
   return result;
@@ -484,17 +490,6 @@ const string *ReplyMarkup::get_login_button_url(int64 button_id) const {
 
 bool ReplyMarkup::has_buy_button() const {
   return !inline_keyboard.empty() && !inline_keyboard[0].empty() && inline_keyboard[0][0].is_buy();
-}
-
-bool ReplyMarkup::has_disabled_buttons() const {
-  for (auto &row : inline_keyboard) {
-    for (auto &button : row) {
-      if (button.is_disabled()) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 telegram_api::object_ptr<telegram_api::ReplyMarkup> get_input_reply_markup(

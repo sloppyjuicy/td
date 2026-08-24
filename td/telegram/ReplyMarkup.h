@@ -50,8 +50,6 @@ struct ReplyMarkup {
   const string *get_login_button_url(int64 button_id) const;
 
   bool has_buy_button() const;
-
-  bool has_disabled_buttons() const;
 };
 
 bool operator==(const ReplyMarkup &lhs, const ReplyMarkup &rhs);
